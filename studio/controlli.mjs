@@ -28,10 +28,31 @@ const PAGINE = [
 ];
 // Attesi da CLAUDE.md §7
 const ATTESI_7 = {
-  home: { title: "Migliore – Estetica Avanzata · Caronno Varesino", h1: "Trattamenti viso e pedicure avanzato a Caronno Varesino" },
-  viso: { title: "Trattamenti viso a Caronno Varesino · Migliore", h1: "Trattamenti viso a Caronno Varesino" },
-  pedicure: { title: "Pedicure avanzato a Caronno Varesino · Migliore", h1: "Pedicure avanzato a Caronno Varesino" },
+  home: {
+    title: "Migliore – Estetica Avanzata · Caronno Varesino",
+    h1: "Trattamenti viso e pedicure avanzato a Caronno Varesino",
+    description: "Trattamenti viso, pedicure avanzato, epilazione e massaggi a Caronno Varesino. Solo su appuntamento: chiama o scrivi su WhatsApp al 352 060 1109.",
+  },
+  viso: {
+    title: "Trattamenti viso a Caronno Varesino · Migliore",
+    h1: "Trattamenti viso a Caronno Varesino",
+    description: "Pulizia viso e trattamenti anti-age a Caronno Varesino, su appuntamento. Chiama o scrivi su WhatsApp al 352 060 1109.",
+  },
+  pedicure: {
+    title: "Pedicure avanzato a Caronno Varesino · Migliore",
+    h1: "Pedicure avanzato a Caronno Varesino",
+    description: "Pedicure avanzato a Caronno Varesino: non la solita pedicure. Su appuntamento, chiama o scrivi su WhatsApp al 352 060 1109.",
+  },
 };
+// Attesi da CLAUDE.md §8, «Pagina 404»
+const ATTESI_404 = {
+  title: "Pagina non trovata · Migliore – Estetica Avanzata",
+  h1: "Questa pagina non esiste.",
+  testo: "Forse il link è cambiato. Torna alla pagina iniziale o contattaci direttamente.",
+  link: "Torna alla pagina iniziale",
+  pulsanti: ["Chiama", "Scrivi su WhatsApp"],
+};
+const URL_PROVA = "https://esempio.netlify.app";
 // Listino atteso, voce per voce da CLAUDE.md §2.3 (scritto a mano qui, di proposito)
 const LISTINO_ATTESO = {
   "mani-piedi|Manicure e pedicure": [
@@ -178,26 +199,37 @@ await controllo("studio/ e content/ non finiscono in dist/", () => {
   verifica(!sospetti.length, sospetti.join(", "));
 });
 
-await controllo("URL assoluto: senza URL niente canonical né sitemap; con URL canonical, og:url e sitemap", () => {
+await controllo("senza URL: canonical, og:url e sitemap.xml omessi", () => {
   verifica(!existsSync(join(DIST, "sitemap.xml")), "sitemap.xml presente senza URL assoluto");
-  verifica(!/rel="canonical"/.test(pagina("index.html")), "canonical presente senza URL assoluto");
-  verifica(/^User-agent: \*/m.test(readFileSync(join(DIST, "robots.txt"), "utf8")), "robots.txt mancante o vuoto");
+  for (const [file] of PAGINE) {
+    const html = pagina(file);
+    verifica(!/rel="canonical"/.test(html), `${file}: canonical presente senza URL`);
+    verifica(!/property="og:url"/.test(html), `${file}: og:url presente senza URL`);
+  }
+  const robots = readFileSync(join(DIST, "robots.txt"), "utf8");
+  verifica(/^User-agent: \*/m.test(robots), "robots.txt mancante o vuoto");
+  verifica(!/Sitemap:/.test(robots), "robots.txt cita una sitemap che non esiste");
+});
+
+await controllo(`con URL=${URL_PROVA} node build.mjs: canonical, og:url e sitemap.xml usano quell'indirizzo`, () => {
+  // Stessa build con la variabile URL, ma in una cartella temporanea: dist/ resta la versione senza URL.
   const tmp = mkdtempSync(join(tmpdir(), "migliore-build-"));
   try {
-    const r = spawnSync(process.execPath, ["build.mjs", "--dist", tmp], {
-      cwd: RADICE,
-      encoding: "utf8",
-      env: { ...process.env, URL: "https://esempio.netlify.app/" },
-    });
+    const r = spawnSync(process.execPath, ["build.mjs", "--dist", tmp], { cwd: RADICE, encoding: "utf8", env: { ...process.env, URL: URL_PROVA } });
     verifica(r.status === 0, `build con URL fallita: ${r.stderr || r.stdout}`);
-    const viso = readFileSync(join(tmp, "viso", "index.html"), "utf8");
-    verifica(viso.includes('<link rel="canonical" href="https://esempio.netlify.app/viso/">'), "canonical di /viso/ errato");
-    verifica(viso.includes('<meta property="og:url" content="https://esempio.netlify.app/viso/">'), "og:url di /viso/ errato");
+    for (const [file, id] of PAGINE.filter(([, id]) => id)) {
+      const html = readFileSync(join(tmp, file), "utf8");
+      const indirizzo = URL_PROVA + testi.pagine[id].percorso;
+      verifica(html.includes(`<link rel="canonical" href="${indirizzo}">`), `${file}: canonical diverso da ${indirizzo}`);
+      verifica(html.includes(`<meta property="og:url" content="${indirizzo}">`), `${file}: og:url diverso da ${indirizzo}`);
+      verifica(JSON.parse(jsonLdDi(html)[0]).url === `${URL_PROVA}/`, `${file}: url del JSON-LD`);
+    }
     const sitemap = readFileSync(join(tmp, "sitemap.xml"), "utf8");
-    for (const p of ["/", "/viso/", "/pedicure/"]) verifica(sitemap.includes(`<loc>https://esempio.netlify.app${p}</loc>`), `sitemap senza ${p}`);
-    verifica(!/404/.test(sitemap), "la 404 non va nella sitemap");
-    verifica(readFileSync(join(tmp, "robots.txt"), "utf8").includes("Sitemap: https://esempio.netlify.app/sitemap.xml"), "robots.txt senza Sitemap");
-    verifica(!/rel="canonical"/.test(readFileSync(join(tmp, "404.html"), "utf8")), "la 404 non deve avere canonical");
+    const loc = [...sitemap.matchAll(/<loc>([^<]*)<\/loc>/g)].map((m) => m[1]);
+    verifica(loc.join() === ["/", "/viso/", "/pedicure/"].map((p) => URL_PROVA + p).join(), `sitemap: ${loc.join(", ")}`);
+    verifica(readFileSync(join(tmp, "robots.txt"), "utf8").includes(`Sitemap: ${URL_PROVA}/sitemap.xml`), "robots.txt senza Sitemap");
+    const html404 = readFileSync(join(tmp, "404.html"), "utf8");
+    verifica(!/rel="canonical"|property="og:url"/.test(html404), "la 404 non deve avere canonical né og:url");
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
@@ -473,14 +505,16 @@ await controllo("JSON-LD BeautySalon sulle tre pagine (orari ricavati da «dal l
   verifica(build.ricavaGiorni("lunedì, mercoledì e sabato") === null, "ricavaGiorni: un testo ambiguo deve dare null");
 });
 
-await controllo("meta per pagina: description, og:title, og:description, og:type, og:locale, theme-color", () => {
+await controllo("meta per pagina: description di §7 (60–160 caratteri), og:title, og:description, og:type, og:locale, theme-color", () => {
   for (const [file, id] of PAGINE.filter(([, id]) => id)) {
     const html = pagina(file);
-    const p = testi.pagine[id];
+    const atteso = ATTESI_7[id];
     const meta = (attr, nome) => decodifica(html.match(new RegExp(`<meta ${attr}="${nome}" content="([^"]*)"`))?.[1] ?? "");
-    verifica(meta("name", "description") === p.description, `${file}: description`);
-    verifica(meta("property", "og:title") === p.title, `${file}: og:title`);
-    verifica(meta("property", "og:description") === p.description, `${file}: og:description`);
+    const descrizione = meta("name", "description");
+    verifica(descrizione === atteso.description, `${file}: description «${descrizione}»`);
+    verifica(descrizione.length >= 60 && descrizione.length <= 160, `${file}: description di ${descrizione.length} caratteri (60–160)`);
+    verifica(meta("property", "og:title") === atteso.title, `${file}: og:title`);
+    verifica(meta("property", "og:description") === atteso.description, `${file}: og:description`);
     verifica(meta("property", "og:type") === "website" && meta("property", "og:locale") === "it_IT", `${file}: og:type/og:locale`);
     verifica(meta("name", "theme-color").toUpperCase() === "#F4DBCA", `${file}: theme-color`);
     verifica(html.includes('<script>document.documentElement.classList.add("js")</script>'), `${file}: script della classe js`);
@@ -504,6 +538,19 @@ await controllo("nessun testo scritto nei template (tutto da content/)", () => {
     if (/\d{3}\s?\d{3}\s?\d{4}|04123400121|esteticamigliore/.test(senzaTag)) problemi.push(`${rel(file)}: dato scritto a mano`);
   }
   verifica(!problemi.length, problemi.join(", "));
+});
+
+await controllo("pagina 404 come in §8: title, noindex, H1, testo, link e pulsanti", () => {
+  const html = pagina("404.html");
+  const main = html.match(/<main[\s\S]*?<\/main>/)?.[0] ?? "";
+  verifica(decodifica(html.match(/<title>([\s\S]*?)<\/title>/)[1]) === ATTESI_404.title, "title");
+  verifica(/<meta name="robots" content="noindex">/.test(html), "manca meta robots noindex");
+  verifica(testoVisibile(main.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? "") === ATTESI_404.h1, "H1");
+  verifica(testoVisibile(main).includes(ATTESI_404.testo), "testo");
+  verifica(new RegExp(`<a href="/">${ATTESI_404.link}</a>`).test(main), "link alla pagina iniziale");
+  const pulsanti = [...main.matchAll(/<a class="pulsante[^"]*" href="([^"]*)">[\s\S]*?<span>([^<]*)<\/span><\/a>/g)];
+  verifica(pulsanti.map((m) => m[2]).join() === ATTESI_404.pulsanti.join(), `pulsanti: ${pulsanti.map((m) => m[2]).join(", ")}`);
+  verifica(pulsanti[0][1] === `tel:${centro.telefonoE164}` && pulsanti[1][1].startsWith(`https://wa.me/${centro.whatsappNumero}?text=`), "destinazioni dei pulsanti");
 });
 
 await controllo("pesi: main.js ≤ 3 KB, JS ≤ 12 KB e CSS ≤ 20 KB compressi, font ≤ 100 KB", () => {

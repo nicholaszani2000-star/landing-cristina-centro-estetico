@@ -40,7 +40,7 @@ Struttura obbligatoria:
 │  ├─ testi.json          tutti i testi, per pagina
 │  └─ listino.json        il listino prezzi (§2.3)
 ├─ src/
-│  ├─ templates/          pagina.html, parti/*.html, privacy.html, cookie.html, 404.html
+│  ├─ templates/          pagina.html, parti/*.html, icone/*.svg, privacy.html, cookie.html, 404.html
 │  ├─ css/                tokens.css, base.css, sezioni.css
 │  ├─ js/                 main.js, consenso.js, codice.js
 │  ├─ fonts/              woff2 self-hosted
@@ -177,7 +177,7 @@ Trattamenti corpo e viso (id `corpo-viso`)
 - Laminazione ciglia — 50 €
 - Laminazione sopracciglia — 30 €
 
-Le voci viso della sezione viso (§6) sono, in quest'ordine: Pulizia viso base, Trattamento viso Antiage, Trattamento Antiage contorno occhi e labbra, Laminazione ciglia, Laminazione sopracciglia. La voce «Trattamento viso Antiage» va per prima, con l'etichetta «In evidenza».
+Le voci viso della sezione viso (§6) sono 5: Pulizia viso base, Trattamento viso Antiage, Trattamento Antiage contorno occhi e labbra, Laminazione ciglia, Laminazione sopracciglia. Nella sezione la voce «Trattamento viso Antiage» va per prima, con l'etichetta «In evidenza»; le altre seguono nell'ordine di questo elenco. Nel listino (sezione 9) l'ordine resta quello del cartaceo.
 
 ### §2.4 Codice sconto e promo email
 
@@ -265,7 +265,7 @@ Requisiti verificati sulla documentazione ufficiale, con le loro insidie:
 - Supabase: RLS sempre attivo sulle tabelle in `public`. Creando la tabella in SQL bisogna attivarlo e dare i permessi esplicitamente. Qui: nessun permesso ad `anon` e `authenticated`, permessi solo a `service_role`. La chiave segreta o `service_role` scavalca RLS e non va mai nel browser.
 
 Motore di template (`build.mjs`):
-- Sintassi: `{{chiave.annidata}}` (testo con escape HTML), `{{{chiave}}}` (HTML già sicuro, solo per JSON-LD e SVG interni), `{{> parte}}`, `{{#se chiave}}…{{/se}}`, `{{#ogni lista}}…{{/ogni}}`.
+- Sintassi: `{{chiave.annidata}}` (testo con escape HTML), `{{{chiave}}}` (HTML già sicuro, solo per JSON-LD e SVG interni), `{{> parte}}`, `{{#se chiave}}…{{altrimenti}}…{{/se}}` (con la negazione `{{#se !chiave}}`), `{{#ogni lista}}…{{/ogni}}`.
 - Modalità severa, come gli strictFilters: una chiave mancante, una parte inesistente o un `{{` rimasto nell'output fermano la build con un errore che dice file e chiave.
 - Aggiunge `?v=<hash8>` ai link di CSS, JS e font, calcolato sul contenuto.
 - Genera i dati strutturati JSON-LD `BeautySalon` da `centro.json`: name, image, telephone, email, address, url (se c'è), openingHoursSpecification (se ricavabile), priceRange «€€».
@@ -368,6 +368,11 @@ Per ogni pagina cambiano: `<title>`, meta description, H1, sottotitolo, ordine d
 | `/viso/` | Trattamenti viso a Caronno Varesino · Migliore | Trattamenti viso a Caronno Varesino |
 | `/pedicure/` | Pedicure avanzato a Caronno Varesino · Migliore | Pedicure avanzato a Caronno Varesino |
 
+Meta description (60–160 caratteri, una per pagina):
+- `/`: «Trattamenti viso, pedicure avanzato, epilazione e massaggi a Caronno Varesino. Solo su appuntamento: chiama o scrivi su WhatsApp al 352 060 1109.»
+- `/viso/`: «Pulizia viso e trattamenti anti-age a Caronno Varesino, su appuntamento. Chiama o scrivi su WhatsApp al 352 060 1109.»
+- `/pedicure/`: «Pedicure avanzato a Caronno Varesino: non la solita pedicure. Su appuntamento, chiama o scrivi su WhatsApp al 352 060 1109.»
+
 Titoli alternativi da testare negli annunci (non vanno nel sito ora):
 - Viso, simili: «Pulizia viso e anti-age a Caronno Varesino» · «Il tuo trattamento viso, su appuntamento» · «Trattamenti viso con Cristina, a Caronno Varesino»
 - Viso, diversi: «Una pausa per la tua pelle» · «Diventa la versione più bella di te» · «Il tempo per la tua pelle, finalmente»
@@ -462,9 +467,15 @@ Listino
 - testo: «Prezzi finali. È lo stesso listino che trovi in centro.»
 - link: «Vedi il listino stampato»
 
+Pagina 404
+- title: «Pagina non trovata · Migliore – Estetica Avanzata» · meta robots noindex
+- H1: «Questa pagina non esiste.»
+- testo: «Forse il link è cambiato. Torna alla pagina iniziale o contattaci direttamente.»
+- link: «Torna alla pagina iniziale» · pulsanti «Chiama» e «Scrivi su WhatsApp»
+
 Footer
 - «Migliore Cristina · P.IVA 04123400121» · «Registro Imprese di Varese · REA non indicato (la riga REA non compare)» (solo se indicato) · indirizzo · telefono · email · «© [anno] Migliore – Estetica Avanzata»
-- link: «Privacy» · «Cookie» · «Preferenze cookie» (solo se il banner è attivo)
+- link: «Privacy» · «Cookie» · «Preferenze cookie» (solo se il banner è attivo). Privacy e Cookie puntano a /privacy/ e /cookie/ fin dallo Step 1: fino allo Step 7 portano alla 404, ed è previsto.
 
 ## §9 Performance e accessibilità
 

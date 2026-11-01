@@ -116,8 +116,9 @@
       "preferenzeCookie": "Preferenze cookie"
     },
     "pagina404": {
-      "title": "Pagina non trovata · {nomeBreve}",
+      "title": "Pagina non trovata · {nome}",
       "h1": "Questa pagina non esiste.",
+      "testo": "Forse il link è cambiato. Torna alla pagina iniziale o contattaci direttamente.",
       "linkHome": "Torna alla pagina iniziale",
       "pulsanteChiama": "Chiama",
       "pulsanteWhatsapp": "Scrivi su WhatsApp"
@@ -127,34 +128,43 @@
     "home": {
       "percorso": "/",
       "title": "Migliore – Estetica Avanzata · Caronno Varesino",
-      "description": "Trattamenti viso e pedicure avanzato a Caronno Varesino. Si riceve solo su appuntamento: chiama o scrivi su WhatsApp e scegli il giorno che preferisci.",
+      "description": "Trattamenti viso, pedicure avanzato, epilazione e massaggi a Caronno Varesino. Solo su appuntamento: chiama o scrivi su WhatsApp al {telefono}.",
       "occhiello": "Estetica avanzata a Caronno Varesino",
       "h1": "Trattamenti viso e pedicure avanzato a Caronno Varesino",
       "sottotitolo": "Si riceve solo su appuntamento. Chiama o scrivi su WhatsApp e scegli il giorno che preferisci.",
       "whatsapp": "generale",
-      "ordine": ["viso", "pedicure"],
+      "ordine": [
+        "viso",
+        "pedicure"
+      ],
       "listinoAperto": null
     },
     "viso": {
       "percorso": "/viso/",
       "title": "Trattamenti viso a Caronno Varesino · Migliore",
-      "description": "Trattamenti viso a Caronno Varesino: pulizia viso e trattamenti anti-age, su appuntamento, in un ambiente caldo e tranquillo.",
+      "description": "Pulizia viso e trattamenti anti-age a Caronno Varesino, su appuntamento. Chiama o scrivi su WhatsApp al {telefono}.",
       "occhiello": "Viso · Caronno Varesino",
       "h1": "Trattamenti viso a Caronno Varesino",
       "sottotitolo": "Pulizia viso e trattamenti anti-age, su appuntamento, in un ambiente caldo e tranquillo.",
       "whatsapp": "viso",
-      "ordine": ["viso", "pedicure"],
+      "ordine": [
+        "viso",
+        "pedicure"
+      ],
       "listinoAperto": "corpo-viso"
     },
     "pedicure": {
       "percorso": "/pedicure/",
       "title": "Pedicure avanzato a Caronno Varesino · Migliore",
-      "description": "Pedicure avanzato a Caronno Varesino: non la solita pedicure, più attenzione alle zone dove la pelle si ispessisce, per piedi morbidi e curati.",
+      "description": "Pedicure avanzato a Caronno Varesino: non la solita pedicure. Su appuntamento, chiama o scrivi su WhatsApp al {telefono}.",
       "occhiello": "Piedi · Caronno Varesino",
       "h1": "Pedicure avanzato a Caronno Varesino",
       "sottotitolo": "Non la solita pedicure: più attenzione alle zone dove la pelle si ispessisce, per piedi morbidi e curati.",
       "whatsapp": "pedicure",
-      "ordine": ["pedicure", "viso"],
+      "ordine": [
+        "pedicure",
+        "viso"
+      ],
       "listinoAperto": "mani-piedi"
     }
   },

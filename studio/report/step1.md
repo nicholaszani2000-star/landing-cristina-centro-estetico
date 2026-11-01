@@ -112,3 +112,27 @@ Studio
 1. **Immagini.** Il pacchetto `migliore-immagini.zip` serve per lo Step 2 e non è ancora nell'ambiente. Puoi caricarlo in `studio/originali/` del repository (o allegarlo)?
 2. **REA e link.** Il numero REA e il link al profilo Instagram, se esistono, li aggiungo a `content/centro.json`: compaiono da soli nel footer.
 3. **Branch principale.** Vuoi un `main` separato per la produzione su Netlify, o resta `landing-migliore` (oggi è il branch predefinito su GitHub)?
+
+---
+
+## Aggiornamento: decisioni sul report
+
+Applicate le decisioni sui dubbi del report. I punti «Meta description» e «Testi della 404 non indicati» qui sopra sono superati.
+
+1. File modificati
+- `CLAUDE.md`, aggiornato su richiesta:
+  - §1: `icone/*.svg` nell'elenco di `templates/`;
+  - §2.3: ordine delle voci viso chiarito (Antiage per prima nella sezione, le altre nell'ordine dell'elenco; nel listino l'ordine del cartaceo);
+  - §4: `{{altrimenti}}` e `{{#se !chiave}}` nella sintassi;
+  - §7: meta description delle tre pagine;
+  - §8: testi della pagina 404, e la nota sui link Privacy e Cookie che portano alla 404 fino allo Step 7.
+- `content/testi.json`: meta description di §7. Il numero è scritto `{telefono}` e viene da `centro.json`. Testi della 404 di §8: title «Pagina non trovata · Migliore – Estetica Avanzata» e il testo nuovo.
+- `src/templates/404.html`: il paragrafo «Forse il link è cambiato…» sotto l'H1. `noindex` c'era già.
+- `studio/controlli.mjs`:
+  - il controllo sugli URL assoluti diventa due controlli espliciti. Senza URL: canonical, og:url e sitemap omessi su tutte le pagine, robots senza `Sitemap`. Con `URL=https://esempio.netlify.app`: canonical, og:url e JSON-LD di ogni pagina, gli indirizzi della sitemap e robots usano quell'indirizzo. Quest'ultima build va in una cartella temporanea, così `dist/` resta la versione senza URL;
+  - le meta description sono confrontate con il testo di §7, e la loro lunghezza deve stare tra 60 e 160 caratteri;
+  - nuovo controllo sulla 404 come in §8: title, noindex, H1, testo, link e i due pulsanti con le loro destinazioni.
+
+2. Controlli: build OK · html-validate 0 errori · `node --check` OK · **controlli 26/26**. Prova a vuoto: con una description sbagliata, il testo della 404 tolto e la build che ignora `URL`, i tre controlli nuovi falliscono come devono.
+
+3. Anteprima: 14 screenshot in `studio/screenshot/step1/`. La 404 mostra H1, testo, link e pulsanti. Console: 0 errori, 0 richieste fallite.
