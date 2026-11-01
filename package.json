@@ -1,0 +1,15 @@
+{
+  "name": "landing-migliore",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Landing page di Migliore – Estetica Avanzata, Caronno Varesino",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "anteprima": "node studio/anteprima.mjs",
+    "controlli": "node studio/controlli.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

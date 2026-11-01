@@ -1,0 +1,35 @@
+/  (radice del repository; esclusi .git e node_modules)
+├─ content/
+│  └─ .gitkeep
+├─ dist/   (ignorato da git)
+├─ netlify/
+│  └─ functions/
+│     └─ .gitkeep
+├─ src/
+│  ├─ css/
+│  │  └─ .gitkeep
+│  ├─ fonts/
+│  │  └─ .gitkeep
+│  ├─ img/
+│  │  └─ .gitkeep
+│  ├─ js/
+│  │  └─ .gitkeep
+│  └─ templates/
+│     └─ parti/
+│        └─ .gitkeep
+├─ studio/
+│  ├─ originali/
+│  │  └─ .gitkeep
+│  ├─ report/
+│  │  ├─ step0-albero.txt
+│  │  └─ step0.md
+│  ├─ screenshot/   (ignorato da git)
+│  ├─ package-lock.json
+│  └─ package.json
+├─ supabase/
+│  └─ .gitkeep
+├─ .gitignore
+├─ build.mjs
+├─ CLAUDE.md
+├─ netlify.toml
+└─ package.json

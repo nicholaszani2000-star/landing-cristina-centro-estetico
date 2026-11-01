@@ -1,0 +1,45 @@
+# Netlify: build, functions e header (CLAUDE.md §4).
+# Niente variabili segrete qui: le chiavi vanno nell'interfaccia di Netlify,
+# con ambito «Functions» (le variabili di questo file non arrivano alle Functions).
+
+[build]
+  command = "node build.mjs"
+  publish = "dist"
+  environment = { NODE_VERSION = "22" }
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Sicurezza: tutte le risposte statiche.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    X-Frame-Options = "DENY"
+
+# Cache: font, CSS e JS hanno ?v=<hash> nei link, quindi sono immutabili.
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/css/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Immagini: 30 giorni.
+[[headers]]
+  for = "/img/*"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000"
+
+# Content-Security-Policy: allo Step 9, quando si conoscono i domini di GA4 e Meta.
