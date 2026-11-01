@@ -1,0 +1,104 @@
+{
+  "nome": "Migliore – Estetica Avanzata",
+  "nomeBreve": "Migliore",
+  "payoff": "Diventa la versione più bella di te",
+  "titolare": {
+    "nome": "Cristina",
+    "cognome": "Migliore",
+    "completo": "Cristina Migliore"
+  },
+  "legale": {
+    "denominazione": "Migliore Cristina",
+    "partitaIva": "04123400121",
+    "registroImprese": "Varese",
+    "rea": null,
+    "sedeLegale": null
+  },
+  "indirizzo": {
+    "via": "Via Roma 2/A",
+    "cap": "21040",
+    "comune": "Caronno Varesino",
+    "provincia": "VA",
+    "nazione": "IT",
+    "completo": "Via Roma 2/A, 21040 Caronno Varesino (VA)"
+  },
+  "telefono": "352 060 1109",
+  "telefonoE164": "+393520601109",
+  "whatsappNumero": "393520601109",
+  "email": "esteticamigliore@gmail.com",
+  "orari": {
+    "giorni": "dal lunedì al sabato",
+    "apertura": "08:00",
+    "chiusura": "17:00",
+    "soloSuAppuntamento": true
+  },
+  "presentazione": null,
+  "dominio": null,
+  "social": {
+    "instagram": null,
+    "facebook": null,
+    "schedaGoogle": null
+  },
+  "trattamenti": {
+    "viso": {
+      "inEvidenza": "Trattamento viso Antiage",
+      "dettagli": [
+        {
+          "voce": "Pulizia viso base",
+          "descrizione": "detersione delicata, pulizia accurata delle impurità, maschera e crema finale scelte per il tuo tipo di pelle. Per una pelle più pulita, fresca e luminosa."
+        },
+        {
+          "voce": "Trattamento viso Antiage",
+          "descrizione": "un trattamento professionale Natinuel, senza aghi, scelto in base alla tua pelle per renderla più luminosa, compatta e idratata, con linee sottili meno visibili e un colorito più uniforme. Uno dei trattamenti è Revinol, in tre fasi: esfoliazione delicata, maschera peel-off e siero finale, con retinolo, vitamina C, vitamina E e acido ialuronico. Fatto con costanza, aiuta la pelle a mantenere più a lungo un aspetto fresco e compatto."
+        },
+        {
+          "voce": "Trattamento Antiage contorno occhi e labbra",
+          "descrizione": "un trattamento mirato sulle zone più delicate del viso, per idratare e attenuare l'aspetto delle linee sottili intorno a occhi e labbra."
+        },
+        {
+          "voce": "Laminazione ciglia",
+          "descrizione": "ciglia più definite e incurvate, senza extension."
+        },
+        {
+          "voce": "Laminazione sopracciglia",
+          "descrizione": "i peli vengono fissati nella forma scelta, per sopracciglia più ordinate e piene alla vista."
+        }
+      ],
+      "macchinari": null,
+      "prodotti": "Natinuel, linea cosmetica professionale per centri estetici"
+    },
+    "pedicure": {
+      "estetico": {
+        "include": [
+          "taglio e forma delle unghie",
+          "cura delle cuticole",
+          "levigatura della pelle dei talloni",
+          "crema finale"
+        ],
+        "durata": null
+      },
+      "avanzato": {
+        "include": [
+          "tutto il pedicure estetico",
+          "un lavoro approfondito sulle zone dove la pelle si ispessisce",
+          "levigatura con strumenti professionali",
+          "idratazione finale"
+        ],
+        "durata": null
+      },
+      "strumenti": null
+    }
+  },
+  "codiceSconto": {
+    "percentuale": 10,
+    "validitaGiorni": 30,
+    "condizioni": "su un trattamento a scelta, uno per persona, non cumulabile con altre promozioni",
+    "frequenzaPromo": "circa una volta al mese",
+    "unoPerEmail": true
+  },
+  "integrazioni": {
+    "ga4": null,
+    "pixelMeta": null,
+    "supabase": null
+  }
+}

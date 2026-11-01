@@ -1,0 +1,78 @@
+/* tokens.css — design system «sabbia» (CLAUDE.md §5). Unica fonte di colori, font, scala, spazi, raggi e durate. */
+:root {
+  /* Colori. Contrasti sul sabbia: inchiostro 13,4:1 · inchiostro tenue 6,7:1 · accento 5,4:1 (4,7:1 sul sabbia profondo). */
+  --sabbia: #F4DBCA;           /* fondo principale, preso dal logo */
+  --sabbia-chiara: #FAEDE4;    /* sezioni alternate */
+  --sabbia-profonda: #EBCBB5;  /* schede e blocchi in rilievo */
+  --crema: #FFF8F3;            /* campi dei moduli */
+  --inchiostro: #1F1612;       /* testi e pulsante principale */
+  --inchiostro-tenue: #5C4537; /* testi secondari e bordi dei campi */
+  --accento: #8C4318;          /* link, occhielli, piccoli dettagli */
+  --linea: #D9B49C;            /* solo filetti decorativi: mai testi o bordi di campi */
+  --farfalla: #EB7D40;         /* SOLO decorazione (2,1:1): vietato per testi, icone informative e bordi */
+
+  /* Font */
+  --font-titoli: Marcellus, "Cormorant Garamond", Georgia, serif;
+  --font-testo: Jost, "Segoe UI", system-ui, sans-serif;
+  --peso-normale: 400;
+  --peso-medio: 500;
+
+  /* Scala tipografica: da 390 px a 1440 px con clamp() */
+  --testo-h1: clamp(2.25rem, 1.7857rem + 1.9048vw, 3.5rem);
+  --testo-h2: clamp(1.75rem, 1.4714rem + 1.1429vw, 2.5rem);
+  --testo-h3: clamp(1.25rem, 1.1571rem + 0.381vw, 1.5rem);
+  --testo-base: 1.0625rem;   /* 17 px */
+  --testo-piccolo: 0.875rem;
+  --testo-occhiello: 0.8125rem;
+  --testo-logo: 1.75rem;
+  --interlinea-h1: 1.1;
+  --interlinea-h2: 1.15;
+  --interlinea-h3: 1.25;
+  --interlinea-testo: 1.6;
+  --lettering-h1: 0.01em;
+  --lettering-occhiello: 0.14em;
+  --misura-testo: 62ch;
+
+  /* Spazi: base 8 px */
+  --spazio-1: 0.5rem;  /*   8 px */
+  --spazio-2: 1rem;    /*  16 px */
+  --spazio-3: 1.5rem;  /*  24 px */
+  --spazio-4: 2rem;    /*  32 px */
+  --spazio-5: 2.5rem;  /*  40 px */
+  --spazio-6: 3rem;    /*  48 px */
+  --spazio-8: 4rem;    /*  64 px */
+  --spazio-14: 7rem;   /* 112 px */
+  --sezione-verticale: var(--spazio-8); /* 64 px su mobile, 112 px da 1024 px */
+  --margine-laterale: 1.25rem;          /* 20 px */
+  --contenuto-max: 70rem;               /* 1120 px */
+
+  /* Raggi e misure */
+  --raggio-pillola: 999px;
+  --raggio-foto: 6px;
+  --pulsante-altezza: 3.25rem; /* 52 px */
+  --bordo-pulsante: 1.5px;
+  --area-tocco: 2.75rem;       /* 44 px */
+  --logo-altezza: 4rem;        /* 64 px su mobile, 80 px da 1024 px */
+  --arco-larghezza: 48px;
+  --arco-altezza: 12px;
+  --arco-opacita: 0.6;
+
+  /* Focus */
+  --focus-spessore: 3px;
+  --focus-distanza: 3px;
+
+  /* Movimento */
+  --curva: cubic-bezier(.2, .7, .2, 1);
+  --durata-comparsa: 450ms;
+  --sfasamento: 60ms;
+  --spostamento-comparsa: 12px;
+  --durata-rapida: 160ms;
+  --opacita-hover: 0.9;
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --sezione-verticale: var(--spazio-14);
+    --logo-altezza: 5rem;
+  }
+}

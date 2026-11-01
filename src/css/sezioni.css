@@ -1,0 +1,159 @@
+/* sezioni.css — una parte per sezione (CLAUDE.md §6). Per ora: header, apertura, footer. */
+
+/* 1. Header: logo a sinistra, «Chiama» a destra. Non fisso. */
+.testata {
+  padding-block: var(--spazio-1);
+}
+.testata-riga {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spazio-2);
+  min-height: var(--logo-altezza);
+}
+.testata-logo {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--area-tocco);
+  font-family: var(--font-titoli);
+  font-size: var(--testo-logo);
+  line-height: 1;
+  color: var(--inchiostro);
+  text-decoration: none;
+}
+.testata-chiama {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  min-height: var(--area-tocco);
+  padding-inline: var(--spazio-1);
+  font-weight: var(--peso-medio);
+  color: var(--inchiostro);
+  text-decoration: none;
+}
+.testata-chiama .icona {
+  color: var(--accento);
+}
+.testata-chiama:hover {
+  text-decoration: underline;
+}
+/* Sotto i 768 px il numero resta solo per i lettori di schermo */
+@media (max-width: 767.98px) {
+  .testata-numero {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+@media (min-width: 768px) {
+  .testata-numero::before {
+    content: "·";
+    margin-right: 0.5em;
+    color: var(--inchiostro-tenue);
+  }
+}
+
+/* 2. Apertura: occhiello, H1, sottotitolo, pulsanti, riga info, payoff. Foto dallo Step 3. */
+.apertura {
+  padding-block: var(--spazio-4) var(--sezione-verticale);
+}
+.apertura-testo {
+  display: grid;
+  gap: var(--spazio-2);
+  max-width: 36rem;
+}
+.apertura-sottotitolo {
+  font-size: 1.125rem;
+}
+.apertura .pulsanti {
+  margin-top: var(--spazio-1);
+}
+.apertura-info {
+  font-size: var(--testo-piccolo);
+  color: var(--inchiostro-tenue);
+}
+.apertura-info span {
+  white-space: nowrap;
+}
+.apertura-payoff {
+  font-size: 1.125rem;
+  color: var(--inchiostro-tenue);
+}
+@media (min-width: 1024px) {
+  .apertura {
+    padding-top: var(--spazio-6);
+  }
+  .apertura-griglia {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: var(--spazio-8);
+  }
+}
+
+/* 10. Footer: logo piccolo, dati legali, contatti, link legali */
+.piede {
+  padding-block: var(--spazio-8) var(--spazio-6);
+  background: var(--sabbia-chiara);
+  font-size: var(--testo-piccolo);
+  color: var(--inchiostro-tenue);
+}
+.piede-griglia {
+  display: grid;
+  gap: var(--spazio-3);
+}
+.piede-logo {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--area-tocco);
+  font-family: var(--font-titoli);
+  font-size: 1.375rem;
+  line-height: 1;
+  color: var(--inchiostro);
+  text-decoration: none;
+}
+.piede-dati {
+  display: grid;
+  gap: var(--spazio-1);
+}
+.piede-elenco {
+  display: grid;
+  align-content: start;
+  padding: 0;
+  list-style: none;
+}
+.piede-elenco a,
+.piede-preferenze {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--area-tocco);
+  color: var(--inchiostro);
+}
+.piede-preferenze {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+}
+.piede-copyright {
+  padding-top: var(--spazio-3);
+  border-top: 1px solid var(--linea);
+  max-width: none;
+}
+@media (min-width: 768px) {
+  .piede-griglia {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: var(--spazio-5);
+  }
+  .piede-copyright {
+    grid-column: 1 / -1;
+  }
+}

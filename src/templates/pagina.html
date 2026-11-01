@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+{{> testa}}
+</head>
+<body>
+{{> header}}
+<main id="contenuto">
+{{> apertura}}
+{{#se p.visoPrima}}
+<!-- sezione: viso (Step 4) -->
+<!-- sezione: pedicure (Step 5) -->
+{{altrimenti}}
+<!-- sezione: pedicure (Step 5) -->
+<!-- sezione: viso (Step 4) -->
+{{/se}}
+<!-- sezione: chi-sono (Step 6) -->
+<!-- sezione: come-prenotare (Step 6) -->
+<!-- sezione: codice-sconto (Step 8) -->
+<!-- sezione: dove-siamo (Step 6) -->
+<!-- sezione: listino (Step 7) -->
+</main>
+{{> footer}}
+<!-- barra contatti mobile (Step 3) -->
+</body>
+</html>

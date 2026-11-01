@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+{{> testa}}
+</head>
+<body>
+{{> header}}
+<main id="contenuto">
+<section class="apertura pagina-404" aria-labelledby="titolo-404">
+  <div class="contenitore">
+    <div class="apertura-testo">
+      <h1 id="titolo-404">{{t.pagina404.h1}}</h1>
+      <p><a href="{{link.home}}">{{t.pagina404.linkHome}}</a></p>
+      <div class="pulsanti">
+        <a class="pulsante pulsante-principale" href="{{link.tel}}">{{{icone.telefono}}}<span>{{t.pagina404.pulsanteChiama}}</span></a>
+        <a class="pulsante pulsante-secondario" href="{{link.whatsapp}}">{{{icone.fumetto}}}<span>{{t.pagina404.pulsanteWhatsapp}}</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+{{> footer}}
+</body>
+</html>

@@ -1,0 +1,28 @@
+<footer class="piede">
+  <div class="contenitore piede-griglia">
+    <div class="piede-marchio appare">
+      <a class="piede-logo" href="{{link.home}}" aria-label="{{t.footer.logoEtichetta}}">{{centro.nomeBreve}}</a>
+    </div>
+    <div class="piede-dati appare">
+      <p>{{t.footer.legale}}</p>
+      {{#se t.footer.rea}}<p>{{t.footer.rea}}</p>
+      {{/se}}{{#se t.footer.sedeLegale}}<p>{{t.footer.sedeLegale}}</p>
+      {{/se}}<p>{{t.footer.indirizzo}}</p>
+    </div>
+    <ul class="piede-elenco appare">
+      <li><a href="{{link.tel}}">{{contatti.telefono}}</a></li>
+      <li><a href="{{link.email}}">{{contatti.email}}</a></li>
+      {{#se centro.social.instagram}}<li><a href="{{centro.social.instagram}}">{{t.footer.instagram}}</a></li>
+      {{/se}}{{#se centro.social.facebook}}<li><a href="{{centro.social.facebook}}">{{t.footer.facebook}}</a></li>
+      {{/se}}{{#se centro.social.schedaGoogle}}<li><a href="{{centro.social.schedaGoogle}}">{{t.footer.schedaGoogle}}</a></li>
+      {{/se}}
+    </ul>
+    <ul class="piede-elenco appare">
+      <li><a href="{{link.privacy}}">{{t.footer.privacy}}</a></li>
+      <li><a href="{{link.cookie}}">{{t.footer.cookie}}</a></li>
+      {{#se banner.attivo}}<li><button class="piede-preferenze" type="button" data-preferenze-cookie>{{t.footer.preferenzeCookie}}</button></li>
+      {{/se}}
+    </ul>
+    <p class="piede-copyright" data-anno="{{anno}}">{{t.footer.copyright}}</p>
+  </div>
+</footer>

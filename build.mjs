@@ -1,37 +1,568 @@
-// build.mjs PROVVISORIO (Step 0).
-// Crea soltanto dist/index.html con una pagina minima «in costruzione».
-// Lo Step 1 lo sostituisce con il motore di template vero (CLAUDE.md §4).
-// Nessuna dipendenza: solo moduli integrati di Node.
+// build.mjs — genera dist/ da content/ e src/ (CLAUDE.md §4).
+// Nessuna dipendenza esterna: solo moduli integrati di Node.
+//
+// Uso:  node build.mjs               → dist/
+//       node build.mjs --dist <dir>  → un'altra cartella (usato dai controlli)
+// Variabile d'ambiente URL (la imposta Netlify): indirizzo principale del sito,
+// serve per canonical, og:url e sitemap. Senza URL né dominio, gli URL assoluti
+// vengono omessi.
+//
+// Motore di template, modalità severa:
+//   {{chiave.annidata}}      testo con escape HTML (null o mancante = errore)
+//   {{{chiave}}}             HTML già sicuro: solo JSON-LD e SVG interni
+//   {{> parte}}              src/templates/parti/parte.html
+//   {{#se chiave}}…{{altrimenti}}…{{/se}}   ({{#se !chiave}} per la negazione)
+//   {{#ogni lista}}…{{/ogni}}  dentro: {{.}}, {{@indice}}, {{@numero}}, {{#se @ultimo}}
+// Nei testi di content/testi.json i segnaposto {chiave} si riempiono con
+// content/centro.json; se il dato vale null l'intera frase diventa null.
 
-import { mkdir, rm, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
+import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { dirname, join, relative, resolve, sep } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
-const radice = dirname(fileURLToPath(import.meta.url));
-const dist = join(radice, "dist");
+const RADICE = dirname(fileURLToPath(import.meta.url));
+const SRC = join(RADICE, "src");
+const TEMPLATES = join(SRC, "templates");
+const PARTI = join(TEMPLATES, "parti");
+const ICONE = join(TEMPLATES, "icone");
+const NBSP = " ";
+const FASCIA_PREZZO = "€€"; // §4: priceRange del JSON-LD
+const CHIAVI_VOCE = new Set(["nome", "prezzo", "da", "a", "supplemento", "prezzi"]);
 
-const pagina = `<!DOCTYPE html>
-<html lang="it">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
-<title>Migliore – Estetica Avanzata — in costruzione</title>
-</head>
-<body>
-<main>
-<h1>Migliore – Estetica Avanzata — in costruzione</h1>
-</main>
-</body>
-</html>
-`;
+export class ErroreBuild extends Error {}
+const errore = (dove, messaggio) => {
+  throw new ErroreBuild(`${dove}: ${messaggio}`);
+};
+const rel = (p) => relative(RADICE, p).split(sep).join("/");
 
-try {
+// ---------------------------------------------------------------- dati
+
+/** Cerca «a.b.c» in un oggetto. Un passaggio su null restituisce null. */
+export function ottieni(oggetto, percorso) {
+  let valore = oggetto;
+  for (const parte of percorso.split(".")) {
+    if (valore === null) return { trovato: true, valore: null };
+    if (typeof valore !== "object" || !(parte in valore)) return { trovato: false };
+    valore = valore[parte];
+  }
+  return { trovato: true, valore };
+}
+
+const SEGNAPOSTO = /\{([A-Za-z]\w*(?:\.\w+)*)\}/g;
+
+/** Riempie i segnaposto {chiave} di un testo. Dato null → l'intero testo vale null. */
+export function componi(testo, dati, dove) {
+  let nullo = false;
+  const risultato = testo.replace(SEGNAPOSTO, (_, chiave) => {
+    const r = ottieni(dati, chiave);
+    if (!r.trovato) errore(dove, `segnaposto {${chiave}} sconosciuto (non esiste in content/centro.json)`);
+    if (r.valore === null || r.valore === undefined) {
+      nullo = true;
+      return "";
+    }
+    if (typeof r.valore === "object") errore(dove, `segnaposto {${chiave}} non è un testo`);
+    return String(r.valore);
+  });
+  if (nullo) return null;
+  if (/[{}]/.test(risultato)) errore(dove, `graffa isolata o segnaposto non valido in «${testo}»`);
+  return risultato;
+}
+
+function componiTutto(valore, dati, dove) {
+  if (typeof valore === "string") return componi(valore, dati, dove);
+  if (Array.isArray(valore)) return valore.map((v, i) => componiTutto(v, dati, `${dove}[${i}]`));
+  if (valore && typeof valore === "object") {
+    const uscita = {};
+    for (const [chiave, v] of Object.entries(valore)) {
+      if (!chiave.startsWith("_")) uscita[chiave] = componiTutto(v, dati, `${dove}.${chiave}`);
+    }
+    return uscita;
+  }
+  return valore;
+}
+
+// ---------------------------------------------------------------- prezzi
+
+const numeroIt = new Intl.NumberFormat("it-IT", { maximumFractionDigits: 2 });
+const euro = (n) => `${numeroIt.format(n)}${NBSP}€`;
+
+/** L'unico punto in cui si scrivono i prezzi: «15 €», «da 30 a 40 €», «da 60 €», «+ 5 €», «20 € / 25 €». */
+export function formattaPrezzo(voce) {
+  const dove = `content/listino.json «${voce?.nome ?? "?"}»`;
+  for (const chiave of Object.keys(voce)) {
+    if (!CHIAVI_VOCE.has(chiave)) errore(dove, `chiave «${chiave}» non prevista`);
+  }
+  const forme = ["prezzo", "da", "supplemento", "prezzi"].filter((k) => k in voce);
+  if (forme.length !== 1) {
+    errore(dove, `serve una sola forma di prezzo tra prezzo, da/a, supplemento, prezzi (trovate: ${forme.join(", ") || "nessuna"})`);
+  }
+  if ("a" in voce && !("da" in voce)) errore(dove, "«a» senza «da»");
+  const num = (n) => {
+    if (typeof n !== "number" || !Number.isFinite(n) || n < 0) errore(dove, `prezzo non valido: ${JSON.stringify(n)}`);
+    return n;
+  };
+  if ("prezzo" in voce) return euro(num(voce.prezzo));
+  if ("supplemento" in voce) return `+${NBSP}${euro(num(voce.supplemento))}`;
+  if ("prezzi" in voce) {
+    if (!Array.isArray(voce.prezzi) || voce.prezzi.length < 2) errore(dove, "«prezzi» vuole almeno due numeri");
+    return voce.prezzi.map((n) => euro(num(n))).join(" / ");
+  }
+  if ("a" in voce) {
+    if (num(voce.a) <= num(voce.da)) errore(dove, "«a» deve essere maggiore di «da»");
+    return `da ${numeroIt.format(voce.da)} a ${euro(voce.a)}`;
+  }
+  return `da ${euro(num(voce.da))}`;
+}
+
+// ---------------------------------------------------------------- template
+
+const TOKEN = /\{\{\{\s*([^{}]*?)\s*\}\}\}|\{\{\s*([^{}]*?)\s*\}\}/g;
+const PERCORSO = /^(?:\.|@?[A-Za-z]\w*(?:\.\w+)*)$/;
+
+function rigaDi(sorgente, indice) {
+  let riga = 1;
+  for (let i = 0; i < indice; i++) if (sorgente.charCodeAt(i) === 10) riga++;
+  return riga;
+}
+
+/** Trasforma un template in un albero di nodi. Errori con file e riga. */
+export function compila(sorgente, file) {
+  const radice = { tipo: "radice", figli: [] };
+  radice.ramo = radice.figli;
+  const pila = [radice];
+  let ultimo = 0;
+
+  const aggiungiTesto = (testo, inizio) => {
+    const i = Math.max(testo.indexOf("{{"), testo.indexOf("}}"));
+    if (i >= 0) errore(`${file}:${rigaDi(sorgente, inizio + i)}`, "«{{» o «}}» senza tag valido");
+    if (testo) pila.at(-1).ramo.push({ tipo: "testo", valore: testo });
+  };
+
+  for (const m of sorgente.matchAll(TOKEN)) {
+    aggiungiTesto(sorgente.slice(ultimo, m.index), ultimo);
+    ultimo = m.index + m[0].length;
+    const dove = `${file}:${rigaDi(sorgente, m.index)}`;
+    const cima = pila.at(-1);
+
+    if (m[1] !== undefined) {
+      if (!PERCORSO.test(m[1])) errore(dove, `chiave non valida in «${m[0]}»`);
+      cima.ramo.push({ tipo: "grezzo", percorso: m[1], dove });
+      continue;
+    }
+    const corpo = m[2];
+    let r;
+    if ((r = corpo.match(/^>\s*([\w-]+)$/))) {
+      cima.ramo.push({ tipo: "parte", nome: r[1], dove });
+    } else if ((r = corpo.match(/^#(se|ogni)\s+(!?)(\S+)$/))) {
+      if (!PERCORSO.test(r[3]) || (r[2] && r[1] !== "se")) errore(dove, `chiave non valida in «${m[0]}»`);
+      const nodo = { tipo: r[1], percorso: r[3], nega: r[2] === "!", dove, figli: [], altrimenti: [] };
+      nodo.ramo = nodo.figli;
+      cima.ramo.push(nodo);
+      pila.push(nodo);
+    } else if (corpo === "altrimenti") {
+      if (cima.tipo !== "se" || cima.ramo === cima.altrimenti) errore(dove, "{{altrimenti}} fuori posto (vale solo una volta dentro {{#se}})");
+      cima.ramo = cima.altrimenti;
+    } else if ((r = corpo.match(/^\/(se|ogni)$/))) {
+      if (cima.tipo !== r[1]) {
+        const aperto = cima.tipo === "radice" ? "nessun blocco aperto" : `aperto {{#${cima.tipo}}} a ${cima.dove}`;
+        errore(dove, `{{/${r[1]}}} non corrisponde (${aperto})`);
+      }
+      pila.pop();
+    } else if (PERCORSO.test(corpo)) {
+      cima.ramo.push({ tipo: "valore", percorso: corpo, dove });
+    } else {
+      errore(dove, `sintassi non riconosciuta: «${m[0]}»`);
+    }
+  }
+  aggiungiTesto(sorgente.slice(ultimo), ultimo);
+  if (pila.length > 1) errore(pila.at(-1).dove, `{{#${pila.at(-1).tipo}}} non chiuso`);
+  return radice;
+}
+
+const ESCAPE = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+const escapeHtml = (s) => s.replace(/[&<>"']/g, (c) => ESCAPE[c]);
+const vero = (v) => v !== null && v !== undefined && v !== false && v !== "" && !(Array.isArray(v) && v.length === 0);
+
+function risolvi(percorso, ambito, dove) {
+  if (percorso === ".") return ambito.corrente;
+  if (percorso.startsWith("@")) {
+    const chiave = percorso.slice(1);
+    if (!ambito.giro || !(chiave in ambito.giro)) errore(dove, `«${percorso}» si usa solo dentro {{#ogni}}`);
+    return ambito.giro[chiave];
+  }
+  const primo = percorso.split(".")[0];
+  for (let i = ambito.livelli.length - 1; i >= 0; i--) {
+    const livello = ambito.livelli[i];
+    if (livello && typeof livello === "object" && primo in livello) {
+      const r = ottieni(livello, percorso);
+      if (!r.trovato) errore(dove, `chiave «${percorso}» mancante`);
+      return r.valore;
+    }
+  }
+  errore(dove, `chiave «${percorso}» mancante`);
+}
+
+function stampabile(valore, percorso, dove) {
+  if (valore === null || valore === undefined) {
+    errore(dove, `chiave «${percorso}» vale null: per un dato facoltativo usa {{#se ${percorso}}}`);
+  }
+  if (typeof valore === "number") return String(valore);
+  if (typeof valore !== "string") errore(dove, `chiave «${percorso}» non è un testo`);
+  return valore;
+}
+
+/** Carica le parti da disco (con cache) e rende i template. */
+export class Motore {
+  constructor({ cartellaParti = PARTI, parti = null } = {}) {
+    this.cartellaParti = cartellaParti;
+    this.parti = parti; // per i test: { nome: "sorgente" }
+    this.cache = new Map();
+  }
+
+  parte(nome, dove) {
+    if (!this.cache.has(nome)) {
+      let sorgente;
+      let file;
+      if (this.parti) {
+        if (!(nome in this.parti)) errore(dove, `parte «${nome}» inesistente`);
+        sorgente = this.parti[nome];
+        file = `parti/${nome}.html`;
+      } else {
+        const percorso = join(this.cartellaParti, `${nome}.html`);
+        if (!existsSync(percorso)) errore(dove, `parte «${nome}» inesistente (${rel(percorso)})`);
+        sorgente = readFileSync(percorso, "utf8");
+        file = rel(percorso);
+      }
+      this.cache.set(nome, compila(sorgente, file));
+    }
+    return this.cache.get(nome);
+  }
+
+  rendi(sorgente, contesto, file) {
+    return this.#nodi(compila(sorgente, file).figli, { livelli: [contesto], corrente: contesto, giro: null }, 0);
+  }
+
+  #nodi(nodi, ambito, profondita) {
+    let uscita = "";
+    for (const nodo of nodi) uscita += this.#nodo(nodo, ambito, profondita);
+    return uscita;
+  }
+
+  #nodo(nodo, ambito, profondita) {
+    switch (nodo.tipo) {
+      case "testo":
+        return nodo.valore;
+      case "valore":
+        return escapeHtml(stampabile(risolvi(nodo.percorso, ambito, nodo.dove), nodo.percorso, nodo.dove));
+      case "grezzo":
+        return stampabile(risolvi(nodo.percorso, ambito, nodo.dove), nodo.percorso, nodo.dove);
+      case "parte":
+        if (profondita > 20) errore(nodo.dove, `parti annidate troppo a fondo (ciclo con «${nodo.nome}»?)`);
+        return this.#nodi(this.parte(nodo.nome, nodo.dove).figli, ambito, profondita + 1);
+      case "se":
+        return this.#nodi(vero(risolvi(nodo.percorso, ambito, nodo.dove)) !== nodo.nega ? nodo.figli : nodo.altrimenti, ambito, profondita);
+      case "ogni": {
+        const lista = risolvi(nodo.percorso, ambito, nodo.dove);
+        if (lista === null) return "";
+        if (!Array.isArray(lista)) errore(nodo.dove, `«${nodo.percorso}» non è una lista`);
+        return lista
+          .map((elemento, i) =>
+            this.#nodi(
+              nodo.figli,
+              {
+                livelli: [...ambito.livelli, elemento],
+                corrente: elemento,
+                giro: { indice: i, numero: i + 1, primo: i === 0, ultimo: i === lista.length - 1 },
+              },
+              profondita,
+            ),
+          )
+          .join("");
+      }
+      default:
+        throw new Error(`nodo sconosciuto: ${nodo.tipo}`);
+    }
+  }
+}
+
+// ---------------------------------------------------------------- orari e JSON-LD
+
+const GIORNI = ["lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato", "domenica"];
+const GIORNI_SCHEMA = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const senzaAccenti = (s) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+
+/** «dal lunedì al sabato» → ["Monday", …, "Saturday"]; null se non si ricava senza ambiguità. */
+export function ricavaGiorni(testo) {
+  const m = senzaAccenti(String(testo ?? "")).trim().match(/^dal\s+(\S+)\s+al\s+(\S+)$/);
+  if (!m) return null;
+  const inizio = GIORNI.map(senzaAccenti).indexOf(m[1]);
+  const fine = GIORNI.map(senzaAccenti).indexOf(m[2]);
+  if (inizio < 0 || fine < 0 || fine < inizio) return null;
+  return GIORNI_SCHEMA.slice(inizio, fine + 1);
+}
+
+function jsonLd(centro, base, avvisi) {
+  const dati = {
+    "@context": "https://schema.org",
+    "@type": "BeautySalon",
+    name: centro.nome,
+    telephone: centro.telefonoE164,
+    email: centro.email,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: centro.indirizzo.via,
+      postalCode: centro.indirizzo.cap,
+      addressLocality: centro.indirizzo.comune,
+      addressRegion: centro.indirizzo.provincia,
+      addressCountry: centro.indirizzo.nazione,
+    },
+  };
+  if (base) dati.url = `${base}/`;
+  // image: arriva allo Step 2 con le immagini.
+  const giorni = ricavaGiorni(centro.orari.giorni);
+  if (giorni) {
+    dati.openingHoursSpecification = [
+      { "@type": "OpeningHoursSpecification", dayOfWeek: giorni, opens: centro.orari.apertura, closes: centro.orari.chiusura },
+    ];
+  } else {
+    avvisi.push(`openingHoursSpecification omesso: giorni non ricavabili da «${centro.orari.giorni}»`);
+  }
+  dati.priceRange = FASCIA_PREZZO;
+  return JSON.stringify(dati).replace(/</g, "\\u003c");
+}
+
+// ---------------------------------------------------------------- risorse
+
+async function elencaFile(cartella) {
+  if (!existsSync(cartella)) return [];
+  const uscita = [];
+  for (const voce of await readdir(cartella, { withFileTypes: true })) {
+    if (voce.name.startsWith(".")) continue;
+    const percorso = join(cartella, voce.name);
+    if (voce.isDirectory()) uscita.push(...(await elencaFile(percorso)));
+    else uscita.push(percorso);
+  }
+  return uscita;
+}
+
+const hash8 = (contenuto) => createHash("sha256").update(contenuto).digest("hex").slice(0, 8);
+
+/** Copia src/{fonts,img,js,css} in dist/ e restituisce gli hash per URL ("/css/base.css" → "1a2b3c4d"). */
+async function copiaRisorse(dist) {
+  const hash = new Map();
+  const scrivi = async (sorgente, contenuto) => {
+    const url = "/" + relative(SRC, sorgente).split(sep).join("/");
+    const destinazione = join(dist, ...url.split("/"));
+    await mkdir(dirname(destinazione), { recursive: true });
+    await writeFile(destinazione, contenuto);
+    hash.set(url, hash8(contenuto));
+  };
+  for (const cartella of ["fonts", "img", "js"]) {
+    for (const file of await elencaFile(join(SRC, cartella))) await scrivi(file, await readFile(file));
+  }
+  for (const file of await elencaFile(join(SRC, "css"))) {
+    const css = (await readFile(file, "utf8")).replace(/url\(\s*(['"]?)([^'")]+)\1\s*\)/g, (intero, virgolette, url) => {
+      if (url.startsWith("data:")) return intero;
+      if (!url.startsWith("/fonts/") && !url.startsWith("/img/")) errore(rel(file), `url() non ammesso: «${url}» (solo /fonts/, /img/ o data:)`);
+      if (!hash.has(url)) errore(rel(file), `url(${url}): file inesistente in src/`);
+      return url.startsWith("/fonts/") ? `url(${virgolette}${url}?v=${hash.get(url)}${virgolette})` : intero;
+    });
+    if (/@import/i.test(css)) errore(rel(file), "@import non ammesso");
+    await scrivi(file, css);
+  }
+  return hash;
+}
+
+/** Aggiunge ?v=hash8 ai riferimenti a /css/, /js/ e /fonts/ nell'HTML. */
+function versiona(html, hash, dove) {
+  return html.replace(/(\s(?:href|src))="(\/(?:css|js|fonts)\/[^"?#]+)"/g, (_, attributo, url) => {
+    if (!hash.has(url)) errore(dove, `riferimento a un file inesistente: ${url}`);
+    return `${attributo}="${url}?v=${hash.get(url)}"`;
+  });
+}
+
+// ---------------------------------------------------------------- pagine
+
+async function leggiJson(percorso) {
+  const file = join(RADICE, percorso);
+  if (!existsSync(file)) errore(percorso, "file mancante");
+  try {
+    return JSON.parse(await readFile(file, "utf8"));
+  } catch (e) {
+    errore(percorso, `JSON non valido: ${e.message}`);
+  }
+}
+
+function urlBase(centro, avvisi) {
+  const candidato = process.env.URL?.trim() || (centro.dominio ? `https://${centro.dominio}` : "");
+  if (!candidato) {
+    avvisi.push("nessun URL assoluto (variabile URL e dominio assenti): canonical, og:url e sitemap omessi");
+    return null;
+  }
+  if (!/^https?:\/\/[^\s/]+/.test(candidato)) errore("URL", `indirizzo non valido: «${candidato}»`);
+  return candidato.replace(/\/+$/, "");
+}
+
+function coloreTema() {
+  const css = readFileSync(join(SRC, "css", "tokens.css"), "utf8");
+  const m = css.match(/--sabbia\s*:\s*(#[0-9a-fA-F]{3,8})\s*;/);
+  if (!m) errore("src/css/tokens.css", "token --sabbia mancante (serve per theme-color)");
+  return m[1];
+}
+
+async function caricaIcone() {
+  const icone = {};
+  for (const file of await elencaFile(ICONE)) {
+    if (file.endsWith(".svg")) icone[file.slice(ICONE.length + 1, -4)] = (await readFile(file, "utf8")).trim();
+  }
+  return icone;
+}
+
+function validaListino(listino) {
+  if (!Array.isArray(listino?.categorie)) errore("content/listino.json", "manca l'elenco «categorie»");
+  const id = new Set();
+  let voci = 0;
+  for (const categoria of listino.categorie) {
+    if (!categoria.id || !categoria.titolo || !Array.isArray(categoria.voci)) errore("content/listino.json", "ogni categoria vuole id, titolo e voci");
+    if (id.has(categoria.id)) errore("content/listino.json", `id ripetuto: ${categoria.id}`);
+    id.add(categoria.id);
+    for (const voce of categoria.voci) {
+      if (!voce.nome) errore(`content/listino.json «${categoria.id}»`, "voce senza nome");
+      formattaPrezzo(voce);
+      voci++;
+    }
+  }
+  return { id, voci };
+}
+
+function waLink(numero, testo) {
+  return `https://wa.me/${numero}?text=${encodeURIComponent(testo)}`;
+}
+
+function controllaUscita(html, dove) {
+  const senzaJsonLd = html.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/g, "");
+  if (html.includes("{{") || senzaJsonLd.includes("}}")) errore(dove, "nell'uscita è rimasto un «{{» o «}}»");
+}
+
+async function main() {
+  const inizio = Date.now();
+  const argomenti = process.argv.slice(2);
+  const iDist = argomenti.indexOf("--dist");
+  const dist = iDist >= 0 ? resolve(argomenti[iDist + 1] ?? "") : join(RADICE, "dist");
+  const protette = [SRC, join(RADICE, "content"), join(RADICE, "studio"), join(RADICE, "netlify")];
+  if (dist === RADICE || RADICE.startsWith(dist + sep) || protette.some((p) => dist === p || dist.startsWith(p + sep))) {
+    errore("build", `cartella di uscita non valida: ${dist}`);
+  }
+  const avvisi = [];
+
+  const centro = await leggiJson("content/centro.json");
+  const testi = await leggiJson("content/testi.json");
+  const listino = await leggiJson("content/listino.json");
+  const { id: categorie, voci } = validaListino(listino);
+
+  const anno = new Date().getFullYear();
+  const t = componiTutto(testi.comuni, { ...centro, anno }, "content/testi.json › comuni");
+  // La riga info va a capo solo tra un segmento e l'altro («Su appuntamento · dal lunedì al sabato · …»).
+  t.apertura.rigaInfoSegmenti = t.apertura.rigaInfo.split(" · ");
+  const base = urlBase(centro, avvisi);
+
   await rm(dist, { recursive: true, force: true });
   await mkdir(dist, { recursive: true });
-  await writeFile(join(dist, "index.html"), pagina, "utf8");
-  console.log("build provvisoria: dist/index.html creato");
-} catch (errore) {
-  console.error("build fallita:", errore.message);
-  process.exit(1);
+  const hash = await copiaRisorse(dist);
+
+  const motore = new Motore();
+  const comune = {
+    centro,
+    t,
+    anno: String(anno),
+    icone: await caricaIcone(),
+    contatti: {
+      telefono: centro.telefono.replace(/ /g, NBSP), // spazi non separabili: il numero non va a capo
+      email: centro.email,
+      indirizzo: centro.indirizzo.completo,
+    },
+    banner: { attivo: Boolean(centro.integrazioni.ga4 || centro.integrazioni.pixelMeta) },
+    link: {
+      home: "/",
+      tel: `tel:${centro.telefonoE164}`,
+      email: `mailto:${centro.email}`,
+      whatsappGenerale: waLink(centro.whatsappNumero, testi.whatsapp.generale),
+      maps: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(centro.indirizzo.completo)}`,
+      privacy: "/privacy/",
+      cookie: "/cookie/",
+    },
+  };
+  const tema = coloreTema();
+  const ld = jsonLd(centro, base, avvisi);
+
+  const scrivi = async (file, html) => {
+    controllaUscita(html, file);
+    const destinazione = join(dist, file);
+    await mkdir(dirname(destinazione), { recursive: true });
+    const pulito = html.replace(/[ \t]+$/gm, "").replace(/\n{3,}/g, "\n\n");
+    await writeFile(destinazione, versiona(pulito, hash, file));
+  };
+
+  const sorgentePagina = await readFile(join(TEMPLATES, "pagina.html"), "utf8");
+  const generate = [];
+  for (const [id, grezza] of Object.entries(testi.pagine)) {
+    const dove = `content/testi.json › pagine.${id}`;
+    const p = componiTutto(grezza, { ...centro, anno }, dove);
+    if (!/^\/([\w-]+\/)?$/.test(p.percorso)) errore(dove, `percorso non valido: «${p.percorso}»`);
+    if ([...p.ordine].sort().join() !== "pedicure,viso") errore(dove, "«ordine» deve contenere viso e pedicure, una volta ciascuno");
+    if (!(p.whatsapp in testi.whatsapp)) errore(dove, `testo WhatsApp «${p.whatsapp}» inesistente`);
+    if (p.listinoAperto !== null && !categorie.has(p.listinoAperto)) errore(dove, `categoria «${p.listinoAperto}» inesistente nel listino`);
+    p.visoPrima = p.ordine[0] === "viso";
+
+    const contesto = {
+      ...comune,
+      p,
+      link: { ...comune.link, whatsapp: waLink(centro.whatsappNumero, testi.whatsapp[p.whatsapp]) },
+      meta: {
+        title: p.title,
+        description: p.description,
+        canonical: base ? base + p.percorso : null,
+        robots: null,
+        ogImage: null, // Step 2
+        themeColor: tema,
+      },
+      jsonld: ld,
+    };
+    const file = p.percorso === "/" ? "index.html" : `${p.percorso.slice(1)}index.html`;
+    await scrivi(file, motore.rendi(sorgentePagina, contesto, "src/templates/pagina.html"));
+    generate.push(p.percorso);
+  }
+
+  const contesto404 = {
+    ...comune,
+    link: { ...comune.link, whatsapp: comune.link.whatsappGenerale },
+    meta: { title: t.pagina404.title, description: null, canonical: null, robots: "noindex", ogImage: null, themeColor: tema },
+    jsonld: null,
+  };
+  await scrivi("404.html", motore.rendi(await readFile(join(TEMPLATES, "404.html"), "utf8"), contesto404, "src/templates/404.html"));
+
+  await writeFile(join(dist, "robots.txt"), `User-agent: *\nAllow: /\n${base ? `\nSitemap: ${base}/sitemap.xml\n` : ""}`);
+  if (base) {
+    const url = generate.map((p) => `  <url><loc>${escapeHtml(base + p)}</loc></url>`).join("\n");
+    await writeFile(
+      join(dist, "sitemap.xml"),
+      `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${url}\n</urlset>\n`,
+    );
+  }
+
+  for (const avviso of avvisi) console.log(`  · ${avviso}`);
+  console.log(
+    `✔ build in ${Date.now() - inizio} ms → ${rel(dist) || dist}: ${generate.join(", ")}, 404.html, robots.txt` +
+      `${base ? ", sitemap.xml" : ""} · listino ${voci} voci`,
+  );
+}
+
+const eseguitoDirettamente = process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url;
+if (eseguitoDirettamente) {
+  main().catch((e) => {
+    console.error(e instanceof ErroreBuild ? `✘ build fallita — ${e.message}` : e);
+    process.exit(1);
+  });
 }

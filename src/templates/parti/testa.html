@@ -1,0 +1,25 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{meta.title}}</title>
+{{#se meta.description}}<meta name="description" content="{{meta.description}}">
+{{/se}}{{#se meta.robots}}<meta name="robots" content="{{meta.robots}}">
+{{/se}}{{#se meta.canonical}}<link rel="canonical" href="{{meta.canonical}}">
+{{/se}}<meta property="og:type" content="website">
+<meta property="og:locale" content="it_IT">
+<meta property="og:site_name" content="{{centro.nome}}">
+<meta property="og:title" content="{{meta.title}}">
+{{#se meta.description}}<meta property="og:description" content="{{meta.description}}">
+{{/se}}{{#se meta.canonical}}<meta property="og:url" content="{{meta.canonical}}">
+{{/se}}{{#se meta.ogImage}}<meta property="og:image" content="{{meta.ogImage}}">
+{{/se}}<meta name="theme-color" content="{{meta.themeColor}}">
+<!-- favicon e icona per iPhone: Step 2 (farfalla del logo); fino ad allora nessuna richiesta -->
+<link rel="icon" href="data:,">
+<script>document.documentElement.classList.add("js")</script>
+<link rel="preload" href="/fonts/marcellus-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/jost-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/css/tokens.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/sezioni.css">
+<script src="/js/main.js" defer></script>
+{{#se jsonld}}<script type="application/ld+json">{{{jsonld}}}</script>
+{{/se}}
