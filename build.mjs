@@ -363,8 +363,10 @@ export function immagine(manifesto, nome, alt, sizes, { priorita = false } = {})
   const sorgenti = voce.formati.map(
     (formato) => `<source type="image/${formato}" srcset="${voce.larghezze.map((w) => `${url(w, formato)} ${w}w`).join(", ")}" sizes="${escapeHtml(sizes)}">`,
   );
-  const ripiego = voce.ripiego ? `/img/${voce.ripiego}` : url(voce.larghezze[Math.min(1, voce.larghezze.length - 1)], "webp");
-  if (!esiste(ripiego)) errore(dove, `file mancante: src${ripiego}`);
+  // <img> in WebP: la larghezza indicata dal manifesto (larghezzaImg), altrimenti la seconda della serie.
+  const larghezzaImg = voce.larghezzaImg ?? voce.larghezze[Math.min(1, voce.larghezze.length - 1)];
+  if (!voce.larghezze.includes(larghezzaImg)) errore(dove, `larghezzaImg ${larghezzaImg} non è tra le larghezze esportate`);
+  const ripiego = url(larghezzaImg, "webp");
   const caricamento = priorita ? 'fetchpriority="high"' : 'loading="lazy" decoding="async"';
   return `<picture>${sorgenti.join("")}<img src="${ripiego}" alt="${escapeHtml(alt)}" width="${voce.larghezza}" height="${voce.altezza}" ${caricamento}></picture>`;
 }

@@ -646,7 +646,7 @@ await controllo("colori invariati: media RGB di ogni file entro ±2 dall'origina
   verifica(sha(join(IMG, manifesto.immagini.og.file)) === sha(join(ORIGINALI, manifesto.immagini.og.originale)), "og.jpg diversa dall'originale");
 });
 
-await controllo("pesi entro §9: foto 01 a 720 ≤ 120 KB, altre foto ≤ 160 KB, 06 a 1536 ≤ 300 KB, logo scaricato ≤ 40 KB", () => {
+await controllo("pesi entro §9: foto 01 a 720 ≤ 120 KB, altre foto ≤ 160 KB, 06 a 1536 ≤ 300 KB, logo solo 240 e 320 px con ogni file ≤ 40 KB", () => {
   const problemi = [];
   const peso = (f) => statSync(join(IMG, f)).size;
   for (const [nome, v] of Object.entries(manifesto.immagini)) {
@@ -659,17 +659,72 @@ await controllo("pesi entro §9: foto 01 a 720 ≤ 120 KB, altre foto ≤ 160 KB
       }
     }
   }
-  // Logo: il file che il browser sceglie dal srcset per le misure a schermo (sizes) e densità fino a 3× su telefono, 2× su desktop.
+  // Logo (§9): solo 240 e 320 px, AVIF e WebP, ogni file ≤ 40 KB.
   const logo = manifesto.immagini.logo;
-  for (const [file, misure] of [["index.html", [[79, 3], [99, 2]]], ["index.html", [[69, 3]]]]) {
-    verifica(pagina(file).includes(`sizes="(min-width: 1024px) 99px, 79px"`) && pagina(file).includes('sizes="69px"'), "sizes del logo cambiati: aggiorna questo controllo");
-    for (const [larghezzaCss, densita] of misure) {
-      const w = logo.larghezze.find((x) => x >= larghezzaCss * densita) ?? Math.max(...logo.larghezze);
-      const f = `logo-${w}.webp`;
-      if (peso(f) > 40 * KB) problemi.push(`${f} (scelto a ${larghezzaCss} px × ${densita}): ${(peso(f) / KB).toFixed(1)} KB > 40 KB`);
+  verifica(logo.larghezze.join() === "240,320" && logo.formati.join() === "avif,webp", `logo: ${logo.larghezze.join("/")} in ${logo.formati.join("/")}`);
+  for (const formato of logo.formati) {
+    for (const w of logo.larghezze) {
+      const f = `logo-${w}.${formato}`;
+      if (peso(f) > 40 * KB) problemi.push(`${f}: ${(peso(f) / KB).toFixed(1)} KB > 40 KB`);
     }
   }
   verifica(!problemi.length, problemi.join(", "));
+});
+
+await controllo("helper immagine(): escape di alt e sizes, errori su alt o sizes mancanti; il logo usa logo-240.webp", () => {
+  const html = build.immagine(manifesto, "logo", `A "B" <C> & 'D'`, `(x) "1px"`);
+  verifica(html.includes(`alt="A &quot;B&quot; &lt;C&gt; &amp; &#39;D&#39;"`), `alt senza escape: ${html.match(/alt="[^"]*"/)?.[0]}`);
+  verifica(html.includes(`sizes="(x) &quot;1px&quot;"`), "sizes senza escape");
+  verifica(!/<C>/.test(html), "un tag passa dentro l'alt");
+  for (const [alt, sizes] of [["", "10px"], ["Logo", ""]]) {
+    let fermato = false;
+    try {
+      build.immagine(manifesto, "logo", alt, sizes);
+    } catch {
+      fermato = true;
+    }
+    verifica(fermato, `accettato alt «${alt}» / sizes «${sizes}»`);
+  }
+  verifica(/<img src="\/img\/logo-240\.webp"/.test(html), "l'<img> del logo non usa logo-240.webp");
+  const testata = pagina("index.html").match(/<a class="testata-logo"[\s\S]*?<\/a>/)?.[0] ?? "";
+  verifica(testata.includes('sizes="(min-width: 1024px) 99px, 79px"'), "sizes del logo dell'header diverso dalla larghezza a schermo (79 px, 99 px da 1024 px)");
+});
+
+await controllo("logo scaricato davvero (Playwright, densità 1, 2, 3): ogni file ≤ 40 KB; a densità 3 su desktop è il 320", async () => {
+  const { avviaServer, apriBrowser } = await import(pathToFileURL(join(STUDIO, "anteprima.mjs")).href);
+  const { browser, errore } = await apriBrowser();
+  verifica(browser, `browser non disponibile: ${errore}`);
+  const server = await avviaServer(0);
+  const base = `http://localhost:${server.address().port}`;
+  const risultati = [];
+  try {
+    for (const [larghezza, altezza] of [[390, 844], [1440, 900]]) {
+      for (const densita of [1, 2, 3]) {
+        const contesto = await browser.newContext({ viewport: { width: larghezza, height: altezza }, deviceScaleFactor: densita });
+        const pagina = await contesto.newPage();
+        const scaricati = [];
+        pagina.on("response", async (r) => {
+          if (/\/img\/logo-/.test(r.url())) scaricati.push({ file: r.url().split("/img/")[1], byte: (await r.body()).length });
+        });
+        await pagina.goto(base + "/", { waitUntil: "networkidle" });
+        await pagina.evaluate(() => scrollTo(0, document.documentElement.scrollHeight)); // il logo del footer è lazy
+        await pagina.waitForTimeout(400);
+        await pagina.waitForLoadState("networkidle");
+        await contesto.close();
+        verifica(scaricati.length > 0, `${larghezza} px × ${densita}: nessun logo scaricato`);
+        for (const s of scaricati) {
+          verifica(s.byte <= 40 * KB, `${larghezza} px × ${densita}: ${s.file} pesa ${(s.byte / KB).toFixed(1)} KB`);
+          verifica(/^logo-(240|320)\.avif$/.test(s.file), `${larghezza} px × ${densita}: scaricato ${s.file} invece dell'AVIF`);
+        }
+        risultati.push(`${larghezza}×${densita}: ${[...new Set(scaricati.map((s) => s.file))].join("+")}`);
+        if (larghezza === 1440 && densita === 3) verifica(scaricati.some((s) => s.file === "logo-320.avif"), `1440 px × 3: scaricato ${scaricati.map((s) => s.file).join(", ")} invece del 320`);
+      }
+    }
+  } finally {
+    await browser.close();
+    server.close();
+  }
+  console.log(`    ${risultati.join(" · ")}`);
 });
 
 await controllo("ogni <img> ha alt, width e height; <picture> con AVIF/WebP e loading come in §9", () => {
@@ -701,7 +756,7 @@ await controllo("favicon, apple-touch-icon e og:image (con misure e alt) nella <
     verifica(!testa.includes('href="data:,"'), `${file}: è rimasto il segnaposto della favicon`);
     verifica(/<meta property="og:image" content="[^"]*\/img\/og\.jpg">/.test(testa), `${file}: og:image`);
     verifica(testa.includes('<meta property="og:image:width" content="1200">') && testa.includes('<meta property="og:image:height" content="630">'), `${file}: og:image:width/height`);
-    verifica(/<meta property="og:image:alt" content="[^"]+">/.test(testa), `${file}: og:image:alt`);
+    verifica(testa.includes('<meta property="og:image:alt" content="Logo di Migliore – Estetica Avanzata e Cristina Migliore al bancone del centro">'), `${file}: og:image:alt diverso da §8`);
   }
 });
 

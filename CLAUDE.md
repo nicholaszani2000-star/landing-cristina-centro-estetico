@@ -206,7 +206,7 @@ Sono foto vere del centro. Restano identiche: niente ritocchi, niente rigenerazi
 | foto/04-cabina-lettino.png (941×1672) | Cabina con lettino, lampada a lente, lavabo | «Chi sono» |
 | foto/05-postazione-pedicure.png (941×1672) | Poltrona pedicure, poggiapiedi, carrello attrezzi | Sezione pedicure |
 | foto/06-listino-stampato.png (1536×1024) | Il listino stampato, due facciate | Listino: link «Vedi il listino stampato» |
-| logo/logo-trasparente.png (624×508) | Logo su fondo trasparente, senza payoff | Header e footer |
+| logo/logo-trasparente.png (624×508) | Logo su fondo trasparente, senza payoff | Header e footer, esportato a 240 e 320 px |
 | logo/logo-sabbia.png (624×508) | Lo stesso logo su fondo sabbia #F4DBCA | Riserva, se il trasparente dà problemi |
 | logo/farfalla.png (210×210) | La farfalla del logo su fondo sabbia | Favicon e icona per iPhone |
 | condivisione/og-1200x630.jpg | Logo e foto 01 su sabbia, per le anteprime dei link | Meta tag og:image |
@@ -265,7 +265,7 @@ Requisiti verificati sulla documentazione ufficiale, con le loro insidie:
 - Supabase: RLS sempre attivo sulle tabelle in `public`. Creando la tabella in SQL bisogna attivarlo e dare i permessi esplicitamente. Qui: nessun permesso ad `anon` e `authenticated`, permessi solo a `service_role`. La chiave segreta o `service_role` scavalca RLS e non va mai nel browser.
 
 Motore di template (`build.mjs`):
-- Sintassi: `{{chiave.annidata}}` (testo con escape HTML), `{{{chiave}}}` (HTML già sicuro, solo per JSON-LD e SVG interni), `{{> parte}}`, `{{#se chiave}}…{{altrimenti}}…{{/se}}` (con la negazione `{{#se !chiave}}`), `{{#ogni lista}}…{{/ogni}}`.
+- Sintassi: `{{chiave.annidata}}` (testo con escape HTML), `{{{chiave}}}` (HTML già sicuro, solo per JSON-LD, SVG interni e il <picture> generato dall'helper immagine(), che fa da sé l'escape di alt e attributi), `{{> parte}}`, `{{#se chiave}}…{{altrimenti}}…{{/se}}` (con la negazione `{{#se !chiave}}`), `{{#ogni lista}}…{{/ogni}}`.
 - Modalità severa, come gli strictFilters: una chiave mancante, una parte inesistente o un `{{` rimasto nell'output fermano la build con un errore che dice file e chiave.
 - Aggiunge `?v=<hash8>` ai link di CSS, JS e font, calcolato sul contenuto.
 - Genera i dati strutturati JSON-LD `BeautySalon` da `centro.json`: name, image, telephone, email, address, url (se c'è), openingHoursSpecification (se ricavabile), priceRange «€€».
@@ -408,6 +408,7 @@ Comuni all'apertura
 - riga info: «Su appuntamento · dal lunedì al sabato · dalle 08:00 alle 17:00»
 - payoff: «“Diventa la versione più bella di te”»
 - alt foto 01: «Cristina Migliore al bancone del centro Migliore – Estetica Avanzata»
+- alt dell'immagine di condivisione (og:image): «Logo di Migliore – Estetica Avanzata e Cristina Migliore al bancone del centro»
 
 Viso
 - occhiello: «Viso» · H2: «Trattamenti viso»
@@ -484,7 +485,7 @@ Obiettivi, misurati con Lighthouse in modalità mobile sulla build di produzione
 - LCP ≤ 2,0 s; CLS ≤ 0,05; TBT ≤ 100 ms; INP ≤ 200 ms sul campo.
 - JavaScript proprio ≤ 12 KB compresso in totale. GA4 e Meta si caricano solo dopo il consenso e non contano nel primo caricamento.
 - CSS ≤ 20 KB compresso. Font ≤ 100 KB in totale.
-- Immagini: AVIF con ripiego WebP in `<picture>`, `srcset` e `sizes` corretti, mai ingrandite oltre l'originale. Foto 01 ≤ 120 KB alla larghezza 720; altre foto ≤ 160 KB; foto 06 ≤ 300 KB alla larghezza 1536.
+- Immagini: AVIF con ripiego WebP in `<picture>`, `srcset` e `sizes` corretti, mai ingrandite oltre l'originale. Foto 01 ≤ 120 KB alla larghezza 720; altre foto ≤ 160 KB; foto 06 ≤ 300 KB alla larghezza 1536. Logo: solo 240 e 320 px, AVIF con trasparenza e WebP, ogni file ≤ 40 KB.
 - `width` e `height` su ogni immagine; `loading="lazy"` e `decoding="async"` su tutte tranne la foto dell'apertura, che ha `fetchpriority="high"`.
 - Contrasto AA (valori in §5), focus sempre visibile, aree di tocco ≥ 44×44 px, `lang="it"`, un solo H1 per pagina, titoli in ordine, link con testo che si capisce da solo, `<label>` su ogni campo, errori annunciati con `aria-live="polite"`.
 

@@ -28,15 +28,16 @@ const FOTO = [
   { file: "foto/05-postazione-pedicure.png", nome: "postazione-pedicure", larghezze: [480, 720, 941] },
   { file: "foto/06-listino-stampato.png", nome: "listino-stampato", larghezze: [800, 1536] },
 ];
-// Logo: 480 e 960 (960 solo se l'originale è largo almeno 960, altrimenti la misura originale), più 240:
-// a schermo il logo è largo al massimo ~99 px, quindi il browser scarica il 240 (≤ 40 KB) anche a densità 3×.
-const LOGO = { file: "logo/logo-trasparente.png", nome: "logo", larghezze: [240, 480, 960], ripiego: 240 };
+// Logo (CLAUDE.md §9): solo 240 e 320 px, AVIF con trasparenza e WebP, ogni file ≤ 40 KB.
+// A schermo è largo al massimo 99 px: il 320 copre fino a densità 3. L'<img> usa il 240 in WebP.
+const LOGO = { file: "logo/logo-trasparente.png", nome: "logo", larghezze: [240, 320], larghezzaImg: 240 };
 const FARFALLA = { file: "logo/farfalla.png", icone: [["favicon-32.png", 32], ["favicon-16.png", 16], ["apple-touch-icon.png", 180]] };
 const CONDIVISIONE = { file: "condivisione/og-1200x630.jpg", nome: "og", destinazione: "og.jpg" };
 
 const AVIF = { quality: 55, effort: 6 };
 const WEBP = { quality: 80 };
-const WEBP_LOGO = { quality: 90, alphaQuality: 100 }; // il logo ha la trasparenza: bordi puliti
+const AVIF_LOGO = { quality: 60, effort: 6 };      // con trasparenza; qualità nell'intervallo 50–60
+const WEBP_LOGO = { quality: 80, alphaQuality: 90 }; // 320 px: 37,9 KB, sotto i 40 KB
 const PNG = { compressionLevel: 9, adaptiveFiltering: true, palette: false };
 
 const kb = (byte) => Math.round((byte / 1024) * 10) / 10;
@@ -107,12 +108,18 @@ async function main() {
   }
 
   const ol = await originale(LOGO.file);
-  const larghezzeLogo = [...new Set(LOGO.larghezze.map((w) => Math.min(w, ol.larghezza)))];
-  for (const w of larghezzeLogo) {
+  for (const w of LOGO.larghezze) {
+    esportati.push({ gruppo: "logo", originale: LOGO.file, ...(await scrivi(pipeline(ol.percorso, w, ol.larghezza).avif(AVIF_LOGO), join(IMG, `logo-${w}.avif`))) });
     esportati.push({ gruppo: "logo", originale: LOGO.file, ...(await scrivi(pipeline(ol.percorso, w, ol.larghezza).webp(WEBP_LOGO), join(IMG, `logo-${w}.webp`))) });
   }
-  esportati.push({ gruppo: "logo", originale: LOGO.file, ...(await scrivi(pipeline(ol.percorso, LOGO.ripiego, ol.larghezza).png(PNG), join(IMG, "logo.png"))) });
-  manifesto.immagini.logo = { originale: LOGO.file, larghezza: ol.larghezza, altezza: ol.altezza, larghezze: larghezzeLogo, formati: ["webp"], ripiego: "logo.png" };
+  manifesto.immagini.logo = {
+    originale: LOGO.file,
+    larghezza: ol.larghezza,
+    altezza: ol.altezza,
+    larghezze: LOGO.larghezze,
+    formati: ["avif", "webp"],
+    larghezzaImg: LOGO.larghezzaImg,
+  };
 
   // Icone dalla farfalla (già su fondo sabbia): solo ridimensionamento, mai più grandi dell'originale.
   const of = await originale(FARFALLA.file);
@@ -195,18 +202,14 @@ async function contactSheet(esportati) {
     .tutte { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
     .tutte img { height: 140px; width: auto; display: block; outline: 1px solid #ccc; }
     .fondo { padding: 16px; display: inline-block; }
-    .zoom { width: 520px; height: 300px; overflow: hidden; position: relative; display: inline-block; outline: 1px solid #ccc; }
-    .zoom img { position: absolute; width: 1248px; height: auto; image-rendering: auto; }
   </style></head><body>
-    <h1>Contact sheet · Step 2 · immagini esportate (AVIF q55 e6 · WebP q80 · sRGB · senza metadati)</h1>
+    <h1>Contact sheet · Step 2 · immagini esportate (foto: AVIF q55 e6 · WebP q80; logo: AVIF q60 · WebP q80 · sRGB · senza metadati)</h1>
     <p>Accanto a ogni originale, la versione AVIF e WebP più grande. Δ RGB = differenza della media dei canali R/G/B rispetto all'originale (0 = colori invariati).</p>
     ${righeFoto}
     <section><h2>Logo trasparente (${LOGO.file}) · su sabbia e sabbia chiara, al 100% e al 200%</h2>
-      <div class="fondo" style="background:${sabbia}">${logo.filter((e) => e.file.endsWith(".webp")).map((e) => `<figure><img src="${url(e.file)}" style="height:${e === logo[0] ? 80 : 160}px"><figcaption>${etichetta(e)}</figcaption></figure>`).join(" ")}</div>
-      <div class="fondo" style="background:${sabbiaChiara}"><figure><img src="${url(logo.find((e) => e.file.endsWith(".png")).file)}" style="height:160px"><figcaption>${etichetta(logo.find((e) => e.file.endsWith(".png")))}</figcaption></figure></div>
-      <p>Zoom al 200% sui bordi (cerchio, scritta e farfalla):</p>
-      <div class="fondo" style="background:${sabbia}"><div class="zoom" style="background:${sabbia}"><img src="${url("src/img/logo-" + manifestoLarghezzaLogo(logo) + ".webp")}" style="left:-40px;top:-380px"></div> <div class="zoom" style="background:${sabbia}"><img src="${url("src/img/logo-" + manifestoLarghezzaLogo(logo) + ".webp")}" style="left:-700px;top:-20px"></div></div>
-      <div class="fondo" style="background:${sabbiaChiara}"><div class="zoom" style="background:${sabbiaChiara}"><img src="${url("src/img/logo-" + manifestoLarghezzaLogo(logo) + ".webp")}" style="left:-40px;top:-380px"></div> <div class="zoom" style="background:${sabbiaChiara}"><img src="${url("src/img/logo-" + manifestoLarghezzaLogo(logo) + ".webp")}" style="left:-700px;top:-20px"></div></div>
+      ${[sabbia, sabbiaChiara].map((fondo) => `<div class="fondo" style="background:${fondo}">${logo.map((e) => `<figure><img src="${url(e.file)}"><figcaption>${etichetta(e)}</figcaption></figure>`).join(" ")}</div>`).join(" ")}
+      <p>Al 200% (logo da 320 px mostrato a 640 px), AVIF e WebP, su sabbia e su sabbia chiara: bordi e aloni.</p>
+      ${[sabbia, sabbiaChiara].map((fondo) => `<div class="fondo" style="background:${fondo}">${logo.filter((e) => e.larghezza === 320).map((e) => `<figure><img src="${url(e.file)}" style="width:640px;height:auto"><figcaption>${etichetta(e)}</figcaption></figure>`).join(" ")}</div>`).join("<br>")}
     </section>
     <section><h2>Icone dalla farfalla (${FARFALLA.file}, 210×210)</h2>
       <div class="fondo" style="background:#fff"><figure><img src="${pathToFileURL(join(ORIGINALI, FARFALLA.file)).href}"><figcaption><b>ORIGINALE</b> 210×210</figcaption></figure>
@@ -231,7 +234,6 @@ async function contactSheet(esportati) {
   await browser.close();
   console.log(`✔ contact sheet: ${rel(join(uscita, "contact-sheet.png"))}`);
 }
-const manifestoLarghezzaLogo = (logo) => Math.max(...logo.filter((e) => e.file.endsWith(".webp")).map((e) => e.larghezza));
 
 main().catch((e) => {
   console.error(`✘ ${e.message}`);

@@ -11,7 +11,7 @@ import { existsSync, readdirSync, statSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { dirname, extname, join, normalize, resolve, sep } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const STUDIO = dirname(fileURLToPath(import.meta.url));
 const RADICE = resolve(STUDIO, "..");
@@ -131,7 +131,7 @@ async function rispondi(richiesta, risposta) {
   risposta.end(richiesta.method === "HEAD" ? undefined : corpo);
 }
 
-function avviaServer(porta) {
+export function avviaServer(porta) {
   return new Promise((ok, ko) => {
     const server = createServer((req, res) => {
       rispondi(req, res).catch((e) => {
@@ -147,7 +147,7 @@ function avviaServer(porta) {
 
 // ---------------------------------------------------------------- browser
 
-async function apriBrowser() {
+export async function apriBrowser() {
   let chromium;
   try {
     ({ chromium } = await import("playwright"));
@@ -298,7 +298,11 @@ async function main() {
   console.log("✔ console: 0 errori, 0 richieste fallite");
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+// Eseguito direttamente: anteprima completa. Importato (da controlli.mjs): solo server e browser.
+const eseguitoDirettamente = process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url;
+if (eseguitoDirettamente) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}
