@@ -796,7 +796,7 @@ await controllo('una sola immagine con fetchpriority="high" per pagina, ed è la
     verifica(alte.length === 1, `${file}: ${alte.length} immagini con fetchpriority="high"`);
     verifica(/src="\/img\/cristina-bancone-\d+\.webp"/.test(alte[0]) && !/loading="lazy"/.test(alte[0]), `${file}: la priorità alta non è sulla foto 01 (o è lazy)`);
     const sorgenti = pagina(file).match(/<div class="apertura-foto">([\s\S]*?)<\/div>/)?.[1] ?? "";
-    verifica(sorgenti.includes('sizes="(min-width: 1024px) 480px, 100vw"'), `${file}: sizes della foto 01`);
+    verifica(sorgenti.includes('sizes="(min-width: 1024px) 480px, (min-width: 768px) 520px, 100vw"'), `${file}: sizes della foto 01`);
   }
 });
 
@@ -866,6 +866,45 @@ await controllo("390×844: pulsanti dell'apertura nel primo schermo, elementi cl
     for (const r of esito.pulsanti) if (r.top < 0 || r.bottom > 844) problemi.push(`${percorso}: pulsante fuori dal primo schermo (${Math.round(r.top)}–${Math.round(r.bottom)} px)`);
     if (esito.piccoli.length) problemi.push(`${percorso}: area di tocco < 44 px: ${esito.piccoli.join(", ")}`);
     if (esito.scrollWidth > esito.innerWidth) problemi.push(`${percorso}: scroll orizzontale (${esito.scrollWidth} > ${esito.innerWidth})`);
+  }
+  verifica(!problemi.length, problemi.join(" · "));
+});
+
+await controllo("768 px: nessuna foto verticale supera i 520 px di larghezza; cornice 3:4 centrata, object-position 50% 62%", async () => {
+  const { browser, base } = await browserCondiviso();
+  const problemi = [];
+  for (const [percorso] of LINK_PAGINE) {
+    const contesto = await browser.newContext({ viewport: { width: 768, height: 1024 } });
+    const pagina = await contesto.newPage();
+    await pagina.goto(base + percorso, { waitUntil: "networkidle" });
+    const foto = await pagina.evaluate(() =>
+      [...document.querySelectorAll("img")]
+        .filter((img) => img.naturalHeight > img.naturalWidth) // verticali: 01, 03, 04, 05 (il logo è orizzontale)
+        .map((img) => {
+          const r = img.getBoundingClientRect();
+          const cornice = img.closest(".apertura-foto");
+          const c = cornice?.getBoundingClientRect();
+          return {
+            src: img.currentSrc.split("/img/")[1],
+            larghezza: r.width,
+            altezza: r.height,
+            sinistra: c ? c.left : r.left,
+            destra: c ? innerWidth - c.right : innerWidth - r.right,
+            posizione: getComputedStyle(img).objectPosition,
+            cornice: Boolean(cornice),
+          };
+        }),
+    );
+    await contesto.close();
+    if (!foto.length) problemi.push(`${percorso}: nessuna foto verticale trovata`);
+    for (const f of foto) {
+      if (f.larghezza > 520.5) problemi.push(`${percorso}: ${f.src} larga ${Math.round(f.larghezza)} px`);
+      if (f.cornice) {
+        if (Math.abs(f.altezza / f.larghezza - 4 / 3) > 0.01) problemi.push(`${percorso}: cornice non 3:4 (${Math.round(f.larghezza)}×${Math.round(f.altezza)})`);
+        if (Math.abs(f.sinistra - f.destra) > 1) problemi.push(`${percorso}: cornice non centrata (${Math.round(f.sinistra)} / ${Math.round(f.destra)} px)`);
+        if (f.posizione !== "50% 62%") problemi.push(`${percorso}: object-position ${f.posizione}`);
+      }
+    }
   }
   verifica(!problemi.length, problemi.join(" · "));
 });

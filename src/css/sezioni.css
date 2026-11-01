@@ -101,6 +101,37 @@
     flex: 1 1 100%;
   }
 }
+/* Da 768 px: cornice 3:4 che sfuma in basso (all'86%: la scritta MIGLIORE resta nitida),
+   foto ritagliata dal CSS con object-position: il volto di Cristina e la scritta sul bancone. */
+@media (min-width: 768px) {
+  .apertura-foto {
+    aspect-ratio: 3 / 4;
+    -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+    mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+  }
+  .apertura-foto picture {
+    height: 100%;
+  }
+  .apertura-foto img {
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 62%;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+/* Tra 768 e 1023 px: cornice larga al massimo 520 px e centrata (intera sarebbe alta oltre 1300 px). */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .apertura-testo {
+    max-width: var(--cornice-tablet); /* stessi bordi della foto */
+    margin-inline: auto;
+  }
+  .apertura-foto {
+    width: 100%;
+    max-width: var(--cornice-tablet);
+    margin: var(--spazio-5) auto 0;
+  }
+}
 @media (min-width: 1024px) {
   .apertura {
     padding-block: var(--spazio-4) var(--sezione-verticale);
@@ -114,28 +145,23 @@
   /* Due maschere su due elementi: la cornice sfuma in basso, la foto sfuma a sinistra. */
   .apertura-foto {
     margin: 0;
-    aspect-ratio: 3 / 4;
-    -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
-    mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
-  }
-  .apertura-foto picture {
-    height: 100%;
   }
   .apertura-foto img {
-    height: 100%;
-    object-fit: cover;
-    object-position: 50% 62%; /* volto di Cristina e scritta MIGLIORE sul bancone */
     -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--sfumatura-lato));
     mask-image: linear-gradient(to right, transparent, #000 var(--sfumatura-lato));
   }
 }
-/* Ripiego senza mask-image: niente sfumatura, angoli arrotondati, foto dentro i margini. */
+/* Ripiego senza mask-image: niente sfumatura, angoli arrotondati; su mobile foto dentro i margini. */
 @supports not ((mask-image: none) or (-webkit-mask-image: none)) {
-  .apertura-foto {
-    margin-inline: 0;
-  }
   .apertura-foto img {
     border-radius: var(--raggio-foto);
+  }
+}
+@supports not ((mask-image: none) or (-webkit-mask-image: none)) {
+  @media (max-width: 767.98px) {
+    .apertura-foto {
+      margin-inline: 0;
+    }
   }
 }
 
@@ -245,11 +271,16 @@
 }
 @media (min-width: 768px) {
   .piede-griglia {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     column-gap: var(--spazio-5);
   }
   .piede-copyright {
     grid-column: 1 / -1;
+  }
+}
+@media (min-width: 1024px) {
+  .piede-griglia {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
   }
 }
 

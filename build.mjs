@@ -37,8 +37,9 @@ const MANIFESTO = "src/img/immagini.json";
 // --logo-piede-altezza (56 px) per le proporzioni del logo 624×508.
 const SIZES_LOGO_TESTATA = "(min-width: 1024px) 99px, 79px";
 const SIZES_LOGO_PIEDE = "69px";
-// Foto 01 dell'apertura: a tutta larghezza fino a 1023 px, colonna destra (~480 px) da 1024 px.
-const SIZES_FOTO_APERTURA = "(min-width: 1024px) 480px, 100vw";
+// Foto 01 dell'apertura: a tutta larghezza fino a 767 px, cornice di 520 px tra 768 e 1023 px,
+// colonna destra (~480 px) da 1024 px.
+const SIZES_FOTO_APERTURA = "(min-width: 1024px) 480px, (min-width: 768px) 520px, 100vw";
 
 export class ErroreBuild extends Error {}
 const errore = (dove, messaggio) => {

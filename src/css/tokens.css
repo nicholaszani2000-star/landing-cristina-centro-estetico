@@ -61,6 +61,7 @@
   --sfumatura-basso-mobile: 72%;   /* da qui in giù la foto sfuma (mobile) */
   --sfumatura-basso: 86%;          /* da 1024 px, in basso */
   --sfumatura-lato: 22%;           /* da 1024 px, dal lato del testo */
+  --cornice-tablet: 32.5rem;       /* 520 px: foto verticali tra 768 e 1023 px */
 
   /* Barra contatti mobile */
   --barra-altezza: calc(var(--pulsante-altezza) + 2 * var(--spazio-1));

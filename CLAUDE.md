@@ -321,7 +321,7 @@ Pulsanti:
 Foto (la firma visiva del progetto):
 - Ogni foto sfuma nel sabbia con `mask-image` sul bordo verso il testo: su mobile dal basso (`linear-gradient(to bottom, #000 72%, transparent)`), su desktop dal lato del testo. Il soggetto non viene mai coperto dalla sfumatura.
 - Ripiego: dove `mask-image` non è supportato, la foto ha angoli arrotondati di 6 px e nessuna sfumatura.
-- Proporzioni: su mobile la foto si vede intera (proporzione originale). Su desktop la cornice è 4:5 con `object-position` dichiarato per ogni foto, scelto per tenere il soggetto al centro.
+- Proporzioni: fino a 767 px la foto si vede intera, in proporzione originale e a tutta larghezza. Tra 768 e 1023 px le foto verticali (01, 03, 04, 05) stanno in una cornice larga al massimo 520 px e centrata, con la stessa proporzione e lo stesso object-position del desktop, e sfumano in basso: intere a tutta larghezza sarebbero alte oltre 1300 px. La foto 02, orizzontale, resta intera. Da 1024 px la cornice è 4:5 (3:4 per la foto 01) con object-position dichiarato per ogni foto, scelto per tenere il soggetto al centro. La sfumatura in basso può arrivare all'86% dove serve a tenere nitido un dettaglio (per esempio la scritta MIGLIORE sul bancone).
 
 Dettaglio firma: un arco sottile «a pennello» (SVG originale disegnato da te, ispirato al cerchio del logo, non ricalcato) sopra l'occhiello di ogni H2. Colore `--accento` al 60%, larghezza 48 px. Una sola volta per sezione.
 
@@ -367,6 +367,8 @@ Per ogni pagina cambiano: `<title>`, meta description, H1, sottotitolo, ordine d
 | `/` | Migliore – Estetica Avanzata · Caronno Varesino | Trattamenti viso e pedicure avanzato a Caronno Varesino |
 | `/viso/` | Trattamenti viso a Caronno Varesino · Migliore | Trattamenti viso a Caronno Varesino |
 | `/pedicure/` | Pedicure avanzato a Caronno Varesino · Migliore | Pedicure avanzato a Caronno Varesino |
+
+I `<title>` restano entro 60 caratteri (oltre, Google li taglia).
 
 Meta description (60–160 caratteri, una per pagina):
 - `/`: «Trattamenti viso, pedicure avanzato, epilazione e massaggi a Caronno Varesino. Solo su appuntamento: chiama o scrivi su WhatsApp al 352 060 1109.»

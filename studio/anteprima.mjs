@@ -24,6 +24,7 @@ const PAGINE = [
 ];
 const MISURE = [
   [390, 844],
+  [768, 1024],
   [1440, 900],
 ];
 const TIPI = {

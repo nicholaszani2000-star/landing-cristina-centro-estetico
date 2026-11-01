@@ -86,3 +86,37 @@ Prova a vuoto: in una copia ho stretto i link del footer, tolto lo spazio in fon
 
 1. Tra 768 e 1023 px (tablet) la foto a tutta larghezza è molto alta, circa 1365 px a 768 px. Va bene così, o la limito a una larghezza massima, per esempio 560 px centrata?
 2. Va bene che la barra contatti non compaia sulla pagina 404?
+
+---
+
+## Aggiornamento: decisioni sul report
+
+Il punto «Title tra 60 e 160 caratteri», il punto «Foto a tutta larghezza fino a 1023 px» e le domande 1–2 qui sopra sono superati.
+
+1. File modificati
+- `CLAUDE.md`:
+  - §7: «I `<title>` restano entro 60 caratteri (oltre, Google li taglia).», subito prima delle meta description;
+  - §5: la riga «Proporzioni» sostituita con il testo indicato (fino a 767 px intera; tra 768 e 1023 px cornice di 520 px al massimo per le foto verticali; da 1024 px 4:5, 3:4 per la 01; sfumatura fino all'86%).
+- `src/css/tokens.css`: `--cornice-tablet` (520 px).
+- `src/css/sezioni.css`:
+  - da 768 px la foto 01 sta in una cornice 3:4 con `object-position: 50% 62%`, sfumata in basso all'86%;
+  - tra 768 e 1023 px la cornice è larga al massimo 520 px e centrata, e il testo dell'apertura prende la stessa larghezza, così i bordi coincidono;
+  - da 1024 px resta la sfumatura a sinistra;
+  - il ripiego senza `mask-image` toglie i margini negativi solo sotto i 768 px;
+  - footer: 2 colonne tra 768 e 1023 px, 4 da 1024 px (a 768 px su 4 colonne l'email toccava «Cookie»).
+- `build.mjs`: `sizes` della foto 01 corretto per la cornice da tablet: `(min-width: 1024px) 480px, (min-width: 768px) 520px, 100vw`. Con `100vw` a 768 px il browser avrebbe scaricato una foto più grande del necessario.
+- `studio/controlli.mjs`:
+  - nuovo controllo a 768 px: nessuna foto verticale supera i 520 px di larghezza; la cornice è 3:4, centrata, con `object-position` 50% 62%;
+  - aggiornato il `sizes` atteso.
+- `studio/anteprima.mjs`: screenshot anche a 768×1024.
+
+2. Controlli: build OK · html-validate 0 errori · `node --check` OK · **controlli 42/42**. Prova a vuoto: senza il limite di 520 px il controllo nuovo segnala la foto larga 728 px.
+
+3. Anteprima: 24 screenshot in `studio/screenshot/step3/` (390, 768 e 1440 px, più il fondo pagina con la barra a 390 px).
+- A 768 px la cornice è larga 520 px e centrata. Si vedono il volto di Cristina e la scritta MIGLIORE sul bancone; la sfumatura in basso parte sotto la scritta.
+- 390 e 1440 px invariati.
+- Console: 0 errori, 0 richieste fallite.
+
+4. Decisioni confermate senza modifiche: sfumatura all'86% da 1024 px; bordo provvisorio tra foto e footer su mobile; nessuna barra contatti sulla 404.
+
+5. Nota su CLAUDE.md: in §7 ho scritto `<title>` tra apici inversi, perché su GitHub un `<title>` nudo sparisce dal testo visualizzato. In §4 lo stesso succede a «il <picture> generato dall'helper»: se vuoi, metto gli apici anche lì.
