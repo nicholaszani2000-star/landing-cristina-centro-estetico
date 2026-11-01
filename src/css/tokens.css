@@ -2,7 +2,7 @@
 :root {
   /* Colori. Contrasti sul sabbia: inchiostro 13,4:1 · inchiostro tenue 6,7:1 · accento 5,4:1 (4,7:1 sul sabbia profondo). */
   --sabbia: #F4DBCA;           /* fondo principale, preso dal logo */
-  --sabbia-chiara: #FAEDE4;    /* sezioni alternate */
+  --sabbia-chiara: #FAEDE4;    /* mai come fondo: la landing è tutta color sabbia (§5) */
   --sabbia-profonda: #EBCBB5;  /* schede e blocchi in rilievo */
   --crema: #FFF8F3;            /* campi dei moduli */
   --inchiostro: #1F1612;       /* testi e pulsante principale */
@@ -62,9 +62,6 @@
   --sfumatura-basso-dettaglio: 86%;  /* dove un dettaglio deve restare nitido (scritta MIGLIORE sul bancone) */
   --sfumatura-lato: 22%;           /* da 1024 px, dal lato del testo */
   --cornice-tablet: 32.5rem;       /* 520 px: foto verticali tra 768 e 1023 px */
-
-  /* Passaggio morbido tra il sabbia e il sabbia chiara delle sezioni alternate */
-  --passaggio-sezioni: 4rem;
 
   /* Barra contatti mobile */
   --barra-altezza: calc(var(--pulsante-altezza) + 2 * var(--spazio-1));

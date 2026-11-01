@@ -1,13 +1,13 @@
-<section class="sezione viso{{#se p.visoPrima}} sezione-chiara{{/se}}" id="viso" data-sezione="viso" aria-labelledby="viso-titolo">
+<section class="sezione viso" id="viso" data-sezione="viso" aria-labelledby="viso-titolo">
   <div class="contenitore viso-griglia">
+    <div class="viso-intro appare">
+      <p class="occhiello arco">{{t.viso.occhiello}}</p>
+      <h2 id="viso-titolo">{{t.viso.h2}}</h2>
+      <p>{{t.viso.testo}}</p>
+      <p>{{t.viso.secondaFrase}}</p>
+    </div>
     <div class="viso-foto">{{{immagini.fotoViso}}}</div>
-    <div class="viso-testo">
-      <div class="viso-intro appare">
-        <p class="occhiello arco">{{t.viso.occhiello}}</p>
-        <h2 id="viso-titolo">{{t.viso.h2}}</h2>
-        <p>{{t.viso.testo}}</p>
-        <p>{{t.viso.secondaFrase}}</p>
-      </div>
+    <div class="viso-dettagli">
       <ul class="viso-voci">
         {{#ogni viso.voci}}<li class="viso-voce appare">
           <h3 class="viso-voce-nome">{{nome}}{{#se inEvidenza}} <span class="etichetta">{{t.viso.etichettaInEvidenza}}</span>{{/se}}</h3>

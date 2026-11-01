@@ -94,3 +94,42 @@ Data: 2026-11-01 · Branch: `landing-migliore`
 
 1. Il poster «REVINOL» sulla parete della foto 03 contiene foto prima/dopo? Se sì, su tablet e desktop posso spostare l'inquadratura (`object-position`) per lasciarlo fuori. Su mobile la foto si vede intera per §5, quindi lì resterebbe.
 2. Su mobile la foto dell'apertura e quella della cabina arrivano una dopo l'altra, circa 1400 px di foto prima del testo della sezione viso. Va bene così, o su mobile metto il testo della sezione prima della sua foto?
+
+---
+
+## Aggiornamento: landing tutta color sabbia e decisioni sul report
+
+Le domande 1–2 e il punto «Passaggio morbido tra le sezioni» qui sopra sono superati.
+
+1. Landing tutta color sabbia (tua richiesta: «la landing la voglio tutta color sabbia, ricordatelo»)
+- `CLAUDE.md` §5:
+  - `--sabbia-chiara` «mai come fondo»;
+  - regola nuova: header, apertura, ogni sezione, footer e barra contatti hanno fondo `--sabbia` su tutte e tre le pagine, senza sezioni alternate né altri colori di fondo. Le sezioni si separano con lo spazio e con il dettaglio firma; `--sabbia-profonda` resta solo per piccoli blocchi in rilievo (etichette, scheda 2 del pedicure).
+- Codice:
+  - la sezione viso non ha più la classe `sezione-chiara`;
+  - tolti la regola `.sezione-chiara` e il passaggio sfumato (`--passaggio-sezioni`) aggiunti allo Step 4;
+  - il footer è sul sabbia.
+- Controllo nuovo «landing tutta color sabbia»:
+  - nel CSS il sabbia chiara compare solo come definizione del token, e non ci sono fondi sfumati;
+  - nell'HTML nessuna classe `sezione-chiara`;
+  - con Playwright, a 390 e 1440 px su tre pagine più la 404, il body è sabbia; header, main, sezioni, footer e barra sono sabbia o trasparenti; gli unici altri fondi ammessi sono la pillola su sabbia profonda, il pulsante principale in inchiostro e, dallo Step 8, i campi in crema.
+
+2. Poster «REVINOL» nella foto 03: resta.
+- `CLAUDE.md` §10: aggiunta la frase indicata in fondo alla riga «Niente foto prima/dopo…».
+- L'inquadratura da 768 px (`object-position: 50% 55%`) è quella che mostra meglio la cabina: lettino al centro, bancone di marmo a destra. Non è stata scelta per nascondere il poster.
+
+3. Ordine su mobile
+- `CLAUDE.md` §5: aggiunta la riga «Ordine su mobile» subito dopo «Proporzioni».
+- `src/templates/parti/viso.html`:
+  - nel markup l'ordine ora è introduzione (occhiello, H2, testo, «Prima di iniziare…»), foto, dettagli (elenco, riga cabina, link, pulsante);
+  - fino a 1023 px resta quest'ordine;
+  - da 1024 px una griglia con aree (`foto intro` / `foto dettagli`) rimette la foto a sinistra, ferma mentre si scorre, come prima.
+- `src/css/sezioni.css`: aree della griglia da 1024 px, larghezza di 520 px per introduzione e dettagli tra 768 e 1023 px.
+- Controllo nuovo: a 390 e 768 px, in ogni sezione con foto (tranne l'apertura), l'H2 sta sopra la foto.
+
+4. Controlli: build OK · html-validate 0 errori · `node --check` OK · **controlli 50/50**. Prova a vuoto, in una copia: con la foto rimessa prima dell'H2 e il body sul sabbia chiaro, i due controlli nuovi falliscono come devono.
+
+5. Anteprima: 24 screenshot in `studio/screenshot/step4/` (tre pagine a 390, 768 e 1440 px, più fondo pagina a 390 px e 404). Console: 0 errori, 0 richieste fallite.
+- **390 px**: la foto dell'apertura sfuma sul sabbia, poi arco, «Viso», H2 e il testo della sezione, poi la foto della cabina che sfuma in basso, poi le 5 voci e il pulsante. Footer sul sabbia.
+- **768 px**: stesso ordine, foto nella cornice di 520 px centrata.
+- **1440 px**: invariato, foto a sinistra, testo ed elenco a destra; tutto sabbia.

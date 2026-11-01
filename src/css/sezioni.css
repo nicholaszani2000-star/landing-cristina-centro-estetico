@@ -165,9 +165,10 @@
   }
 }
 
-/* 3. Viso (quarta su /pedicure/): foto 03, testo, voci viso dal listino senza prezzi, link ai prezzi,
-   pulsante WhatsApp. Fino a 767 px foto intera che sfuma in basso; tra 768 e 1023 px cornice 4:5 di
-   520 px al massimo; da 1024 px colonne 5/7, foto a sinistra in cornice 4:5 che sfuma a destra. */
+/* 3. Viso (quarta su /pedicure/): testo, foto 03, voci viso dal listino senza prezzi, link ai prezzi,
+   pulsante WhatsApp. Fino a 1023 px (§5, ordine su mobile): introduzione, poi foto che sfuma in basso
+   (intera fino a 767 px, cornice 4:5 di 520 px al massimo fino a 1023 px), poi elenco e pulsante.
+   Da 1024 px colonne 5/7: foto a sinistra in cornice 4:5 che sfuma a destra, testo a destra. */
 .viso-griglia {
   display: grid;
   gap: var(--spazio-4);
@@ -184,8 +185,8 @@
   -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
   mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
 }
-.viso-testo,
-.viso-intro {
+.viso-intro,
+.viso-dettagli {
   display: grid;
   gap: var(--spazio-2);
   align-content: start;
@@ -194,7 +195,7 @@
   margin-bottom: var(--spazio-1);
 }
 .viso-voci {
-  margin: var(--spazio-2) 0 0;
+  margin: 0;
   padding: 0;
   list-style-type: "\200B"; /* niente pallino; con list-style: none Safari non annuncia più la lista */
   border-top: 1px solid var(--linea);
@@ -292,7 +293,8 @@
     -webkit-mask-image: none;
     mask-image: none;
   }
-  .viso-testo {
+  .viso-intro,
+  .viso-dettagli {
     width: 100%;
     max-width: var(--cornice-tablet);
     margin-inline: auto;
@@ -301,11 +303,23 @@
 @media (min-width: 1024px) {
   .viso-griglia {
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-areas:
+      "foto intro"
+      "foto dettagli";
+    grid-template-rows: auto 1fr;
     align-items: start;
-    gap: var(--spazio-8);
+    column-gap: var(--spazio-8);
+    row-gap: var(--spazio-4);
+  }
+  .viso-intro {
+    grid-area: intro;
+  }
+  .viso-dettagli {
+    grid-area: dettagli;
   }
   /* L'elenco è più alto della foto: la foto resta in vista mentre si scorre. */
   .viso-foto {
+    grid-area: foto;
     position: sticky;
     top: var(--spazio-4);
     margin: 0;
@@ -385,7 +399,6 @@
 /* 10. Footer: logo piccolo, dati legali, contatti, link legali */
 .piede {
   padding-block: var(--spazio-8) var(--spazio-6);
-  background: linear-gradient(to bottom, var(--sabbia), var(--sabbia-chiara) var(--passaggio-sezioni));
   font-size: var(--testo-piccolo);
   color: var(--inchiostro-tenue);
 }

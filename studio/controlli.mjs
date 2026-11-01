@@ -1003,7 +1003,7 @@ function vociVisoDi(html) {
   });
 }
 
-await controllo("sezione viso in tutte e tre le pagine: terza su / e /viso/, quarta su /pedicure/; sabbia chiara su / e /viso/", () => {
+await controllo("sezione viso in tutte e tre le pagine: terza su / e /viso/, quarta su /pedicure/", () => {
   for (const [file, id] of PAGINE.filter(([, id]) => id)) {
     const html = pagina(file);
     const viso = sezioneVisoDi(html);
@@ -1014,7 +1014,6 @@ await controllo("sezione viso in tutte e tre le pagine: terza su / e /viso/, qua
     const visoPrima = testi.pagine[id].ordine[0] === "viso";
     verifica(posApertura < posViso, `${file}: la sezione viso viene prima dell'apertura`);
     verifica(visoPrima ? posViso < posPedicure : posPedicure < posViso, `${file}: sezione viso ${visoPrima ? "non terza" : "non quarta"}`);
-    verifica(/class="sezione viso sezione-chiara"/.test(viso) === visoPrima, `${file}: fondo della sezione viso (${visoPrima ? "serve" : "non serve"} sabbia chiara)`);
   }
   verifica(/id="listino" hidden/.test(pagina("index.html")), "manca l'ancora nascosta #listino");
 });
@@ -1102,6 +1101,75 @@ await controllo("sezione viso: nessuna parola vietata per il viso (§8, maiuscol
   }
   const quattro = build.estraiFasi("Si fa in quattro fasi: a, b, c e d.");
   verifica(quattro === null, "con più di 3 fasi non va fatto l'elenco");
+});
+
+await controllo("landing tutta color sabbia (§5): nessun fondo sabbia chiara o di altri colori, su tutte le pagine a 390 e 1440 px", async () => {
+  // Nel CSS il sabbia chiara non si usa (solo la definizione del token) e non ci sono sfumature di fondo.
+  const css = ["tokens.css", "base.css", "sezioni.css"].map((f) => [f, leggi(`src/css/${f}`)]);
+  for (const [f, testo] of css) {
+    const senzaDefinizione = f === "tokens.css" ? testo.replace(/--sabbia-chiara\s*:[^;]*;/, "") : testo;
+    verifica(!/sabbia-chiara|#faede4/i.test(senzaDefinizione), `src/css/${f} usa il sabbia chiara`);
+    verifica(!/background(-image)?\s*:[^;]*gradient/i.test(testo), `src/css/${f}: fondo sfumato`);
+  }
+  for (const [file] of PAGINE) verifica(!/sezione-chiara/.test(pagina(file)), `${file}: classe sezione-chiara`);
+  // Nel browser: ogni fondo è trasparente, sabbia, oppure uno dei piccoli elementi ammessi.
+  const ammessi = { "rgb(244, 219, 202)": "sabbia", "rgb(235, 203, 181)": "sabbia profonda (etichette, schede)", "rgb(31, 22, 18)": "inchiostro (pulsante principale)", "rgb(255, 248, 243)": "crema (campi dei moduli)" };
+  const { browser, base } = await browserCondiviso();
+  const problemi = [];
+  for (const [larghezza, altezza] of [[390, 844], [1440, 900]]) {
+    const contesto = await browser.newContext({ viewport: { width: larghezza, height: altezza } });
+    for (const [percorso] of [...LINK_PAGINE, ["/pagina-che-non-esiste/"]]) {
+      const pagina = await contesto.newPage();
+      await pagina.goto(base + percorso, { waitUntil: "networkidle" });
+      const fondi = await pagina.evaluate(() =>
+        [document.documentElement, document.body, ...document.body.querySelectorAll("*")].map((el) => {
+          const st = getComputedStyle(el);
+          return { el: `${el.tagName.toLowerCase()}${el.className && typeof el.className === "string" ? "." + el.className.split(" ")[0] : ""}`, colore: st.backgroundColor, immagine: st.backgroundImage };
+        }),
+      );
+      const corpo = fondi.find((f) => f.el.startsWith("body"));
+      if (corpo.colore !== "rgb(244, 219, 202)") problemi.push(`${percorso} ${larghezza}: body ${corpo.colore}`);
+      for (const f of fondi) {
+        const trasparente = f.colore === "rgba(0, 0, 0, 0)" || f.colore === "transparent";
+        if (!trasparente && !(f.colore in ammessi)) problemi.push(`${percorso} ${larghezza}: ${f.el} fondo ${f.colore}`);
+        if (f.immagine !== "none") problemi.push(`${percorso} ${larghezza}: ${f.el} immagine di fondo ${f.immagine.slice(0, 40)}`);
+        if (/^(header|main|section|footer|div\.barra-contatti)/.test(f.el) && !trasparente && f.colore !== "rgb(244, 219, 202)") problemi.push(`${percorso} ${larghezza}: ${f.el} non è sabbia`);
+      }
+      await pagina.close();
+    }
+    await contesto.close();
+  }
+  verifica(!problemi.length, [...new Set(problemi)].slice(0, 8).join(" · "));
+});
+
+await controllo("ordine su mobile (§5): a 390 e 768 px, in ogni sezione con foto (tranne l'apertura) l'H2 viene prima della foto", async () => {
+  const { browser, base } = await browserCondiviso();
+  const problemi = [];
+  let sezioniViste = 0;
+  for (const [larghezza, altezza] of [[390, 844], [768, 1024]]) {
+    const contesto = await browser.newContext({ viewport: { width: larghezza, height: altezza } });
+    for (const [percorso] of LINK_PAGINE) {
+      const pagina = await contesto.newPage();
+      await pagina.goto(base + percorso, { waitUntil: "networkidle" });
+      const sezioni = await pagina.evaluate(() =>
+        [...document.querySelectorAll("main section:not(.apertura)")]
+          .filter((sez) => sez.querySelector("img") && sez.querySelector("h2"))
+          .map((sez) => ({
+            nome: sez.dataset.sezione || sez.id,
+            h2: sez.querySelector("h2").getBoundingClientRect().top,
+            foto: sez.querySelector("img").getBoundingClientRect().top,
+          })),
+      );
+      for (const sez of sezioni) {
+        sezioniViste++;
+        if (!(sez.h2 < sez.foto)) problemi.push(`${percorso} ${larghezza} px: in «${sez.nome}» la foto (${Math.round(sez.foto)}) viene prima dell'H2 (${Math.round(sez.h2)})`);
+      }
+      await pagina.close();
+    }
+    await contesto.close();
+  }
+  verifica(sezioniViste > 0, "nessuna sezione con foto trovata");
+  verifica(!problemi.length, problemi.join(" · "));
 });
 
 await controllo("pesi: main.js ≤ 3 KB, JS ≤ 12 KB e CSS ≤ 20 KB compressi, font ≤ 100 KB", () => {

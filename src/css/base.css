@@ -144,16 +144,6 @@ a:hover {
 .sezione {
   padding-block: var(--sezione-verticale);
 }
-/* Sezioni alternate su sabbia chiara: sopra e sotto sfumano nel sabbia, mai linee nette. */
-.sezione-chiara {
-  background: linear-gradient(
-    to bottom,
-    var(--sabbia),
-    var(--sabbia-chiara) var(--passaggio-sezioni),
-    var(--sabbia-chiara) calc(100% - var(--passaggio-sezioni)),
-    var(--sabbia)
-  );
-}
 
 /* Utilità */
 .solo-lettori {

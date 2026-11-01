@@ -284,7 +284,7 @@ Atmosfera: luce calda di sera, carta sabbia, silenzio. Le foto del centro hanno 
 
 Palette (token CSS in `tokens.css`, contrasti verificati WCAG):
 - `--sabbia: #F4DBCA` — fondo principale, preso dal logo.
-- `--sabbia-chiara: #FAEDE4` — fondo delle sezioni alternate.
+- `--sabbia-chiara: #FAEDE4` — mai come fondo: la landing è tutta color sabbia (vedi sotto).
 - `--sabbia-profonda: #EBCBB5` — schede e blocchi in rilievo.
 - `--crema: #FFF8F3` — campi dei moduli.
 - `--inchiostro: #1F1612` — testi e pulsante principale. Contrasto 13,4:1 sul sabbia.
@@ -294,6 +294,8 @@ Palette (token CSS in `tokens.css`, contrasti verificati WCAG):
 - `--farfalla: #EB7D40` — SOLO decorazione. 2,1:1 sul sabbia: vietato per testi, icone informative e bordi.
 
 Il body ha `background: var(--sabbia)`. Niente modalità scura: la pagina è sempre sabbia, ma imposta `color-scheme: light`.
+
+La landing è tutta color sabbia: header, apertura, ogni sezione, footer e barra contatti hanno fondo `--sabbia`, su tutte e tre le pagine. Niente sezioni alternate su `--sabbia-chiara` né altri colori di fondo. Le sezioni si separano con lo spazio e con il dettaglio firma; `--sabbia-profonda` resta solo per piccoli blocchi in rilievo (etichette, la scheda 2 del pedicure).
 
 Font (self-hosted, woff2, solo caratteri latini):
 - Titoli: Marcellus 400. Richiama il carattere del logo.
@@ -322,6 +324,7 @@ Foto (la firma visiva del progetto):
 - Ogni foto sfuma nel sabbia con `mask-image` sul bordo verso il testo: su mobile dal basso (`linear-gradient(to bottom, #000 72%, transparent)`), su desktop dal lato del testo. Il soggetto non viene mai coperto dalla sfumatura.
 - Ripiego: dove `mask-image` non è supportato, la foto ha angoli arrotondati di 6 px e nessuna sfumatura.
 - Proporzioni: fino a 767 px la foto si vede intera, in proporzione originale e a tutta larghezza. Tra 768 e 1023 px le foto verticali (01, 03, 04, 05) stanno in una cornice larga al massimo 520 px e centrata, con la stessa proporzione e lo stesso object-position del desktop, e sfumano in basso: intere a tutta larghezza sarebbero alte oltre 1300 px. La foto 02, orizzontale, resta intera. Da 1024 px la cornice è 4:5 (3:4 per la foto 01) con object-position dichiarato per ogni foto, scelto per tenere il soggetto al centro. La sfumatura in basso può arrivare all'86% dove serve a tenere nitido un dettaglio (per esempio la scritta MIGLIORE sul bancone).
+- Ordine su mobile: fino a 1023 px, in ogni sezione con foto (tranne l'apertura) vengono prima occhiello, H2 e testo introduttivo, poi la foto, poi il resto (elenco, schede, pulsanti). Così due foto non arrivano mai una dopo l'altra e la sfumatura della foto dell'apertura passa sul testo della sezione successiva.
 
 Dettaglio firma: un arco sottile «a pennello» (SVG originale disegnato da te, ispirato al cerchio del logo, non ricalcato) sopra l'occhiello di ogni H2. Colore `--accento` al 60%, larghezza 48 px. Una sola volta per sezione.
 
@@ -497,7 +500,7 @@ Obiettivi, misurati con Lighthouse in modalità mobile sulla build di produzione
 - Attività di estetista (L. 1/1990): sono escluse le prestazioni con finalità terapeutica. Nessuna parola o promessa terapeutica o sanitaria (elenco in §8).
 - Pedicure avanzato: non si scrive mai «podologico» né si nominano condizioni da trattare. Si descrive solo l'aspetto estetico e il metodo. La riga sul limite indirizza al podologo.
 - Trattamenti viso: si descrivono l'aspetto della pelle e il metodo, mai meccanismi biologici, condizioni della pelle o termini medici (elenco in §8). Le affermazioni del produttore restano del produttore: sul sito diventano solo fatti (nome, fasi, ingredienti) e benefici d'aspetto. Una pubblicità che promette più di quanto il servizio dà è una pratica commerciale ingannevole (Codice del Consumo, art. 21).
-- Niente foto prima/dopo: né del produttore né di clienti.
+- Niente foto prima/dopo: né del produttore né di clienti. Il poster «REVINOL» sulla parete della foto 03 è parte della cabina vera e a dimensione web è illeggibile: la foto resta intera e non si ritaglia per nasconderlo. Il divieto vale per le immagini che il sito usa come prova di un risultato.
 - Niente confronti con trattamenti medici («alternativa alle punture», «come il botox», «al posto del filler») e niente risultati in numeri o frazioni («rallenta di un terzo l'invecchiamento»): servono prove che il centro non ha. Si può dire solo ciò che è un fatto, per esempio «senza aghi».
 - Nessuna promessa di risultato («garantito», «definitivo», «visibile dalla prima seduta»).
 - Non scrivere «nuova apertura» o simili: il centro è già aperto da mesi.
