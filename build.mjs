@@ -37,6 +37,8 @@ const MANIFESTO = "src/img/immagini.json";
 // --logo-piede-altezza (56 px) per le proporzioni del logo 624×508.
 const SIZES_LOGO_TESTATA = "(min-width: 1024px) 99px, 79px";
 const SIZES_LOGO_PIEDE = "69px";
+// Foto 01 dell'apertura: a tutta larghezza fino a 1023 px, colonna destra (~480 px) da 1024 px.
+const SIZES_FOTO_APERTURA = "(min-width: 1024px) 480px, 100vw";
 
 export class ErroreBuild extends Error {}
 const errore = (dove, messaggio) => {
@@ -77,13 +79,20 @@ export function componi(testo, dati, dove) {
   return risultato;
 }
 
+// Nei titoli (chiavi h1 e h2) le parole brevi si legano alla parola che segue con uno spazio non
+// separabile: niente «a» o «e» appese in fondo alla riga. Il testo in testi.json non cambia.
+const PAROLE_BREVI = /(^|\s)(a|e|ed|i|o|di|da|in|su|con|per|tra|fra|il|lo|la|gli|le|un|uno|una|al|allo|alla|ai|agli|alle|del|della|nel|nella) (?=\S)/giu;
+export const legaParoleBrevi = (testo) => testo.replace(PAROLE_BREVI, (_, prima, parola) => `${prima}${parola}${NBSP}`);
+
 function componiTutto(valore, dati, dove) {
   if (typeof valore === "string") return componi(valore, dati, dove);
   if (Array.isArray(valore)) return valore.map((v, i) => componiTutto(v, dati, `${dove}[${i}]`));
   if (valore && typeof valore === "object") {
     const uscita = {};
     for (const [chiave, v] of Object.entries(valore)) {
-      if (!chiave.startsWith("_")) uscita[chiave] = componiTutto(v, dati, `${dove}.${chiave}`);
+      if (chiave.startsWith("_")) continue;
+      const composto = componiTutto(v, dati, `${dove}.${chiave}`);
+      uscita[chiave] = (chiave === "h1" || chiave === "h2") && typeof composto === "string" ? legaParoleBrevi(composto) : composto;
     }
     return uscita;
   }
@@ -542,6 +551,7 @@ async function main() {
     immagini: {
       logoTestata: immagine(manifesto, "logo", t.header.logoAlt, SIZES_LOGO_TESTATA),
       logoPiede: immagine(manifesto, "logo", t.footer.logoAlt, SIZES_LOGO_PIEDE),
+      fotoApertura: immagine(manifesto, "cristina-bancone", t.apertura.altFoto, SIZES_FOTO_APERTURA, { priorita: true }),
     },
     contatti: {
       telefono: centro.telefono.replace(/ /g, NBSP), // spazi non separabili: il numero non va a capo

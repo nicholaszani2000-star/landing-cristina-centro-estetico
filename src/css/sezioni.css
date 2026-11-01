@@ -1,4 +1,4 @@
-/* sezioni.css — una parte per sezione (CLAUDE.md §6). Per ora: header, apertura, footer. */
+/* sezioni.css — una parte per sezione (CLAUDE.md §6). Per ora: header, apertura, barra contatti mobile, footer, 404. */
 
 /* 1. Header: logo a sinistra, «Chiama» a destra. Non fisso. */
 .testata {
@@ -56,14 +56,16 @@
   }
 }
 
-/* 2. Apertura: occhiello, H1, sottotitolo, pulsanti, riga info, payoff. Foto dallo Step 3. */
+/* 2. Apertura: occhiello, H1, sottotitolo, pulsanti, riga info, payoff e foto 01.
+   Fino a 1023 px: testo, pulsanti uno sotto l'altro, foto a tutta larghezza che sfuma in basso.
+   Da 1024 px: colonne 7/5, foto in cornice 3:4 che sfuma a sinistra e in basso. */
 .apertura {
-  padding-block: var(--spazio-4) var(--sezione-verticale);
+  padding-top: var(--spazio-3);
 }
 .apertura-testo {
   display: grid;
   gap: var(--spazio-2);
-  max-width: 36rem;
+  max-width: 38rem;
 }
 .apertura-sottotitolo {
   font-size: 1.125rem;
@@ -82,15 +84,111 @@
   font-size: 1.125rem;
   color: var(--inchiostro-tenue);
 }
+.apertura-foto {
+  margin: var(--spazio-4) calc(-1 * var(--margine-laterale)) 0;
+}
+.apertura-foto picture {
+  display: block;
+}
+.apertura-foto img {
+  width: 100%;
+  height: auto;
+  -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso-mobile), transparent);
+  mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso-mobile), transparent);
+}
+@media (max-width: 1023.98px) {
+  .apertura .pulsanti > .pulsante {
+    flex: 1 1 100%;
+  }
+}
 @media (min-width: 1024px) {
   .apertura {
-    padding-top: var(--spazio-6);
+    padding-block: var(--spazio-4) var(--sezione-verticale);
   }
   .apertura-griglia {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
     align-items: center;
-    gap: var(--spazio-8);
+    gap: var(--spazio-6);
+  }
+  /* Due maschere su due elementi: la cornice sfuma in basso, la foto sfuma a sinistra. */
+  .apertura-foto {
+    margin: 0;
+    aspect-ratio: 3 / 4;
+    -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+    mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+  }
+  .apertura-foto picture {
+    height: 100%;
+  }
+  .apertura-foto img {
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 62%; /* volto di Cristina e scritta MIGLIORE sul bancone */
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--sfumatura-lato));
+    mask-image: linear-gradient(to right, transparent, #000 var(--sfumatura-lato));
+  }
+}
+/* Ripiego senza mask-image: niente sfumatura, angoli arrotondati, foto dentro i margini. */
+@supports not ((mask-image: none) or (-webkit-mask-image: none)) {
+  .apertura-foto {
+    margin-inline: 0;
+  }
+  .apertura-foto img {
+    border-radius: var(--raggio-foto);
+  }
+}
+
+/* Barra contatti mobile: sotto i 768 px, fissa in basso. Con JS si nasconde mentre i pulsanti
+   dell'apertura sono visibili; senza JS resta sempre visibile (ripiego dopo 3 s se main.js non parte). */
+.barra-contatti {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  display: flex;
+  gap: var(--spazio-1);
+  padding: var(--spazio-1) var(--margine-laterale) calc(var(--spazio-1) + env(safe-area-inset-bottom));
+  background: var(--sabbia);
+  border-top: 1px solid var(--linea);
+}
+.barra-contatti .pulsante {
+  flex: 1 1 0;
+  padding-inline: var(--spazio-2);
+}
+.js .barra-contatti {
+  transition: opacity var(--durata-barra) ease, visibility 0s linear 0s;
+}
+.js .barra-contatti:not(.visibile) {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--durata-barra) ease, visibility 0s linear var(--durata-barra);
+  animation: barra-ripiego 1ms linear 3s forwards;
+}
+.barra-attiva .barra-contatti:not(.visibile) {
+  animation: none;
+}
+@keyframes barra-ripiego {
+  to {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+@media (max-width: 767.98px) {
+  body {
+    padding-bottom: calc(var(--barra-altezza) + env(safe-area-inset-bottom));
+  }
+}
+@media (min-width: 768px) {
+  .barra-contatti {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .js .barra-contatti,
+  .js .barra-contatti:not(.visibile) {
+    transition: none;
   }
 }
 
@@ -126,6 +224,7 @@
 .piede-preferenze {
   display: inline-flex;
   align-items: center;
+  min-width: var(--area-tocco);
   min-height: var(--area-tocco);
   color: var(--inchiostro);
 }
@@ -152,4 +251,11 @@
   .piede-copyright {
     grid-column: 1 / -1;
   }
+}
+
+/* Pagina 404 */
+.pagina-404 p a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--area-tocco);
 }

@@ -1,4 +1,4 @@
-// main.js — comparse all'ingresso nello schermo e anno corrente nel footer (CLAUDE.md §5).
+// main.js — barra contatti mobile, comparse all'ingresso nello schermo e anno nel footer (CLAUDE.md §5, §6).
 // Nessuna dipendenza. Senza JavaScript la pagina è già tutta visibile.
 (function () {
   "use strict";
@@ -11,6 +11,21 @@
     var annoBuild = el.getAttribute("data-anno");
     if (annoBuild && annoBuild !== anno) el.textContent = el.textContent.replace(annoBuild, anno);
   });
+
+  // Barra contatti mobile: nascosta mentre i pulsanti dell'apertura sono visibili.
+  // Senza IntersectionObserver resta sempre visibile; senza JS il CSS la lascia visibile.
+  var barra = doc.querySelector("[data-barra-contatti]");
+  var pulsantiApertura = doc.querySelector("[data-pulsanti-apertura]");
+  if (barra) {
+    if (pulsantiApertura && "IntersectionObserver" in window) {
+      new IntersectionObserver(function (voci) {
+        barra.classList.toggle("visibile", !voci[voci.length - 1].isIntersecting);
+      }).observe(pulsantiApertura);
+    } else {
+      barra.classList.add("visibile");
+    }
+    radice.classList.add("barra-attiva");
+  }
 
   // Comparse: solo se il movimento non è ridotto e c'è IntersectionObserver.
   var elementi = doc.querySelectorAll(".appare");

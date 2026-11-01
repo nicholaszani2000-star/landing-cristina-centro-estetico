@@ -184,9 +184,23 @@ const regexVietata = (voce) => {
   return new RegExp(`(?<!\\p{L})${corpo}${radice ? "\\p{L}*" : "(?!\\p{L})"}`, "iu");
 };
 
+/** Browser e server di dist/ condivisi dai controlli con Playwright (da anteprima.mjs). */
+let sessione = null;
+async function browserCondiviso() {
+  if (!sessione) {
+    const { avviaServer, apriBrowser } = await import(pathToFileURL(join(STUDIO, "anteprima.mjs")).href);
+    const { browser, errore } = await apriBrowser();
+    if (!browser) throw new Error(`browser non disponibile: ${errore}`);
+    const server = await avviaServer(0);
+    sessione = { browser, server, base: `http://localhost:${server.address().port}` };
+  }
+  return sessione;
+}
+const LINK_PAGINE = [["/", "home"], ["/viso/", "viso"], ["/pedicure/", "pedicure"]];
+
 // ---------------------------------------------------------------- controlli
 
-console.log("Controlli automatici · Step 2\n");
+console.log("Controlli automatici · Step 3\n");
 
 await controllo("build eseguita con codice 0", () => {
   const r = spawnSync(process.execPath, ["build.mjs"], { cwd: RADICE, encoding: "utf8", env: { ...process.env, URL: "" } });
@@ -475,7 +489,7 @@ await controllo("footer condizionale: niente REA, sede legale, social o «Prefer
   }
 });
 
-await controllo("link tel: e WhatsApp corretti su ogni pagina (testo WhatsApp per pagina)", () => {
+await controllo("link tel:+393520601109 e https://wa.me/393520601109?text= su ogni pagina, testo WhatsApp giusto per la pagina, nuova scheda", () => {
   for (const [file, id] of PAGINE) {
     const html = pagina(file);
     const tel = [...html.matchAll(/href="(tel:[^"]*)"/g)].map((m) => m[1]);
@@ -487,6 +501,10 @@ await controllo("link tel: e WhatsApp corretti su ogni pagina (testo WhatsApp pe
       verifica(u.pathname === `/${centro.whatsappNumero}`, `${file}: numero WhatsApp ${u.pathname}`);
       verifica(u.searchParams.get("text") === atteso, `${file}: testo WhatsApp «${u.searchParams.get("text")}»`);
     }
+    for (const m of html.matchAll(/<a\b[^>]*href="https:\/\/wa\.me\/[^"]*"[^>]*>/g)) {
+      verifica(/\starget="_blank"/.test(m[0]) && /\srel="noopener"/.test(m[0]), `${file}: link WhatsApp senza target="_blank" rel="noopener"`);
+    }
+    verifica(html.includes(`href="https://wa.me/${centro.whatsappNumero}?text=`), `${file}: manca https://wa.me/${centro.whatsappNumero}?text=`);
   }
 });
 
@@ -554,7 +572,7 @@ await controllo("pagina 404 come in §8: title, noindex, H1, testo, link e pulsa
   verifica(testoVisibile(main.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? "") === ATTESI_404.h1, "H1");
   verifica(testoVisibile(main).includes(ATTESI_404.testo), "testo");
   verifica(new RegExp(`<a href="/">${ATTESI_404.link}</a>`).test(main), "link alla pagina iniziale");
-  const pulsanti = [...main.matchAll(/<a class="pulsante[^"]*" href="([^"]*)">[\s\S]*?<span>([^<]*)<\/span><\/a>/g)];
+  const pulsanti = [...main.matchAll(/<a class="pulsante[^"]*" href="([^"]*)"[^>]*>[\s\S]*?<span>([^<]*)<\/span><\/a>/g)];
   verifica(pulsanti.map((m) => m[2]).join() === ATTESI_404.pulsanti.join(), `pulsanti: ${pulsanti.map((m) => m[2]).join(", ")}`);
   verifica(pulsanti[0][1] === `tel:${centro.telefonoE164}` && pulsanti[1][1].startsWith(`https://wa.me/${centro.whatsappNumero}?text=`), "destinazioni dei pulsanti");
 });
@@ -691,13 +709,9 @@ await controllo("helper immagine(): escape di alt e sizes, errori su alt o sizes
 });
 
 await controllo("logo scaricato davvero (Playwright, densità 1, 2, 3): ogni file ≤ 40 KB; a densità 3 su desktop è il 320", async () => {
-  const { avviaServer, apriBrowser } = await import(pathToFileURL(join(STUDIO, "anteprima.mjs")).href);
-  const { browser, errore } = await apriBrowser();
-  verifica(browser, `browser non disponibile: ${errore}`);
-  const server = await avviaServer(0);
-  const base = `http://localhost:${server.address().port}`;
+  const { browser, base } = await browserCondiviso();
   const risultati = [];
-  try {
+  {
     for (const [larghezza, altezza] of [[390, 844], [1440, 900]]) {
       for (const densita of [1, 2, 3]) {
         const contesto = await browser.newContext({ viewport: { width: larghezza, height: altezza }, deviceScaleFactor: densita });
@@ -720,9 +734,6 @@ await controllo("logo scaricato davvero (Playwright, densità 1, 2, 3): ogni fil
         if (larghezza === 1440 && densita === 3) verifica(scaricati.some((s) => s.file === "logo-320.avif"), `1440 px × 3: scaricato ${scaricati.map((s) => s.file).join(", ")} invece del 320`);
       }
     }
-  } finally {
-    await browser.close();
-    server.close();
   }
   console.log(`    ${risultati.join(" · ")}`);
 });
@@ -760,6 +771,174 @@ await controllo("favicon, apple-touch-icon e og:image (con misure e alt) nella <
   }
 });
 
+// ---------------------------------------------------------------- Step 3: apertura, barra contatti, varianti
+
+await controllo("varianti: title diversi (≤ 60 caratteri), description diverse (60–160), ordine viso/pedicure per pagina", () => {
+  const titoli = new Set();
+  const descrizioni = new Set();
+  for (const [file, id] of PAGINE.filter(([, id]) => id)) {
+    const html = pagina(file);
+    const title = decodifica(html.match(/<title>([\s\S]*?)<\/title>/)[1]);
+    const description = decodifica(html.match(/<meta name="description" content="([^"]*)"/)?.[1] ?? "");
+    verifica(title.length <= 60, `${file}: title di ${title.length} caratteri (oltre 60 Google lo taglia)`);
+    verifica(description.length >= 60 && description.length <= 160, `${file}: description di ${description.length} caratteri`);
+    titoli.add(title);
+    descrizioni.add(description);
+    const ordine = [...html.matchAll(/<!-- sezione: (viso|pedicure)\b/g)].map((m) => m[1]).join(",");
+    verifica(ordine === testi.pagine[id].ordine.join(","), `${file}: ordine delle sezioni 3 e 4 «${ordine}»`);
+  }
+  verifica(titoli.size === 3 && descrizioni.size === 3, "title o description ripetuti tra le pagine");
+});
+
+await controllo('una sola immagine con fetchpriority="high" per pagina, ed è la foto 01', () => {
+  for (const [file, id] of PAGINE.filter(([, id]) => id)) {
+    const alte = [...pagina(file).matchAll(/<img\b[^>]*fetchpriority="high"[^>]*>/g)].map((m) => m[0]);
+    verifica(alte.length === 1, `${file}: ${alte.length} immagini con fetchpriority="high"`);
+    verifica(/src="\/img\/cristina-bancone-\d+\.webp"/.test(alte[0]) && !/loading="lazy"/.test(alte[0]), `${file}: la priorità alta non è sulla foto 01 (o è lazy)`);
+    const sorgenti = pagina(file).match(/<div class="apertura-foto">([\s\S]*?)<\/div>/)?.[1] ?? "";
+    verifica(sorgenti.includes('sizes="(min-width: 1024px) 480px, 100vw"'), `${file}: sizes della foto 01`);
+  }
+});
+
+await controllo("JSON-LD valido: JSON corretto, tipi schema.org esistenti, solo proprietà note, nessun campo vuoto o null", () => {
+  const PROPRIETA = {
+    BeautySalon: ["@context", "@type", "name", "image", "telephone", "email", "address", "url", "openingHoursSpecification", "priceRange"],
+    PostalAddress: ["@type", "streetAddress", "postalCode", "addressLocality", "addressRegion", "addressCountry"],
+    OpeningHoursSpecification: ["@type", "dayOfWeek", "opens", "closes"],
+  };
+  const GIORNI = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const visita = (nodo, dove) => {
+    if (nodo === null || nodo === undefined || nodo === "" || (Array.isArray(nodo) && !nodo.length)) throw new Error(`${dove}: vuoto o null`);
+    if (Array.isArray(nodo)) return nodo.forEach((v, i) => visita(v, `${dove}[${i}]`));
+    if (typeof nodo !== "object") return;
+    const tipo = nodo["@type"];
+    verifica(tipo in PROPRIETA, `${dove}: tipo «${tipo}» non previsto`);
+    for (const [k, v] of Object.entries(nodo)) {
+      verifica(PROPRIETA[tipo].includes(k), `${dove}: proprietà «${k}» non prevista per ${tipo}`);
+      visita(v, `${dove}.${k}`);
+    }
+  };
+  for (const [file, id] of PAGINE.filter(([, id]) => id)) {
+    const dati = JSON.parse(jsonLdDi(pagina(file))[0]);
+    verifica(dati["@context"] === "https://schema.org" && dati["@type"] === "BeautySalon", `${file}: @context o @type`);
+    visita(dati, file);
+    verifica(/^\+39\d{9,10}$/.test(dati.telephone), `${file}: telephone non in formato internazionale`);
+    for (const o of dati.openingHoursSpecification ?? []) {
+      verifica(o.dayOfWeek.every((g) => GIORNI.includes(g)) && /^\d{2}:\d{2}$/.test(o.opens) && /^\d{2}:\d{2}$/.test(o.closes), `${file}: orari non validi`);
+    }
+  }
+});
+
+/** Apre una pagina a 390×844 (densità 1) con le opzioni date e restituisce { contesto, pagina }. */
+async function apriMobile(percorso, opzioni = {}) {
+  const { browser, base } = await browserCondiviso();
+  const contesto = await browser.newContext({ viewport: { width: 390, height: 844 }, ...opzioni });
+  const pagina = await contesto.newPage();
+  await pagina.goto(base + percorso, { waitUntil: "networkidle" });
+  return { contesto, pagina };
+}
+
+await controllo("390×844: pulsanti dell'apertura nel primo schermo, elementi cliccabili ≥ 44×44 px, nessuno scroll orizzontale", async () => {
+  const problemi = [];
+  for (const [percorso] of LINK_PAGINE) {
+    const { contesto, pagina } = await apriMobile(percorso);
+    const esito = await pagina.evaluate(() => {
+      const pulsanti = [...document.querySelectorAll("[data-pulsanti-apertura] .pulsante")].map((el) => el.getBoundingClientRect());
+      const visibile = (el) => {
+        const st = getComputedStyle(el);
+        const r = el.getBoundingClientRect();
+        return st.visibility !== "hidden" && st.display !== "none" && r.width > 0 && r.height > 0;
+      };
+      const piccoli = [...document.querySelectorAll("a[href], button, summary, input, select, textarea, [role='button']")]
+        .filter(visibile)
+        .map((el) => ({ el, r: el.getBoundingClientRect() }))
+        .filter(({ r }) => r.width < 44 || r.height < 44)
+        .map(({ el, r }) => `«${(el.textContent || el.getAttribute("aria-label") || el.tagName).trim().slice(0, 30)}» ${Math.round(r.width)}×${Math.round(r.height)}`);
+      return {
+        pulsanti: pulsanti.map((r) => ({ top: r.top, bottom: r.bottom })),
+        piccoli,
+        scrollWidth: document.documentElement.scrollWidth,
+        innerWidth,
+      };
+    });
+    await contesto.close();
+    if (esito.pulsanti.length !== 2) problemi.push(`${percorso}: ${esito.pulsanti.length} pulsanti nell'apertura`);
+    for (const r of esito.pulsanti) if (r.top < 0 || r.bottom > 844) problemi.push(`${percorso}: pulsante fuori dal primo schermo (${Math.round(r.top)}–${Math.round(r.bottom)} px)`);
+    if (esito.piccoli.length) problemi.push(`${percorso}: area di tocco < 44 px: ${esito.piccoli.join(", ")}`);
+    if (esito.scrollWidth > esito.innerWidth) problemi.push(`${percorso}: scroll orizzontale (${esito.scrollWidth} > ${esito.innerWidth})`);
+  }
+  verifica(!problemi.length, problemi.join(" · "));
+});
+
+await controllo("barra contatti: nascosta sull'apertura, compare scorrendo oltre, non copre il footer; senza JS sempre visibile; assente da 768 px", async () => {
+  const problemi = [];
+  const statoBarra = (pagina) =>
+    pagina.evaluate(() => {
+      const barra = document.querySelector("[data-barra-contatti]");
+      const st = getComputedStyle(barra);
+      return { visibile: st.display !== "none" && st.visibility !== "hidden" && Number(st.opacity) > 0.99, top: barra.getBoundingClientRect().top };
+    });
+  for (const [percorso] of LINK_PAGINE) {
+    const { contesto, pagina } = await apriMobile(percorso);
+    await pagina.waitForTimeout(300);
+    if ((await statoBarra(pagina)).visibile) problemi.push(`${percorso}: barra visibile mentre si vedono i pulsanti dell'apertura`);
+    const fineApertura = await pagina.evaluate(() => document.querySelector(".apertura").getBoundingClientRect().bottom + scrollY);
+    await pagina.evaluate((y) => scrollTo(0, y), fineApertura);
+    await pagina.waitForTimeout(450);
+    if (!(await statoBarra(pagina)).visibile) problemi.push(`${percorso}: barra non visibile dopo l'apertura`);
+    await pagina.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+    await pagina.waitForTimeout(450);
+    const barra = await statoBarra(pagina);
+    const fondoFooter = await pagina.evaluate(() => {
+      const figli = [...document.querySelector("footer").querySelectorAll("p, a, li")];
+      return Math.max(...figli.map((el) => el.getBoundingClientRect().bottom));
+    });
+    if (!barra.visibile) problemi.push(`${percorso}: barra non visibile in fondo alla pagina`);
+    if (fondoFooter > barra.top + 0.5) problemi.push(`${percorso}: il footer finisce a ${Math.round(fondoFooter)} px, sotto la barra (${Math.round(barra.top)} px)`);
+    const pulsantiBarra = await pagina.evaluate(() => [...document.querySelectorAll("[data-barra-contatti] .pulsante span")].map((s) => s.textContent));
+    if (pulsantiBarra.join() !== [testi.comuni.barraContatti.chiama, testi.comuni.barraContatti.whatsapp].join()) problemi.push(`${percorso}: pulsanti della barra «${pulsantiBarra.join(", ")}»`);
+    await contesto.close();
+
+    const senzaJs = await apriMobile(percorso, { javaScriptEnabled: false });
+    if (!(await statoBarra(senzaJs.pagina)).visibile) problemi.push(`${percorso}: senza JS la barra non è visibile`);
+    await senzaJs.contesto.close();
+  }
+  const { browser, base } = await browserCondiviso();
+  const largo = await browser.newContext({ viewport: { width: 768, height: 900 } });
+  const p768 = await largo.newPage();
+  await p768.goto(base + "/", { waitUntil: "networkidle" });
+  if (await p768.evaluate(() => getComputedStyle(document.querySelector("[data-barra-contatti]")).display !== "none")) problemi.push("a 768 px la barra è presente");
+  await largo.close();
+  verifica(!problemi.length, problemi.join(" · "));
+});
+
+await controllo("con reducedMotion «reduce» nessun elemento ha transizioni o animazioni di posizione", async () => {
+  const problemi = [];
+  for (const [percorso] of LINK_PAGINE) {
+    const { contesto, pagina } = await apriMobile(percorso, { reducedMotion: "reduce" });
+    await pagina.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+    await pagina.waitForTimeout(300);
+    const trovati = await pagina.evaluate(() => {
+      const posizione = /^(all|transform|translate|rotate|scale|top|right|bottom|left|inset|margin|padding)/;
+      const durata = (v) => v.split(",").map((d) => parseFloat(d) * (d.trim().endsWith("ms") ? 1 : 1000));
+      const uscita = [];
+      for (const el of document.querySelectorAll("*")) {
+        const st = getComputedStyle(el);
+        const proprieta = st.transitionProperty.split(",").map((p) => p.trim());
+        const durate = durata(st.transitionDuration);
+        proprieta.forEach((p, i) => {
+          if (posizione.test(p) && (durate[i % durate.length] || 0) > 0.01) uscita.push(`${el.tagName.toLowerCase()}.${el.className}: transition ${p}`);
+        });
+        if (st.animationName !== "none" && durata(st.animationDuration).some((d) => d > 0.01)) uscita.push(`${el.tagName.toLowerCase()}.${el.className}: animation ${st.animationName}`);
+      }
+      return uscita;
+    });
+    await contesto.close();
+    if (trovati.length) problemi.push(`${percorso}: ${trovati.slice(0, 5).join(", ")}`);
+  }
+  verifica(!problemi.length, problemi.join(" · "));
+});
+
 await controllo("pesi: main.js ≤ 3 KB, JS ≤ 12 KB e CSS ≤ 20 KB compressi, font ≤ 100 KB", () => {
   const somma = (filtro, gz) =>
     elenca(DIST, filtro).reduce((t, f) => t + (gz ? gzipSync(readFileSync(f)).length : statSync(f).size), 0);
@@ -774,5 +953,9 @@ await controllo("pesi: main.js ≤ 3 KB, JS ≤ 12 KB e CSS ≤ 20 KB compressi,
   verifica(existsSync(join(RADICE, "src", "fonts", "OFL-Marcellus.txt")) && existsSync(join(RADICE, "src", "fonts", "OFL-Jost.txt")), "licenze OFL mancanti");
 });
 
+if (sessione) {
+  await sessione.browser.close();
+  sessione.server.close();
+}
 console.log(`\n${superati}/${superati + falliti} controlli superati`);
 process.exit(falliti ? 1 : 0);

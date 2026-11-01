@@ -57,6 +57,15 @@
   --arco-altezza: 12px;
   --arco-opacita: 0.6;
 
+  /* Foto: sfumatura nel sabbia (§5) */
+  --sfumatura-basso-mobile: 72%;   /* da qui in giù la foto sfuma (mobile) */
+  --sfumatura-basso: 86%;          /* da 1024 px, in basso */
+  --sfumatura-lato: 22%;           /* da 1024 px, dal lato del testo */
+
+  /* Barra contatti mobile */
+  --barra-altezza: calc(var(--pulsante-altezza) + 2 * var(--spazio-1));
+  --durata-barra: 200ms;
+
   /* Focus */
   --focus-spessore: 3px;
   --focus-distanza: 3px;

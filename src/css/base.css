@@ -65,6 +65,7 @@ button {
 h1, h2, h3 {
   font-family: var(--font-titoli);
   font-weight: var(--peso-normale);
+  font-synthesis: none; /* Marcellus ha un solo peso e niente corsivo: il browser non li simula */
   text-wrap: balance;
 }
 h1 {
@@ -82,12 +83,14 @@ h3 {
 }
 p {
   max-width: var(--misura-testo);
+  text-wrap: pretty; /* niente parola orfana sull'ultima riga */
 }
 .piccolo {
   font-size: var(--testo-piccolo);
 }
 .payoff {
   font-family: var(--font-titoli);
+  font-synthesis: none;
 }
 .occhiello {
   font-family: var(--font-testo);

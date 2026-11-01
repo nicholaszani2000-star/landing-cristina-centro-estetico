@@ -258,6 +258,16 @@ async function main() {
         salvati.push(schermo);
       }
       await scorriTutta(pagina);
+      if (larghezza < 768 && nome !== "404") {
+        // Fondo pagina con la barra contatti mobile visibile
+        await pagina.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+        await pagina.waitForTimeout(500);
+        const fondo = join(uscita, `${nome}-${larghezza}-fondo.png`);
+        await pagina.screenshot({ path: fondo });
+        salvati.push(fondo);
+        await pagina.evaluate(() => scrollTo(0, 0));
+        await pagina.waitForTimeout(400);
+      }
       const intera = join(uscita, `${nome}-${larghezza}.png`);
       await pagina.screenshot({ path: intera, fullPage: true });
       salvati.push(intera);
