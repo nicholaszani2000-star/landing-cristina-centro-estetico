@@ -1,0 +1,122 @@
+{
+  "_nota": "Generato da studio/esporta-immagini.mjs: non modificare a mano.",
+  "immagini": {
+    "cristina-bancone": {
+      "originale": "foto/01-cristina-bancone.png",
+      "larghezza": 941,
+      "altezza": 1672,
+      "larghezze": [
+        480,
+        720,
+        941
+      ],
+      "formati": [
+        "avif",
+        "webp"
+      ]
+    },
+    "ingresso": {
+      "originale": "foto/02-ingresso.png",
+      "larghezza": 1346,
+      "altezza": 1168,
+      "larghezze": [
+        480,
+        800,
+        1200
+      ],
+      "formati": [
+        "avif",
+        "webp"
+      ]
+    },
+    "cabina-viso": {
+      "originale": "foto/03-cabina-viso.png",
+      "larghezza": 941,
+      "altezza": 1672,
+      "larghezze": [
+        480,
+        720,
+        941
+      ],
+      "formati": [
+        "avif",
+        "webp"
+      ]
+    },
+    "cabina-lettino": {
+      "originale": "foto/04-cabina-lettino.png",
+      "larghezza": 941,
+      "altezza": 1672,
+      "larghezze": [
+        480,
+        720,
+        941
+      ],
+      "formati": [
+        "avif",
+        "webp"
+      ]
+    },
+    "postazione-pedicure": {
+      "originale": "foto/05-postazione-pedicure.png",
+      "larghezza": 941,
+      "altezza": 1672,
+      "larghezze": [
+        480,
+        720,
+        941
+      ],
+      "formati": [
+        "avif",
+        "webp"
+      ]
+    },
+    "listino-stampato": {
+      "originale": "foto/06-listino-stampato.png",
+      "larghezza": 1536,
+      "altezza": 1024,
+      "larghezze": [
+        800,
+        1536
+      ],
+      "formati": [
+        "avif",
+        "webp"
+      ]
+    },
+    "logo": {
+      "originale": "logo/logo-trasparente.png",
+      "larghezza": 624,
+      "altezza": 508,
+      "larghezze": [
+        240,
+        480,
+        624
+      ],
+      "formati": [
+        "webp"
+      ],
+      "ripiego": "logo.png"
+    },
+    "og": {
+      "originale": "condivisione/og-1200x630.jpg",
+      "file": "og.jpg",
+      "larghezza": 1200,
+      "altezza": 630
+    }
+  },
+  "icone": [
+    {
+      "file": "favicon-32.png",
+      "lato": 32
+    },
+    {
+      "file": "favicon-16.png",
+      "lato": 16
+    },
+    {
+      "file": "apple-touch-icon.png",
+      "lato": 180
+    }
+  ]
+}

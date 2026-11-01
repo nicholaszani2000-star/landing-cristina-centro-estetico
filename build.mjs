@@ -13,6 +13,8 @@
 //   {{> parte}}              src/templates/parti/parte.html
 //   {{#se chiave}}…{{altrimenti}}…{{/se}}   ({{#se !chiave}} per la negazione)
 //   {{#ogni lista}}…{{/ogni}}  dentro: {{.}}, {{@indice}}, {{@numero}}, {{#se @ultimo}}
+// Immagini: src/img/ e src/img/immagini.json li genera studio/esporta-immagini.mjs; il <picture> lo scrive
+// l'helper immagine() e il template lo stampa con {{{immagini.nome}}}.
 // Nei testi di content/testi.json i segnaposto {chiave} si riempiono con
 // content/centro.json; se il dato vale null l'intera frase diventa null.
 
@@ -30,6 +32,11 @@ const ICONE = join(TEMPLATES, "icone");
 const NBSP = " ";
 const FASCIA_PREZZO = "€€"; // §4: priceRange del JSON-LD
 const CHIAVI_VOCE = new Set(["nome", "prezzo", "da", "a", "supplemento", "prezzi"]);
+const MANIFESTO = "src/img/immagini.json";
+// Larghezze a schermo del logo (sizes): altezza del token --logo-altezza (64 px, 80 px da 1024 px) e
+// --logo-piede-altezza (56 px) per le proporzioni del logo 624×508.
+const SIZES_LOGO_TESTATA = "(min-width: 1024px) 99px, 79px";
+const SIZES_LOGO_PIEDE = "69px";
 
 export class ErroreBuild extends Error {}
 const errore = (dove, messaggio) => {
@@ -303,7 +310,7 @@ export function ricavaGiorni(testo) {
   return GIORNI_SCHEMA.slice(inizio, fine + 1);
 }
 
-function jsonLd(centro, base, avvisi) {
+function jsonLd(centro, base, immagineAssoluta, avvisi) {
   const dati = {
     "@context": "https://schema.org",
     "@type": "BeautySalon",
@@ -320,7 +327,8 @@ function jsonLd(centro, base, avvisi) {
     },
   };
   if (base) dati.url = `${base}/`;
-  // image: arriva allo Step 2 con le immagini.
+  if (immagineAssoluta) dati.image = immagineAssoluta;
+  else avvisi.push("JSON-LD senza image: serve un URL assoluto");
   const giorni = ricavaGiorni(centro.orari.giorni);
   if (giorni) {
     dati.openingHoursSpecification = [
@@ -331,6 +339,44 @@ function jsonLd(centro, base, avvisi) {
   }
   dati.priceRange = FASCIA_PREZZO;
   return JSON.stringify(dati).replace(/</g, "\\u003c");
+}
+
+// ---------------------------------------------------------------- immagini
+
+/** <picture> con <source> AVIF e WebP, srcset dalle larghezze esportate, <img> con width/height
+ *  dell'originale e loading/decoding/fetchpriority come in §9. Restituisce HTML già sicuro. */
+export function immagine(manifesto, nome, alt, sizes, { priorita = false } = {}) {
+  const dove = `immagine «${nome}»`;
+  const voce = manifesto?.immagini?.[nome];
+  if (!voce?.larghezze?.length) errore(dove, `non esiste in ${MANIFESTO} (esegui node studio/esporta-immagini.mjs)`);
+  if (typeof alt !== "string" || !alt.trim()) errore(dove, "alt mancante");
+  if (typeof sizes !== "string" || !sizes.trim()) errore(dove, "sizes mancante");
+  if (!voce.formati.includes("webp")) errore(dove, "manca la versione WebP");
+  const url = (w, formato) => `/img/${nome}-${w}.${formato}`;
+  const esiste = (u) => existsSync(join(SRC, ...u.split("/").filter(Boolean)));
+  for (const formato of voce.formati) {
+    for (const w of voce.larghezze) {
+      if (!esiste(url(w, formato))) errore(dove, `file mancante: src${url(w, formato)}`);
+      if (w > voce.larghezza) errore(dove, `${w} px supera l'originale (${voce.larghezza} px)`);
+    }
+  }
+  const sorgenti = voce.formati.map(
+    (formato) => `<source type="image/${formato}" srcset="${voce.larghezze.map((w) => `${url(w, formato)} ${w}w`).join(", ")}" sizes="${escapeHtml(sizes)}">`,
+  );
+  const ripiego = voce.ripiego ? `/img/${voce.ripiego}` : url(voce.larghezze[Math.min(1, voce.larghezze.length - 1)], "webp");
+  if (!esiste(ripiego)) errore(dove, `file mancante: src${ripiego}`);
+  const caricamento = priorita ? 'fetchpriority="high"' : 'loading="lazy" decoding="async"';
+  return `<picture>${sorgenti.join("")}<img src="${ripiego}" alt="${escapeHtml(alt)}" width="${voce.larghezza}" height="${voce.altezza}" ${caricamento}></picture>`;
+}
+
+/** Ogni /img/… citato in src, href o srcset deve esistere in dist/. */
+function controllaImmagini(html, dist, dove) {
+  const citati = [];
+  for (const m of html.matchAll(/\s(?:src|href|content)="(\/img\/[^"?#]+)"/g)) citati.push(m[1]);
+  for (const m of html.matchAll(/\ssrcset="([^"]*)"/g)) citati.push(...m[1].split(",").map((parte) => parte.trim().split(/\s+/)[0]));
+  for (const u of citati) {
+    if (u.startsWith("/img/") && !existsSync(join(dist, ...u.split("/").filter(Boolean)))) errore(dove, `immagine inesistente: ${u}`);
+  }
 }
 
 // ---------------------------------------------------------------- risorse
@@ -360,7 +406,10 @@ async function copiaRisorse(dist) {
     hash.set(url, hash8(contenuto));
   };
   for (const cartella of ["fonts", "img", "js"]) {
-    for (const file of await elencaFile(join(SRC, cartella))) await scrivi(file, await readFile(file));
+    for (const file of await elencaFile(join(SRC, cartella))) {
+      if (file === join(RADICE, MANIFESTO)) continue; // il manifesto serve alla build, non al sito
+      await scrivi(file, await readFile(file));
+    }
   }
   for (const file of await elencaFile(join(SRC, "css"))) {
     const css = (await readFile(file, "utf8")).replace(/url\(\s*(['"]?)([^'")]+)\1\s*\)/g, (intero, virgolette, url) => {
@@ -467,6 +516,16 @@ async function main() {
   // La riga info va a capo solo tra un segmento e l'altro («Su appuntamento · dal lunedì al sabato · …»).
   t.apertura.rigaInfoSegmenti = t.apertura.rigaInfo.split(" · ");
   const base = urlBase(centro, avvisi);
+  if (!existsSync(join(RADICE, MANIFESTO))) errore(MANIFESTO, "manca: esegui node studio/esporta-immagini.mjs");
+  const manifesto = await leggiJson(MANIFESTO);
+  const og = manifesto.immagini.og;
+  if (!og?.file || !existsSync(join(SRC, "img", og.file))) errore(MANIFESTO, "immagine di condivisione mancante");
+  const condivisione = {
+    ogImage: base ? `${base}/img/${og.file}` : `/img/${og.file}`,
+    ogImageWidth: og.larghezza,
+    ogImageHeight: og.altezza,
+    ogImageAlt: t.condivisione.ogImageAlt,
+  };
 
   await rm(dist, { recursive: true, force: true });
   await mkdir(dist, { recursive: true });
@@ -478,6 +537,10 @@ async function main() {
     t,
     anno: String(anno),
     icone: await caricaIcone(),
+    immagini: {
+      logoTestata: immagine(manifesto, "logo", t.header.logoAlt, SIZES_LOGO_TESTATA),
+      logoPiede: immagine(manifesto, "logo", t.footer.logoAlt, SIZES_LOGO_PIEDE),
+    },
     contatti: {
       telefono: centro.telefono.replace(/ /g, NBSP), // spazi non separabili: il numero non va a capo
       email: centro.email,
@@ -495,10 +558,11 @@ async function main() {
     },
   };
   const tema = coloreTema();
-  const ld = jsonLd(centro, base, avvisi);
+  const ld = jsonLd(centro, base, base ? condivisione.ogImage : null, avvisi);
 
   const scrivi = async (file, html) => {
     controllaUscita(html, file);
+    controllaImmagini(html, dist, file);
     const destinazione = join(dist, file);
     await mkdir(dirname(destinazione), { recursive: true });
     const pulito = html.replace(/[ \t]+$/gm, "").replace(/\n{3,}/g, "\n\n");
@@ -525,7 +589,7 @@ async function main() {
         description: p.description,
         canonical: base ? base + p.percorso : null,
         robots: null,
-        ogImage: null, // Step 2
+        ...condivisione,
         themeColor: tema,
       },
       jsonld: ld,
@@ -538,7 +602,7 @@ async function main() {
   const contesto404 = {
     ...comune,
     link: { ...comune.link, whatsapp: comune.link.whatsappGenerale },
-    meta: { title: t.pagina404.title, description: null, canonical: null, robots: "noindex", ogImage: null, themeColor: tema },
+    meta: { title: t.pagina404.title, description: null, canonical: null, robots: "noindex", ...condivisione, themeColor: tema },
     jsonld: null,
   };
   await scrivi("404.html", motore.rendi(await readFile(join(TEMPLATES, "404.html"), "utf8"), contesto404, "src/templates/404.html"));

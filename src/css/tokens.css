@@ -24,7 +24,6 @@
   --testo-base: 1.0625rem;   /* 17 px */
   --testo-piccolo: 0.875rem;
   --testo-occhiello: 0.8125rem;
-  --testo-logo: 1.75rem;
   --interlinea-h1: 1.1;
   --interlinea-h2: 1.15;
   --interlinea-h3: 1.25;
@@ -52,7 +51,8 @@
   --pulsante-altezza: 3.25rem; /* 52 px */
   --bordo-pulsante: 1.5px;
   --area-tocco: 2.75rem;       /* 44 px */
-  --logo-altezza: 4rem;        /* 64 px su mobile, 80 px da 1024 px */
+  --logo-altezza: 4rem;        /* 64 px su mobile, 80 px da 1024 px: sotto, la scritta MIGLIORE non si legge */
+  --logo-piede-altezza: 3.5rem; /* 56 px */
   --arco-larghezza: 48px;
   --arco-altezza: 12px;
   --arco-opacita: 0.6;

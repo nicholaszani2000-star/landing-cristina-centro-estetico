@@ -2,6 +2,7 @@
 // Uso: node studio/controlli.mjs   → «✔ nome» o «✘ nome: motivo»; codice di uscita 1 se qualcosa fallisce.
 
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve, sep } from "node:path";
@@ -16,6 +17,9 @@ const json = (p) => JSON.parse(leggi(p));
 const rel = (p) => relative(RADICE, p).split(sep).join("/");
 
 const build = await import(pathToFileURL(join(RADICE, "build.mjs")).href);
+const { default: sharp } = await import("sharp").catch(() => ({ default: null })); // da studio/node_modules
+const ORIGINALI = join(STUDIO, "originali");
+const IMG = join(RADICE, "src", "img");
 const centro = json("content/centro.json");
 const testi = json("content/testi.json");
 
@@ -182,7 +186,7 @@ const regexVietata = (voce) => {
 
 // ---------------------------------------------------------------- controlli
 
-console.log("Controlli automatici · Step 1\n");
+console.log("Controlli automatici · Step 2\n");
 
 await controllo("build eseguita con codice 0", () => {
   const r = spawnSync(process.execPath, ["build.mjs"], { cwd: RADICE, encoding: "utf8", env: { ...process.env, URL: "" } });
@@ -211,7 +215,7 @@ await controllo("senza URL: canonical, og:url e sitemap.xml omessi", () => {
   verifica(!/Sitemap:/.test(robots), "robots.txt cita una sitemap che non esiste");
 });
 
-await controllo(`con URL=${URL_PROVA} node build.mjs: canonical, og:url e sitemap.xml usano quell'indirizzo`, () => {
+await controllo(`con URL=${URL_PROVA} node build.mjs: canonical, og:url, og:image e sitemap.xml usano quell'indirizzo`, () => {
   // Stessa build con la variabile URL, ma in una cartella temporanea: dist/ resta la versione senza URL.
   const tmp = mkdtempSync(join(tmpdir(), "migliore-build-"));
   try {
@@ -223,6 +227,8 @@ await controllo(`con URL=${URL_PROVA} node build.mjs: canonical, og:url e sitema
       verifica(html.includes(`<link rel="canonical" href="${indirizzo}">`), `${file}: canonical diverso da ${indirizzo}`);
       verifica(html.includes(`<meta property="og:url" content="${indirizzo}">`), `${file}: og:url diverso da ${indirizzo}`);
       verifica(JSON.parse(jsonLdDi(html)[0]).url === `${URL_PROVA}/`, `${file}: url del JSON-LD`);
+      verifica(html.includes(`<meta property="og:image" content="${URL_PROVA}/img/og.jpg">`), `${file}: og:image non assoluto`);
+      verifica(JSON.parse(jsonLdDi(html)[0]).image === `${URL_PROVA}/img/og.jpg`, `${file}: image del JSON-LD`);
     }
     const sitemap = readFileSync(join(tmp, "sitemap.xml"), "utf8");
     const loc = [...sitemap.matchAll(/<loc>([^<]*)<\/loc>/g)].map((m) => m[1]);
@@ -551,6 +557,152 @@ await controllo("pagina 404 come in §8: title, noindex, H1, testo, link e pulsa
   const pulsanti = [...main.matchAll(/<a class="pulsante[^"]*" href="([^"]*)">[\s\S]*?<span>([^<]*)<\/span><\/a>/g)];
   verifica(pulsanti.map((m) => m[2]).join() === ATTESI_404.pulsanti.join(), `pulsanti: ${pulsanti.map((m) => m[2]).join(", ")}`);
   verifica(pulsanti[0][1] === `tel:${centro.telefonoE164}` && pulsanti[1][1].startsWith(`https://wa.me/${centro.whatsappNumero}?text=`), "destinazioni dei pulsanti");
+});
+
+// ---------------------------------------------------------------- Step 2: immagini e logo
+
+const manifesto = JSON.parse(leggi("src/img/immagini.json"));
+const KB = 1024;
+/** Tutti i file esportati: [{ nome, file, larghezza (attesa), formato }] dal manifesto. */
+const fileEsportati = () =>
+  Object.entries(manifesto.immagini).flatMap(([nome, v]) =>
+    v.larghezze
+      ? [...v.formati.flatMap((f) => v.larghezze.map((w) => ({ nome, file: `${nome}-${w}.${f}`, larghezza: w }))), ...(v.ripiego ? [{ nome, file: v.ripiego }] : [])]
+      : [{ nome, file: v.file }],
+  );
+function impronteLeggimi() {
+  const testo = readFileSync(join(ORIGINALI, "LEGGIMI.txt"), "utf8");
+  return Object.fromEntries([...testo.matchAll(/^(\S+\.(?:png|jpg))\n.*\n\s+sha256 ([0-9a-f]{64})/gm)].map((m) => [m[1], m[2]]));
+}
+const sha = (file) => createHash("sha256").update(readFileSync(file)).digest("hex");
+
+await controllo("originali intatti: le impronte SHA-256 di studio/originali/ coincidono con LEGGIMI.txt", () => {
+  const attese = impronteLeggimi();
+  verifica(Object.keys(attese).length === 10, `${Object.keys(attese).length} impronte in LEGGIMI.txt invece di 10`);
+  const diverse = Object.entries(attese).filter(([f, h]) => !existsSync(join(ORIGINALI, f)) || sha(join(ORIGINALI, f)) !== h).map(([f]) => f);
+  verifica(!diverse.length, diverse.join(", "));
+});
+
+await controllo("ogni immagine citata in src e srcset esiste (src/img e dist/img); src/img contiene solo file del manifesto", () => {
+  const mancanti = [];
+  for (const file of elenca(DIST, (p) => p.endsWith(".html"))) {
+    const html = readFileSync(file, "utf8");
+    const citati = [
+      ...[...html.matchAll(/\s(?:src|href|content)="(\/img\/[^"]+)"/g)].map((m) => m[1]),
+      ...[...html.matchAll(/\ssrcset="([^"]*)"/g)].flatMap((m) => m[1].split(",").map((p) => p.trim().split(/\s+/)[0])),
+    ];
+    verifica(citati.length > 0, `${rel(file)}: nessuna immagine citata`);
+    for (const u of citati) {
+      if (!existsSync(join(DIST, u))) mancanti.push(`${rel(file)}: dist${u}`);
+      if (!existsSync(join(RADICE, "src", u))) mancanti.push(`${rel(file)}: src${u}`);
+    }
+  }
+  verifica(!mancanti.length, mancanti.join(", "));
+  const attesi = new Set([...fileEsportati().map((e) => e.file), ...manifesto.icone.map((i) => i.file), "immagini.json"]);
+  const estranei = readdirSync(IMG).filter((f) => !attesi.has(f));
+  const assenti = [...attesi].filter((f) => !existsSync(join(IMG, f)));
+  verifica(!estranei.length && !assenti.length, `estranei: ${estranei.join(", ") || "-"} · mancanti: ${assenti.join(", ") || "-"}`);
+  verifica(!existsSync(join(DIST, "img", "immagini.json")), "il manifesto non deve finire in dist/");
+});
+
+await controllo("nessuna larghezza oltre l'originale e nessun ritaglio (proporzioni dell'originale)", async () => {
+  verifica(sharp, "sharp non installato: npm install --prefix studio");
+  const problemi = [];
+  for (const [nome, v] of Object.entries(manifesto.immagini)) {
+    const o = await sharp(join(ORIGINALI, v.originale)).metadata();
+    verifica(o.width === v.larghezza && o.height === v.altezza, `${nome}: misure del manifesto diverse dall'originale`);
+    for (const e of fileEsportati().filter((e) => e.nome === nome)) {
+      const m = await sharp(join(IMG, e.file)).metadata();
+      if (m.width > o.width) problemi.push(`${e.file}: ${m.width} px > ${o.width} px`);
+      if (e.larghezza && m.width !== e.larghezza) problemi.push(`${e.file}: largo ${m.width} invece di ${e.larghezza}`);
+      if (Math.abs(m.height - (m.width * o.height) / o.width) > 1) problemi.push(`${e.file}: ${m.width}×${m.height} non ha le proporzioni di ${o.width}×${o.height}`);
+    }
+  }
+  const farfalla = await sharp(join(ORIGINALI, "logo", "farfalla.png")).metadata();
+  for (const { file, lato } of manifesto.icone) {
+    const m = await sharp(join(IMG, file)).metadata();
+    if (m.width !== lato || m.height !== lato || lato > farfalla.width) problemi.push(`${file}: ${m.width}×${m.height}`);
+  }
+  verifica(!problemi.length, problemi.join(", "));
+});
+
+await controllo("colori invariati: media RGB di ogni file entro ±2 dall'originale; og.jpg identica byte per byte", async () => {
+  verifica(sharp, "sharp non installato: npm install --prefix studio");
+  const statistiche = async (file) => {
+    if (!(await sharp(file).metadata()).hasAlpha) return sharp(file).stats();
+    return sharp(await sharp(file).flatten({ background: "#F4DBCA" }).png().toBuffer()).stats();
+  };
+  const problemi = [];
+  const coppie = [
+    ...fileEsportati().map((e) => [e.file, manifesto.immagini[e.nome].originale]),
+    ...manifesto.icone.map((i) => [i.file, "logo/farfalla.png"]),
+  ];
+  for (const [file, originale] of coppie) {
+    const [a, b] = await Promise.all([statistiche(join(ORIGINALI, originale)), statistiche(join(IMG, file))]);
+    const delta = [0, 1, 2].map((c) => Math.abs(b.channels[c].mean - a.channels[c].mean));
+    if (Math.max(...delta) > 2) problemi.push(`${file}: Δ ${delta.map((d) => d.toFixed(1)).join("/")}`);
+  }
+  verifica(!problemi.length, problemi.join(", "));
+  verifica(sha(join(IMG, manifesto.immagini.og.file)) === sha(join(ORIGINALI, manifesto.immagini.og.originale)), "og.jpg diversa dall'originale");
+});
+
+await controllo("pesi entro §9: foto 01 a 720 ≤ 120 KB, altre foto ≤ 160 KB, 06 a 1536 ≤ 300 KB, logo scaricato ≤ 40 KB", () => {
+  const problemi = [];
+  const peso = (f) => statSync(join(IMG, f)).size;
+  for (const [nome, v] of Object.entries(manifesto.immagini)) {
+    if (!v.formati?.includes("avif")) continue; // solo le foto
+    for (const formato of v.formati) {
+      for (const w of v.larghezze) {
+        const f = `${nome}-${w}.${formato}`;
+        const limite = nome === "cristina-bancone" && w === 720 ? 120 : nome === "listino-stampato" && w === 1536 ? 300 : 160;
+        if (peso(f) > limite * KB) problemi.push(`${f}: ${(peso(f) / KB).toFixed(1)} KB > ${limite} KB`);
+      }
+    }
+  }
+  // Logo: il file che il browser sceglie dal srcset per le misure a schermo (sizes) e densità fino a 3× su telefono, 2× su desktop.
+  const logo = manifesto.immagini.logo;
+  for (const [file, misure] of [["index.html", [[79, 3], [99, 2]]], ["index.html", [[69, 3]]]]) {
+    verifica(pagina(file).includes(`sizes="(min-width: 1024px) 99px, 79px"`) && pagina(file).includes('sizes="69px"'), "sizes del logo cambiati: aggiorna questo controllo");
+    for (const [larghezzaCss, densita] of misure) {
+      const w = logo.larghezze.find((x) => x >= larghezzaCss * densita) ?? Math.max(...logo.larghezze);
+      const f = `logo-${w}.webp`;
+      if (peso(f) > 40 * KB) problemi.push(`${f} (scelto a ${larghezzaCss} px × ${densita}): ${(peso(f) / KB).toFixed(1)} KB > 40 KB`);
+    }
+  }
+  verifica(!problemi.length, problemi.join(", "));
+});
+
+await controllo("ogni <img> ha alt, width e height; <picture> con AVIF/WebP e loading come in §9", () => {
+  const problemi = [];
+  for (const [file] of PAGINE) {
+    const html = pagina(file);
+    for (const m of html.matchAll(/<img\b[^>]*>/g)) {
+      const tag = m[0];
+      if (!/\salt="[^"]+"/.test(tag)) problemi.push(`${file}: <img> senza alt`);
+      if (!/\swidth="\d+"/.test(tag) || !/\sheight="\d+"/.test(tag)) problemi.push(`${file}: <img> senza width/height`);
+      if (!/fetchpriority="high"/.test(tag) && !(/loading="lazy"/.test(tag) && /decoding="async"/.test(tag))) problemi.push(`${file}: <img> senza loading="lazy" decoding="async"`);
+    }
+    for (const m of html.matchAll(/<picture>([\s\S]*?)<\/picture>/g)) {
+      if (!/<source type="image\/webp" srcset="[^"]+" sizes="[^"]+">/.test(m[1])) problemi.push(`${file}: <picture> senza <source> WebP con sizes`);
+    }
+    const logo = html.match(/<a class="testata-logo"[\s\S]*?<\/a>/)?.[0] ?? "";
+    if (!logo.includes('alt="Migliore – Estetica Avanzata"')) problemi.push(`${file}: logo dell'header senza alt «Migliore – Estetica Avanzata»`);
+    if (!/<footer[\s\S]*<picture>[\s\S]*alt="Migliore – Estetica Avanzata"/.test(html)) problemi.push(`${file}: logo del footer mancante`);
+  }
+  verifica(!problemi.length, problemi.join(", "));
+});
+
+await controllo("favicon, apple-touch-icon e og:image (con misure e alt) nella <head> di ogni pagina", () => {
+  for (const [file] of PAGINE) {
+    const testa = pagina(file).match(/<head>[\s\S]*?<\/head>/)[0];
+    verifica(testa.includes('<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">'), `${file}: favicon 32`);
+    verifica(testa.includes('<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">'), `${file}: favicon 16`);
+    verifica(testa.includes('<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">'), `${file}: apple-touch-icon`);
+    verifica(!testa.includes('href="data:,"'), `${file}: è rimasto il segnaposto della favicon`);
+    verifica(/<meta property="og:image" content="[^"]*\/img\/og\.jpg">/.test(testa), `${file}: og:image`);
+    verifica(testa.includes('<meta property="og:image:width" content="1200">') && testa.includes('<meta property="og:image:height" content="630">'), `${file}: og:image:width/height`);
+    verifica(/<meta property="og:image:alt" content="[^"]+">/.test(testa), `${file}: og:image:alt`);
+  }
 });
 
 await controllo("pesi: main.js ≤ 3 KB, JS ≤ 12 KB e CSS ≤ 20 KB compressi, font ≤ 100 KB", () => {

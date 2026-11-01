@@ -14,12 +14,11 @@
 .testata-logo {
   display: inline-flex;
   align-items: center;
-  min-height: var(--area-tocco);
-  font-family: var(--font-titoli);
-  font-size: var(--testo-logo);
-  line-height: 1;
-  color: var(--inchiostro);
-  text-decoration: none;
+  flex: none;
+}
+.testata-logo img {
+  width: auto;
+  height: var(--logo-altezza);
 }
 .testata-chiama {
   display: inline-flex;
@@ -108,13 +107,10 @@
 }
 .piede-logo {
   display: inline-flex;
-  align-items: center;
-  min-height: var(--area-tocco);
-  font-family: var(--font-titoli);
-  font-size: 1.375rem;
-  line-height: 1;
-  color: var(--inchiostro);
-  text-decoration: none;
+}
+.piede-logo img {
+  width: auto;
+  height: var(--logo-piede-altezza);
 }
 .piede-dati {
   display: grid;

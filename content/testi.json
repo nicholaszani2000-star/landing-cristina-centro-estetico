@@ -2,9 +2,11 @@
   "_nota": "Tutti i testi del sito. I segnaposto tra graffe, per esempio {telefono} o {orari.giorni}, si riempiono in build con i dati di content/centro.json; se il dato è null la frase non compare. [data] nel risultato del codice sconto lo riempie il JavaScript.",
   "comuni": {
     "header": {
-      "logoEtichetta": "{nome}",
-      "chiama": "Chiama",
-      "numero": "{telefono}"
+      "logoAlt": "{nome}",
+      "chiama": "Chiama"
+    },
+    "condivisione": {
+      "ogImageAlt": "Logo di {nome} e {titolare.completo} al bancone del centro"
     },
     "apertura": {
       "pulsanteChiama": "Chiama",
@@ -100,13 +102,11 @@
       "whatsapp": "WhatsApp"
     },
     "footer": {
-      "logoEtichetta": "{nome}",
+      "logoAlt": "{nome}",
       "legale": "{legale.denominazione} · P.IVA {legale.partitaIva}",
       "rea": "Registro Imprese di {legale.registroImprese} · REA {legale.rea}",
       "sedeLegale": "Sede legale: {legale.sedeLegale}",
       "indirizzo": "{indirizzo.completo}",
-      "telefono": "{telefono}",
-      "email": "{email}",
       "copyright": "© {anno} {nome}",
       "instagram": "Instagram",
       "facebook": "Facebook",
