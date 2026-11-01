@@ -37,6 +37,9 @@ const MANIFESTO = "src/img/immagini.json";
 // --logo-piede-altezza (56 px) per le proporzioni del logo 624×508.
 const SIZES_LOGO_TESTATA = "(min-width: 1024px) 99px, 79px";
 const SIZES_LOGO_PIEDE = "69px";
+// Foto delle sezioni (03 viso, poi 04 e 05): a tutta larghezza fino a 767 px, cornice di 520 px
+// tra 768 e 1023 px, colonna di 5/12 (~440 px) da 1024 px.
+const SIZES_FOTO_SEZIONE = "(min-width: 1024px) 440px, (min-width: 768px) 520px, 100vw";
 // Foto 01 dell'apertura: a tutta larghezza fino a 767 px, cornice di 520 px tra 768 e 1023 px,
 // colonna destra (~480 px) da 1024 px.
 const SIZES_FOTO_APERTURA = "(min-width: 1024px) 480px, (min-width: 768px) 520px, 100vw";
@@ -98,6 +101,69 @@ function componiTutto(valore, dati, dove) {
     return uscita;
   }
   return valore;
+}
+
+// ---------------------------------------------------------------- sezione viso
+
+const NUMERI = { una: 1, uno: 1, due: 2, tre: 3, quattro: 4, cinque: 5, sei: 6 };
+
+/** Al massimo n frasi, prese così come sono (si accorcia, non si aggiunge nulla). */
+export function limitaFrasi(testo, n) {
+  const frasi = testo.match(/[^.!?]+[.!?]+(?=\s|$)/g) ?? [testo];
+  return frasi.length <= n ? testo : frasi.slice(0, n).join("").trim();
+}
+
+/** «… in tre fasi: A, B e C. Seguito» → { prima: "… in tre fasi:", fasi: [A, B, C], dopo: "Seguito" }.
+ *  Le fasi restano parole del testo originale; con più di 3 fasi o senza elenco restituisce null. */
+export function estraiFasi(testo) {
+  const m = testo.match(/^([\s\S]*?\bin (\w+) fasi:)\s*([^.]+)\.(?:\s+([\s\S]+))?$/);
+  if (!m) return null;
+  const n = NUMERI[m[2].toLowerCase()] ?? Number(m[2]);
+  if (!Number.isInteger(n) || n < 2 || n > 3) return null;
+  const elenco = m[3];
+  const separatori = [...elenco.matchAll(/, | e /g)].slice(0, n - 1);
+  if (separatori.length < n - 1) return null;
+  const fasi = [];
+  let da = 0;
+  for (const sep of separatori) {
+    fasi.push(elenco.slice(da, sep.index).trim());
+    da = sep.index + sep[0].length;
+  }
+  fasi.push(elenco.slice(da).trim());
+  return { prima: m[1].trim(), fasi, dopo: m[4]?.trim() || null };
+}
+
+/** Voci della sezione viso: nomi presi da listino.json, la voce in evidenza per prima, descrizioni dai
+ *  dettagli (solo per nomi che coincidono con il listino), fasi della voce in evidenza in elenco. */
+export function sezioneViso({ listino, centro, dettagli }) {
+  const dove = "content/centro.json › trattamenti.viso";
+  const avvisi = [];
+  const viso = centro.trattamenti.viso;
+  const delListino = new Map(listino.categorie.flatMap((c) => c.voci.map((v) => [v.nome, v])));
+  if (!Array.isArray(viso.voci) || viso.voci.length === 0) errore(dove, "«voci» deve elencare le voci viso del listino");
+  for (const nome of viso.voci) if (!delListino.has(nome)) errore(dove, `la voce «${nome}» non esiste in content/listino.json`);
+  if (viso.inEvidenza !== null && !viso.voci.includes(viso.inEvidenza)) errore(dove, `inEvidenza «${viso.inEvidenza}» non è tra le voci`);
+  const mappa = dettagli ?? {};
+  for (const nome of Object.keys(mappa)) {
+    if (!viso.voci.includes(nome)) avvisi.push(`dettaglio viso ignorato: «${nome}» non coincide con una voce del listino`);
+  }
+  const ordine = viso.inEvidenza ? [viso.inEvidenza, ...viso.voci.filter((n) => n !== viso.inEvidenza)] : viso.voci;
+  const voci = ordine.map((nome) => {
+    const inEvidenza = nome === viso.inEvidenza;
+    const intero = typeof mappa[nome] === "string" && mappa[nome].trim() ? mappa[nome].trim() : null;
+    const breve = intero ? limitaFrasi(intero, inEvidenza ? 3 : 2) : null;
+    if (breve !== intero) avvisi.push(`descrizione di «${nome}» accorciata a ${inEvidenza ? 3 : 2} frasi`);
+    const fasi = inEvidenza && breve ? estraiFasi(breve) : null;
+    return {
+      nome: delListino.get(nome).nome,
+      inEvidenza,
+      descrizione: fasi ? fasi.prima : breve,
+      fasi: fasi ? fasi.fasi : null,
+      seguito: fasi ? fasi.dopo : null,
+    };
+  });
+  const cabina = [viso.macchinari, viso.prodotti].filter((v) => typeof v === "string" && v.trim()).join(", ") || null;
+  return { voci, cabina, avvisi };
 }
 
 // ---------------------------------------------------------------- prezzi
@@ -524,7 +590,12 @@ async function main() {
   const { id: categorie, voci } = validaListino(listino);
 
   const anno = new Date().getFullYear();
-  const t = componiTutto(testi.comuni, { ...centro, anno }, "content/testi.json › comuni");
+  // {cabina}: macchinari e prodotti indicati in centro.json (null se mancano entrambi: la riga non compare)
+  const cabina = sezioneViso({ listino, centro, dettagli: null }).cabina;
+  const datiTesti = { ...centro, anno, cabina };
+  const t = componiTutto(testi.comuni, datiTesti, "content/testi.json › comuni");
+  const viso = sezioneViso({ listino, centro, dettagli: t.viso.dettagli });
+  avvisi.push(...viso.avvisi);
   // La riga info va a capo solo tra un segmento e l'altro («Su appuntamento · dal lunedì al sabato · …»).
   t.apertura.rigaInfoSegmenti = t.apertura.rigaInfo.split(" · ");
   const base = urlBase(centro, avvisi);
@@ -553,6 +624,7 @@ async function main() {
       logoTestata: immagine(manifesto, "logo", t.header.logoAlt, SIZES_LOGO_TESTATA),
       logoPiede: immagine(manifesto, "logo", t.footer.logoAlt, SIZES_LOGO_PIEDE),
       fotoApertura: immagine(manifesto, "cristina-bancone", t.apertura.altFoto, SIZES_FOTO_APERTURA, { priorita: true }),
+      fotoViso: immagine(manifesto, "cabina-viso", t.viso.altFoto, SIZES_FOTO_SEZIONE),
     },
     contatti: {
       telefono: centro.telefono.replace(/ /g, NBSP), // spazi non separabili: il numero non va a capo
@@ -560,11 +632,14 @@ async function main() {
       indirizzo: centro.indirizzo.completo,
     },
     banner: { attivo: Boolean(centro.integrazioni.ga4 || centro.integrazioni.pixelMeta) },
+    viso: { voci: viso.voci },
     link: {
       home: "/",
       tel: `tel:${centro.telefonoE164}`,
       email: `mailto:${centro.email}`,
       whatsappGenerale: waLink(centro.whatsappNumero, testi.whatsapp.generale),
+      whatsappViso: waLink(centro.whatsappNumero, testi.whatsapp.viso),
+      listino: "#listino",
       maps: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(centro.indirizzo.completo)}`,
       privacy: "/privacy/",
       cookie: "/cookie/",
@@ -586,7 +661,7 @@ async function main() {
   const generate = [];
   for (const [id, grezza] of Object.entries(testi.pagine)) {
     const dove = `content/testi.json › pagine.${id}`;
-    const p = componiTutto(grezza, { ...centro, anno }, dove);
+    const p = componiTutto(grezza, datiTesti, dove);
     if (!/^\/([\w-]+\/)?$/.test(p.percorso)) errore(dove, `percorso non valido: «${p.percorso}»`);
     if ([...p.ordine].sort().join() !== "pedicure,viso") errore(dove, "«ordine» deve contenere viso e pedicure, una volta ciascuno");
     if (!(p.whatsapp in testi.whatsapp)) errore(dove, `testo WhatsApp «${p.whatsapp}» inesistente`);

@@ -1,4 +1,4 @@
-/* sezioni.css — una parte per sezione (CLAUDE.md §6). Per ora: header, apertura, barra contatti mobile, footer, 404. */
+/* sezioni.css — una parte per sezione (CLAUDE.md §6). Per ora: header, apertura, viso, barra contatti mobile, footer, 404. */
 
 /* 1. Header: logo a sinistra, «Chiama» a destra. Non fisso. */
 .testata {
@@ -93,8 +93,8 @@
 .apertura-foto img {
   width: 100%;
   height: auto;
-  -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso-mobile), transparent);
-  mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso-mobile), transparent);
+  -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+  mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
 }
 @media (max-width: 1023.98px) {
   .apertura .pulsanti > .pulsante {
@@ -106,8 +106,8 @@
 @media (min-width: 768px) {
   .apertura-foto {
     aspect-ratio: 3 / 4;
-    -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
-    mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+    -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso-dettaglio), transparent);
+    mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso-dettaglio), transparent);
   }
   .apertura-foto picture {
     height: 100%;
@@ -160,6 +160,170 @@
 @supports not ((mask-image: none) or (-webkit-mask-image: none)) {
   @media (max-width: 767.98px) {
     .apertura-foto {
+      margin-inline: 0;
+    }
+  }
+}
+
+/* 3. Viso (quarta su /pedicure/): foto 03, testo, voci viso dal listino senza prezzi, link ai prezzi,
+   pulsante WhatsApp. Fino a 767 px foto intera che sfuma in basso; tra 768 e 1023 px cornice 4:5 di
+   520 px al massimo; da 1024 px colonne 5/7, foto a sinistra in cornice 4:5 che sfuma a destra. */
+.viso-griglia {
+  display: grid;
+  gap: var(--spazio-4);
+}
+.viso-foto {
+  margin-inline: calc(-1 * var(--margine-laterale));
+}
+.viso-foto picture {
+  display: block;
+}
+.viso-foto img {
+  width: 100%;
+  height: auto;
+  -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+  mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+}
+.viso-testo,
+.viso-intro {
+  display: grid;
+  gap: var(--spazio-2);
+  align-content: start;
+}
+.viso-intro h2 {
+  margin-bottom: var(--spazio-1);
+}
+.viso-voci {
+  margin: var(--spazio-2) 0 0;
+  padding: 0;
+  list-style-type: "\200B"; /* niente pallino; con list-style: none Safari non annuncia più la lista */
+  border-top: 1px solid var(--linea);
+}
+.viso-voce {
+  display: grid;
+  gap: var(--spazio-1);
+  padding-block: var(--spazio-3);
+  border-bottom: 1px solid var(--linea);
+}
+.viso-voce-nome {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spazio-1);
+  font-family: var(--font-testo);
+  font-size: 1.125rem;
+  font-weight: var(--peso-medio);
+  line-height: 1.35;
+}
+.etichetta {
+  display: inline-block;
+  padding: 0.2rem 0.7rem;
+  border-radius: var(--raggio-pillola);
+  background: var(--sabbia-profonda);
+  color: var(--accento);
+  font-size: 0.75rem;
+  font-weight: var(--peso-medio);
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+.viso-descrizione {
+  color: var(--inchiostro-tenue);
+}
+.viso-descrizione::first-letter {
+  text-transform: uppercase; /* il testo dei dettagli resta com'è: solo la prima lettera a vista */
+}
+.viso-fasi {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding-left: 1.75rem;
+  color: var(--inchiostro-tenue);
+}
+.viso-fasi li {
+  padding-left: 0.25rem;
+}
+.viso-fasi li::marker {
+  font-family: var(--font-titoli);
+  font-size: 1.0625rem;
+  color: var(--accento);
+}
+.viso-cabina {
+  font-size: var(--testo-piccolo);
+  color: var(--inchiostro-tenue);
+}
+.viso-azioni {
+  display: grid;
+  gap: var(--spazio-2);
+  justify-items: start;
+  margin-top: var(--spazio-1);
+}
+.link-prezzi {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--area-tocco);
+  font-weight: var(--peso-medio);
+}
+.viso-azioni .pulsanti {
+  width: 100%;
+}
+@media (min-width: 768px) {
+  .viso-foto {
+    aspect-ratio: 4 / 5;
+  }
+  .viso-foto picture {
+    height: 100%;
+  }
+  .viso-foto img {
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 55%; /* il lettino al centro della cornice */
+  }
+}
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .viso-foto {
+    width: 100%;
+    max-width: var(--cornice-tablet);
+    margin-inline: auto;
+    -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+    mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+  }
+  .viso-foto img {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .viso-testo {
+    width: 100%;
+    max-width: var(--cornice-tablet);
+    margin-inline: auto;
+  }
+}
+@media (min-width: 1024px) {
+  .viso-griglia {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    align-items: start;
+    gap: var(--spazio-8);
+  }
+  /* L'elenco è più alto della foto: la foto resta in vista mentre si scorre. */
+  .viso-foto {
+    position: sticky;
+    top: var(--spazio-4);
+    margin: 0;
+  }
+  .viso-foto img {
+    -webkit-mask-image: linear-gradient(to left, transparent, #000 var(--sfumatura-lato));
+    mask-image: linear-gradient(to left, transparent, #000 var(--sfumatura-lato));
+  }
+  .viso-azioni .pulsanti {
+    width: auto;
+  }
+}
+@supports not ((mask-image: none) or (-webkit-mask-image: none)) {
+  .viso-foto img {
+    border-radius: var(--raggio-foto);
+  }
+  @media (max-width: 767.98px) {
+    .viso-foto {
       margin-inline: 0;
     }
   }
@@ -221,7 +385,7 @@
 /* 10. Footer: logo piccolo, dati legali, contatti, link legali */
 .piede {
   padding-block: var(--spazio-8) var(--spazio-6);
-  background: var(--sabbia-chiara);
+  background: linear-gradient(to bottom, var(--sabbia), var(--sabbia-chiara) var(--passaggio-sezioni));
   font-size: var(--testo-piccolo);
   color: var(--inchiostro-tenue);
 }

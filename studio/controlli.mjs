@@ -200,7 +200,7 @@ const LINK_PAGINE = [["/", "home"], ["/viso/", "viso"], ["/pedicure/", "pedicure
 
 // ---------------------------------------------------------------- controlli
 
-console.log("Controlli automatici · Step 3\n");
+console.log("Controlli automatici · Step 4\n");
 
 await controllo("build eseguita con codice 0", () => {
   const r = spawnSync(process.execPath, ["build.mjs"], { cwd: RADICE, encoding: "utf8", env: { ...process.env, URL: "" } });
@@ -494,7 +494,9 @@ await controllo("link tel:+393520601109 e https://wa.me/393520601109?text= su og
     const html = pagina(file);
     const tel = [...html.matchAll(/href="(tel:[^"]*)"/g)].map((m) => m[1]);
     verifica(tel.length >= 2 && tel.every((t) => t === `tel:${centro.telefonoE164}`), `${file}: link tel errati ${tel.join(" ")}`);
-    const wa = [...html.matchAll(/href="(https:\/\/wa\.me\/[^"]*)"/g)].map((m) => new URL(decodifica(m[1])));
+    const sezioneViso = html.match(/<section[^>]*data-sezione="viso"[\s\S]*?<\/section>/)?.[0] ?? "";
+    const fuoriViso = html.replace(sezioneViso, "");
+    const wa = [...fuoriViso.matchAll(/href="(https:\/\/wa\.me\/[^"]*)"/g)].map((m) => new URL(decodifica(m[1])));
     const atteso = testi.whatsapp[id ? testi.pagine[id].whatsapp : "generale"];
     verifica(wa.length >= 1, `${file}: nessun link WhatsApp`);
     for (const u of wa) {
@@ -784,7 +786,7 @@ await controllo("varianti: title diversi (≤ 60 caratteri), description diverse
     verifica(description.length >= 60 && description.length <= 160, `${file}: description di ${description.length} caratteri`);
     titoli.add(title);
     descrizioni.add(description);
-    const ordine = [...html.matchAll(/<!-- sezione: (viso|pedicure)\b/g)].map((m) => m[1]).join(",");
+    const ordine = [...html.matchAll(/<!-- sezione: (viso|pedicure)\b|data-sezione="(viso|pedicure)"/g)].map((m) => m[1] ?? m[2]).join(",");
     verifica(ordine === testi.pagine[id].ordine.join(","), `${file}: ordine delle sezioni 3 e 4 «${ordine}»`);
   }
   verifica(titoli.size === 3 && descrizioni.size === 3, "title o description ripetuti tra le pagine");
@@ -976,6 +978,130 @@ await controllo("con reducedMotion «reduce» nessun elemento ha transizioni o a
     if (trovati.length) problemi.push(`${percorso}: ${trovati.slice(0, 5).join(", ")}`);
   }
   verifica(!problemi.length, problemi.join(" · "));
+});
+
+// ---------------------------------------------------------------- Step 4: sezione viso
+
+const VOCI_VISO_ATTESE = [ // §2.3: la voce in evidenza per prima, poi le altre nell'ordine dell'elenco
+  "Trattamento viso Antiage",
+  "Pulizia viso base",
+  "Trattamento Antiage contorno occhi e labbra",
+  "Laminazione ciglia",
+  "Laminazione sopracciglia",
+];
+const sezioneVisoDi = (html) => html.match(/<section[^>]*data-sezione="viso"[\s\S]*?<\/section>/)?.[0] ?? null;
+/** Voci della sezione viso nell'HTML: nome, etichetta, descrizioni, fasi. */
+function vociVisoDi(html) {
+  return [...html.matchAll(/<li class="viso-voce[^"]*">([\s\S]*?)<\/li>\s*(?=<li class="viso-voce|<\/ul>)/g)].map((m) => {
+    const nomeHtml = m[1].match(/<h3[^>]*>([\s\S]*?)<\/h3>/)?.[1] ?? "";
+    return {
+      nome: testoVisibile(nomeHtml.replace(/<span class="etichetta">[\s\S]*?<\/span>/, "")),
+      etichetta: /<span class="etichetta">/.test(nomeHtml),
+      descrizioni: [...m[1].matchAll(/<p class="viso-descrizione">([\s\S]*?)<\/p>/g)].map((d) => testoVisibile(d[1])),
+      fasi: [...(m[1].match(/<ol class="viso-fasi">([\s\S]*?)<\/ol>/)?.[1] ?? "").matchAll(/<li>([\s\S]*?)<\/li>/g)].map((f) => testoVisibile(f[1])),
+    };
+  });
+}
+
+await controllo("sezione viso in tutte e tre le pagine: terza su / e /viso/, quarta su /pedicure/; sabbia chiara su / e /viso/", () => {
+  for (const [file, id] of PAGINE.filter(([, id]) => id)) {
+    const html = pagina(file);
+    const viso = sezioneVisoDi(html);
+    verifica(viso, `${file}: sezione viso mancante`);
+    const posApertura = html.indexOf('class="apertura"');
+    const posViso = html.indexOf('data-sezione="viso"');
+    const posPedicure = html.search(/<!-- sezione: pedicure|data-sezione="pedicure"/);
+    const visoPrima = testi.pagine[id].ordine[0] === "viso";
+    verifica(posApertura < posViso, `${file}: la sezione viso viene prima dell'apertura`);
+    verifica(visoPrima ? posViso < posPedicure : posPedicure < posViso, `${file}: sezione viso ${visoPrima ? "non terza" : "non quarta"}`);
+    verifica(/class="sezione viso sezione-chiara"/.test(viso) === visoPrima, `${file}: fondo della sezione viso (${visoPrima ? "serve" : "non serve"} sabbia chiara)`);
+  }
+  verifica(/id="listino" hidden/.test(pagina("index.html")), "manca l'ancora nascosta #listino");
+});
+
+await controllo("voci viso: esattamente le 5 di §2.3, nomi presi da listino.json, «Trattamento viso Antiage» per prima con «In evidenza»", () => {
+  const nomiListino = new Set(json("content/listino.json").categorie.flatMap((c) => c.voci.map((v) => v.nome)));
+  for (const [file] of PAGINE.filter(([, id]) => id)) {
+    const voci = vociVisoDi(sezioneVisoDi(pagina(file)));
+    verifica(voci.map((v) => v.nome).join(" | ") === VOCI_VISO_ATTESE.join(" | "), `${file}: voci «${voci.map((v) => v.nome).join(" | ")}»`);
+    verifica(voci.every((v) => nomiListino.has(v.nome)), `${file}: una voce non esiste in listino.json`);
+    verifica(voci.map((v) => v.etichetta).join() === "true,false,false,false,false", `${file}: l'etichetta «In evidenza» deve stare solo sulla prima voce`);
+    verifica(sezioneVisoDi(pagina(file)).includes(`<span class="etichetta">${testi.comuni.viso.etichettaInEvidenza}</span>`), `${file}: testo dell'etichetta`);
+  }
+});
+
+await controllo("sezione viso: nessun «€», pulsante WhatsApp con il testo viso, foto 03 con l'alt di §8", () => {
+  for (const [file] of PAGINE.filter(([, id]) => id)) {
+    const viso = sezioneVisoDi(pagina(file));
+    verifica(!/€|&euro;|\bEUR\b/.test(viso), `${file}: un prezzo nella sezione viso`);
+    const wa = [...viso.matchAll(/href="(https:\/\/wa\.me\/[^"]*)"/g)].map((m) => new URL(decodifica(m[1])));
+    verifica(wa.length === 1, `${file}: ${wa.length} link WhatsApp nella sezione viso`);
+    verifica(wa[0].searchParams.get("text") === testi.whatsapp.viso, `${file}: testo WhatsApp «${wa[0].searchParams.get("text")}»`);
+    verifica(viso.includes(`${testi.comuni.viso.pulsante}</span>`) && /class="pulsante pulsante-principale"/.test(viso), `${file}: pulsante «${testi.comuni.viso.pulsante}»`);
+    verifica(viso.includes('alt="Cabina per i trattamenti viso del centro Migliore – Estetica Avanzata"'), `${file}: alt della foto 03`);
+    verifica(/src="\/img\/cabina-viso-\d+\.webp"/.test(viso) && /loading="lazy"/.test(viso), `${file}: foto 03 mancante o non lazy`);
+    verifica(viso.includes(`href="#listino">${testi.comuni.viso.linkPrezzi}</a>`), `${file}: link «Vedi i prezzi ↓» verso #listino`);
+  }
+});
+
+await controllo("dati non indicati: senza dettagli, macchinari e prodotti nessuna descrizione e nessuna riga «In cabina usiamo»", () => {
+  const listino = json("content/listino.json");
+  const vuoto = structuredClone(centro);
+  vuoto.trattamenti.viso.macchinari = null;
+  vuoto.trattamenti.viso.prodotti = null;
+  const modello = build.sezioneViso({ listino, centro: vuoto, dettagli: null });
+  verifica(modello.cabina === null, "cabina non nulla senza macchinari né prodotti");
+  verifica(modello.voci.every((v) => v.descrizione === null && v.fasi === null && v.seguito === null), "descrizioni senza dettagli");
+  verifica(build.componi("In cabina usiamo: {cabina}", { cabina: modello.cabina }, "t") === null, "la riga «In cabina usiamo» non sparisce");
+  const motore = new build.Motore();
+  const html = motore.rendi("{{> viso}}", {
+    p: { visoPrima: true }, immagini: { fotoViso: "" }, icone: { fumetto: "" },
+    t: { viso: { ...testi.comuni.viso, inCabina: null } }, viso: { voci: modello.voci }, link: { listino: "#listino", whatsappViso: "https://wa.me/1?text=x" },
+  }, "prova");
+  verifica(!/viso-descrizione|viso-fasi|viso-cabina/.test(html), "il template mostra descrizioni o la riga cabina senza dati");
+  verifica(vociVisoDi(html).length === 5, "senza dettagli le 5 voci devono restare");
+  // la riga cabina reale: solo se macchinari o prodotti sono indicati, con il testo esatto
+  const indicati = [centro.trattamenti.viso.macchinari, centro.trattamenti.viso.prodotti].filter(Boolean).join(", ");
+  for (const [file] of PAGINE.filter(([, id]) => id)) {
+    const riga = sezioneVisoDi(pagina(file)).match(/<p class="viso-cabina[^"]*">([\s\S]*?)<\/p>/)?.[1];
+    verifica(indicati ? decodifica(riga ?? "") === `In cabina usiamo: ${indicati}` : riga === undefined, `${file}: riga «In cabina usiamo» «${riga}»`);
+  }
+});
+
+await controllo("dettagli viso: ogni voce con una riga mostra la sua descrizione (parole del dettaglio), nessuna descrizione inventata; nomi diversi dal listino ignorati", () => {
+  const dettagli = testi.comuni.viso.dettagli ?? {};
+  for (const [file] of PAGINE.filter(([, id]) => id)) {
+    for (const v of vociVisoDi(sezioneVisoDi(pagina(file)))) {
+      const fonte = dettagli[v.nome];
+      if (!fonte) {
+        verifica(!v.descrizioni.length && !v.fasi.length, `${file}: «${v.nome}» mostra una descrizione che non c'è nei dettagli`);
+        continue;
+      }
+      verifica(v.descrizioni.length > 0, `${file}: «${v.nome}» senza descrizione`);
+      for (const pezzo of [...v.descrizioni, ...v.fasi]) verifica(normalizzaSpazi(fonte).includes(normalizzaSpazi(pezzo)), `${file}: «${pezzo.slice(0, 50)}…» non viene dal dettaglio di «${v.nome}»`);
+      const frasi = v.descrizioni.join(" ").match(/[^.!?]+[.!?]+/g)?.length ?? 0;
+      verifica(frasi <= (v.etichetta ? 3 : 2), `${file}: «${v.nome}» ha ${frasi} frasi`);
+    }
+  }
+  const finto = build.sezioneViso({ listino: json("content/listino.json"), centro, dettagli: { ...dettagli, "Pulizia viso profonda": "non deve comparire." } });
+  verifica(finto.avvisi.some((a) => a.includes("Pulizia viso profonda")), "un nome che non coincide con il listino non viene segnalato");
+  verifica(!finto.voci.some((v) => [v.descrizione, v.seguito].join(" ").includes("non deve comparire")), "un nome che non coincide con il listino viene usato");
+  verifica(build.limitaFrasi("Uno. Due. Tre.", 2) === "Uno. Due.", "limitaFrasi non accorcia");
+});
+
+await controllo("sezione viso: nessuna parola vietata per il viso (§8, maiuscole o minuscole) e al massimo 3 fasi nella voce in evidenza", () => {
+  for (const [file] of PAGINE.filter(([, id]) => id)) {
+    const viso = sezioneVisoDi(pagina(file));
+    const testo = normalizzaSpazi([testoVisibile(viso), testiNascosti(viso)].join(" \n "));
+    const trovate = VIETATE.filter((voce) => regexVietata(voce).test(testo));
+    verifica(!trovate.length, `${file}: ${trovate.join(", ")}`);
+    const voci = vociVisoDi(viso);
+    verifica(voci[0].fasi.length >= 1 && voci[0].fasi.length <= 3, `${file}: ${voci[0].fasi.length} fasi nella voce in evidenza`);
+    verifica(voci.slice(1).every((v) => v.fasi.length === 0), `${file}: fasi su una voce non in evidenza`);
+    verifica(/<ol class="viso-fasi">/.test(viso), `${file}: le fasi non sono un <ol>`);
+  }
+  const quattro = build.estraiFasi("Si fa in quattro fasi: a, b, c e d.");
+  verifica(quattro === null, "con più di 3 fasi non va fatto l'elenco");
 });
 
 await controllo("pesi: main.js ≤ 3 KB, JS ≤ 12 KB e CSS ≤ 20 KB compressi, font ≤ 100 KB", () => {

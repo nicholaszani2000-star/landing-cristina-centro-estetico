@@ -58,10 +58,13 @@
   --arco-opacita: 0.6;
 
   /* Foto: sfumatura nel sabbia (§5) */
-  --sfumatura-basso-mobile: 72%;   /* da qui in giù la foto sfuma (mobile) */
-  --sfumatura-basso: 86%;          /* da 1024 px, in basso */
+  --sfumatura-basso: 72%;            /* da qui in giù la foto sfuma nel sabbia */
+  --sfumatura-basso-dettaglio: 86%;  /* dove un dettaglio deve restare nitido (scritta MIGLIORE sul bancone) */
   --sfumatura-lato: 22%;           /* da 1024 px, dal lato del testo */
   --cornice-tablet: 32.5rem;       /* 520 px: foto verticali tra 768 e 1023 px */
+
+  /* Passaggio morbido tra il sabbia e il sabbia chiara delle sezioni alternate */
+  --passaggio-sezioni: 4rem;
 
   /* Barra contatti mobile */
   --barra-altezza: calc(var(--pulsante-altezza) + 2 * var(--spazio-1));

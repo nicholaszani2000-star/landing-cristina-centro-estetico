@@ -1,5 +1,5 @@
 {
-  "_nota": "Tutti i testi del sito. I segnaposto tra graffe, per esempio {telefono} o {orari.giorni}, si riempiono in build con i dati di content/centro.json; se il dato è null la frase non compare. [data] nel risultato del codice sconto lo riempie il JavaScript.",
+  "_nota": "Tutti i testi del sito. I segnaposto tra graffe, per esempio {telefono} o {orari.giorni}, si riempiono in build con i dati di content/centro.json; se il dato è null la frase non compare. [data] nel risultato del codice sconto lo riempie il JavaScript. {cabina} è calcolato in build da macchinari e prodotti di centro.json (null se mancano entrambi). In viso.dettagli: «nome della voce del listino»: descrizione; null se i dettagli non sono indicati.",
   "comuni": {
     "header": {
       "logoAlt": "{nome}",
@@ -21,7 +21,14 @@
       "testo": "Dalla pulizia del viso ai trattamenti anti-age: in cabina scegli con Cristina il trattamento adatto alla tua pelle.",
       "secondaFrase": "Prima di iniziare guardate insieme la tua pelle e parlate delle tue abitudini: il trattamento si sceglie così.",
       "etichettaInEvidenza": "In evidenza",
-      "inCabina": "In cabina usiamo: {trattamenti.viso.prodotti}",
+      "dettagli": {
+        "Pulizia viso base": "detersione delicata, pulizia accurata delle impurità, maschera e crema finale scelte per il tuo tipo di pelle. Per una pelle più pulita, fresca e luminosa.",
+        "Trattamento viso Antiage": "un trattamento professionale Natinuel, senza aghi, scelto in base alla tua pelle per renderla più luminosa, compatta e idratata, con linee sottili meno visibili e un colorito più uniforme. Uno dei trattamenti è Revinol, in tre fasi: esfoliazione delicata, maschera peel-off e siero finale, con retinolo, vitamina C, vitamina E e acido ialuronico. Fatto con costanza, aiuta la pelle a mantenere più a lungo un aspetto fresco e compatto.",
+        "Trattamento Antiage contorno occhi e labbra": "un trattamento mirato sulle zone più delicate del viso, per idratare e attenuare l'aspetto delle linee sottili intorno a occhi e labbra.",
+        "Laminazione ciglia": "ciglia più definite e incurvate, senza extension.",
+        "Laminazione sopracciglia": "i peli vengono fissati nella forma scelta, per sopracciglia più ordinate e piene alla vista."
+      },
+      "inCabina": "In cabina usiamo: {cabina}",
       "linkPrezzi": "Vedi i prezzi ↓",
       "pulsante": "Prenota il tuo trattamento viso",
       "altFoto": "Cabina per i trattamenti viso del centro {nome}"
