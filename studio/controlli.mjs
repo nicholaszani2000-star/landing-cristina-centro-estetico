@@ -204,7 +204,7 @@ const PAGINE_LEGALI = [["privacy/index.html", "privacy", "/privacy/"], ["cookie/
 
 // ---------------------------------------------------------------- controlli
 
-console.log("Controlli automatici · Step 8\n");
+console.log("Controlli automatici · Step 9\n");
 
 await controllo("build eseguita con codice 0", () => {
   const r = spawnSync(process.execPath, ["build.mjs"], { cwd: RADICE, encoding: "utf8", env: { ...process.env, URL: "" } });
@@ -2365,6 +2365,147 @@ await controllo("codice.js ≤ 3 KB; con il banner (build di prova) main.js, cod
   verifica(codice <= 3072, `codice.js ${codice} B`);
   const somma = ["main.js", "codice.js", "consenso.js"].reduce((t, f) => t + gzipSync(readFileSync(join(RADICE, "src", "js", f))).length, 0);
   verifica(somma <= 12288, `JS compresso con il banner: ${somma} B`);
+});
+
+// ---------------------------------------------------------------- Step 9: controllo qualità e integrazioni
+
+const cspNetlify = () => leggi("netlify.toml").match(/^\s*Content-Security-Policy\s*=\s*"([^"]*)"/m)?.[1] ?? null;
+/** Apre le pagine con gli header di netlify.toml (CSP compresa) e raccoglie le violazioni CSP. */
+async function violazioniCsp(contesto, url, azione) {
+  const pg = await contesto.newPage();
+  await pg.addInitScript(() => {
+    window.__violazioni = [];
+    document.addEventListener("securitypolicyviolation", (e) => window.__violazioni.push(`${e.violatedDirective} ${e.blockedURI}`));
+  });
+  await pg.goto(url, { waitUntil: "networkidle" });
+  if (azione) await azione(pg);
+  await pg.waitForTimeout(300);
+  const v = await pg.evaluate(() => window.__violazioni);
+  await pg.close();
+  return v;
+}
+
+await controllo("Content-Security-Policy in netlify.toml: direttive di base, impronta sha256 uguale all'unico script inline, nessuno stile o gestore inline; Google e Meta ammessi solo dove servono", () => {
+  const csp = cspNetlify();
+  verifica(csp, "Content-Security-Policy mancante nel blocco «/*» di netlify.toml");
+  for (const d of ["default-src 'self'", "style-src 'self'", "font-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'", "upgrade-insecure-requests"]) {
+    verifica(csp.includes(d), `CSP senza «${d}»`);
+  }
+  verifica(!/unsafe-inline|unsafe-eval|\*\s|'\*'|\shttp:/.test(csp), "CSP con unsafe-inline, unsafe-eval, jolly o http:");
+  const script = csp.match(/script-src ([^;]*)/)?.[1] ?? "";
+  verifica(/https:\/\/\*\.googletagmanager\.com/.test(script) && /https:\/\/connect\.facebook\.net/.test(script), `script-src: ${script}`);
+  const impronte = new Set();
+  for (const file of elenca(DIST, (f) => f.endsWith(".html"))) {
+    const html = readFileSync(file, "utf8");
+    for (const m of html.matchAll(/<script(?![^>]*\ssrc=)(?![^>]*type="application\/ld\+json")[^>]*>([\s\S]*?)<\/script>/g)) {
+      impronte.add(`sha256-${createHash("sha256").update(m[1]).digest("base64")}`);
+    }
+    verifica(!/\sstyle="/.test(html), `${rel(file)}: attributo style inline`);
+    verifica(!/\son[a-z]+="/.test(html), `${rel(file)}: gestore di evento inline`);
+    verifica(!/<style\b/.test(html), `${rel(file)}: <style> inline`);
+  }
+  verifica(impronte.size === 1, `script inline diversi: ${impronte.size}`);
+  for (const i of impronte) verifica(script.includes(`'${i}'`), `l'impronta ${i} dello script inline non è nella CSP`);
+});
+
+await controllo("CSP nel browser (anteprima con gli header di netlify.toml): nessuna violazione su tutte le pagine, inviando il codice, e nella build di prova dopo «Accetta» (con le richieste verso Google e Meta tentate)", async () => {
+  const { browser, base } = await browserCondiviso();
+  const problemi = [];
+  const contesto = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  for (const percorso of percorsiDist()) {
+    const v = await violazioniCsp(contesto, base + percorso);
+    if (v.length) problemi.push(`${percorso}: ${v.join(", ")}`);
+  }
+  const v = await violazioniCsp(contesto, base + "/viso/", async (pg) => {
+    await pg.fill("#codice-email", "anna@esempio.it");
+    await pg.check("#codice-consenso");
+    await pg.click(".codice-invia");
+    await pg.waitForSelector(".codice-ottenuto");
+  });
+  if (v.length) problemi.push(`invio del codice: ${v.join(", ")}`);
+  const csp = await (await fetch(base + "/")).headers.get("content-security-policy");
+  if (!csp?.startsWith("default-src 'self'")) problemi.push("l'anteprima non applica la CSP di netlify.toml");
+  await contesto.close();
+  const prova = await buildDiProva();
+  try {
+    const c2 = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const tentate = [];
+    await c2.route((u) => TRACCIANTI.test(u.hostname), (r) => { tentate.push(new URL(r.request().url()).hostname); return r.abort(); });
+    const v2 = await violazioniCsp(c2, prova.base + "/", async (pg) => {
+      await pg.click('[data-consenso="accetta"]');
+      await pg.waitForTimeout(800);
+    });
+    if (v2.length) problemi.push(`build di prova dopo «Accetta»: ${v2.join(", ")}`);
+    if (!tentate.some((h) => /googletagmanager/.test(h)) || !tentate.some((h) => /facebook\.net/.test(h))) problemi.push(`con la CSP Google o Meta non partono: ${tentate.join(", ")}`);
+    await c2.close();
+  } finally {
+    prova.chiudi();
+  }
+  verifica(!problemi.length, problemi.join(" · "));
+});
+
+await controllo("Brevo (finto): POST /v3/smtp/email con api-key, mittente di centro.json, replyTo, oggetto e corpo HTML dai testi (codice, scadenza in italiano, condizioni, telefono); true solo se Brevo accetta; senza chiave, senza mittente o in modalità prova nessun invio; mai l'email nei log", async () => {
+  const f = await import(pathToFileURL(FUNZIONE).href);
+  const salvati = { chiave: process.env.BREVO_API_KEY, url: process.env.SUPABASE_URL, segreta: process.env.SUPABASE_SECRET_KEY, fetch: globalThis.fetch, errore: console.error };
+  const chiamate = [];
+  const log = [];
+  let risposta = () => new Response(JSON.stringify({ messageId: "<prova@brevo>" }), { status: 201 });
+  try {
+    globalThis.fetch = async (url, opz) => { chiamate.push({ url, opz }); return risposta(); };
+    console.error = (...a) => log.push(a.join(" "));
+    const dati = { email: "anna@esempio.it", codice: "MIG-ABC234", scadenza: "2026-12-02" };
+    delete process.env.BREVO_API_KEY;
+    verifica((await f.inviaEmail(dati, "codice@esteticamigliore.it")) === false && chiamate.length === 0, "senza BREVO_API_KEY parte un invio");
+    process.env.BREVO_API_KEY = "chiave-brevo-finta";
+    verifica((await f.inviaEmail(dati, null)) === false && chiamate.length === 0, "senza mittente parte un invio");
+    verifica((await f.inviaEmail(dati, "codice@esteticamigliore.it")) === true, "con Brevo che accetta, emailInviata non è true");
+    const c = chiamate[0];
+    const corpo = JSON.parse(c.opz.body);
+    verifica(c.url === "https://api.brevo.com/v3/smtp/email" && c.opz.method === "POST" && c.opz.headers["api-key"] === "chiave-brevo-finta", "endpoint, metodo o api-key");
+    verifica(corpo.sender.email === "codice@esteticamigliore.it" && corpo.sender.name === centro.nome && corpo.to[0].email === "anna@esempio.it" && corpo.replyTo.email === centro.email, `mittente o destinatario: ${JSON.stringify(corpo.sender)}`);
+    verifica(corpo.subject === build.componi(testi.comuni.codiceSconto.email.oggetto, centro, "testi"), `oggetto «${corpo.subject}»`);
+    verifica(corpo.htmlContent && !("textContent" in corpo) && !("templateId" in corpo), "Brevo vuole un solo tipo di corpo: htmlContent");
+    const testo = decodifica(corpo.htmlContent.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ");
+    for (const atteso of ["MIG-ABC234", "Valido fino al 2 dicembre 2026.", build.componi(testi.comuni.codiceSconto.condizioni, centro, "testi"), centro.telefono, centro.indirizzo.completo]) {
+      verifica(testo.includes(atteso), `email senza «${atteso}»`);
+    }
+    risposta = () => new Response("{}", { status: 400 });
+    verifica((await f.inviaEmail(dati, "codice@esteticamigliore.it")) === false, "con Brevo che rifiuta, emailInviata è true");
+    risposta = () => { throw new TypeError("rete"); };
+    verifica((await f.inviaEmail(dati, "codice@esteticamigliore.it")) === false, "con la rete giù, emailInviata è true");
+    verifica(log.length === 2 && log.every((l) => !l.includes("anna") && !l.includes("chiave-brevo")), `log: ${log.join(" | ")}`);
+    // Gestore: modalità prova → nessun invio; con Supabase ma senza mittente in centro.json → nessun invio.
+    chiamate.length = 0;
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_SECRET_KEY;
+    const invia = () => f.default(new Request("http://x/api/codice-sconto", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ email: "anna@esempio.it", consenso: true }) }));
+    const r1 = await (await invia()).json();
+    verifica(r1.prova === true && r1.emailInviata === false && chiamate.length === 0, "in modalità prova parte l'email");
+    process.env.SUPABASE_URL = "https://progetto-finto.supabase.co";
+    process.env.SUPABASE_SECRET_KEY = "chiave-finta";
+    risposta = () => Response.json([{ codice: "MIG-ABC234", scadenza: "2026-12-02", nuovo: true }]);
+    const r2 = await (await invia()).json();
+    verifica(r2.prova === false && r2.emailInviata === (centro.integrazioni.servizioEmail?.mittente ? true : false), `con Supabase: ${JSON.stringify(r2)}`);
+    verifica(chiamate.every((ch) => !String(ch.url).includes("brevo")) || centro.integrazioni.servizioEmail?.mittente, "senza mittente in centro.json è partita una chiamata a Brevo");
+  } finally {
+    for (const [k, v] of [["BREVO_API_KEY", salvati.chiave], ["SUPABASE_URL", salvati.url], ["SUPABASE_SECRET_KEY", salvati.segreta]]) {
+      if (v === undefined) delete process.env[k]; else process.env[k] = v;
+    }
+    globalThis.fetch = salvati.fetch;
+    console.error = salvati.errore;
+  }
+});
+
+await controllo("pulizia dei dati (§10, privacy): pulisci_iscritti() cancella le iscrizioni revocate e quelle senza interazioni da oltre 24 mesi; nessuno tranne postgres la esegue; Supabase Cron la lancia ogni giorno", () => {
+  const sql = leggi("supabase/iscritti.sql").replace(/--[^\n]*/g, "");
+  for (const re of [
+    /create or replace function public\.pulisci_iscritti\(\)\s*returns integer/,
+    /where disiscritto_il is not null\s+or greatest\(creato_il, coalesce\(usato_il, creato_il\)\) < now\(\) - interval '24 months'/,
+    /revoke execute on function public\.pulisci_iscritti\(\) from public, anon, authenticated, service_role;/,
+    /create extension if not exists pg_cron with schema pg_catalog;/,
+    /select cron\.schedule\('pulizia-iscritti', '\d+ \d+ \* \* \*', \$\$select public\.pulisci_iscritti\(\)\$\$\);/,
+  ]) verifica(re.test(sql), `manca: ${re.source.slice(0, 60)}`);
+  verifica(testi.comuni.privacy.trattamenti.voci[1].conservazione.includes("24 mesi"), "la privacy non dice più 24 mesi");
 });
 
 await controllo("pesi: main.js ≤ 3 KB, JS ≤ 12 KB e CSS ≤ 20 KB compressi, font ≤ 100 KB", () => {

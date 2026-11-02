@@ -6,7 +6,9 @@
 //   - senza chiavi: «modalità prova», restituisce un codice valido e non salva nulla (prova: true).
 // Risponde in JSON se la richiesta accetta application/json, altrimenti con una pagina HTML (senza JavaScript).
 // Testo e versione del consenso vengono dal server (content/testi.json), mai dal browser.
-// Nei log non compare mai l'email. L'invio del codice via email (Brevo) arriva allo Step 9: emailInviata è false.
+// Nei log non compare mai l'email. Con BREVO_API_KEY e un mittente in centro.json (integrazioni.servizioEmail.mittente)
+// il codice salvato arriva anche via email; emailInviata è true solo se Brevo ha accettato l'invio (§2.4).
+// Documentazione Brevo: «Send a transactional email» (POST /v3/smtp/email, header api-key, un solo tipo di corpo).
 // Documentazione: contesto ufficiale Netlify Functions (gestore, config con path/method/rateLimit, Netlify.env.get).
 
 import { createHash } from "node:crypto";
@@ -56,7 +58,7 @@ export function scadenzaDa(adesso = new Date(), giorni = VALIDITA) {
   return new Date(Date.UTC(a, m - 1, g + giorni)).toISOString().slice(0, 10);
 }
 
-const dataItaliana = (iso) =>
+export const dataItaliana = (iso) =>
   new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
 
 // ------------------------------------------------------------------ richiesta
@@ -113,6 +115,53 @@ async function iscrivi({ email, pagina, utm }) {
     throw new Error(`Supabase ${risposta.status} ${errore.code ?? ""}`.trim());
   }
   throw new Error("codice in collisione dopo tutti i tentativi");
+}
+
+// ------------------------------------------------------------------ email con il codice (Brevo)
+
+const BREVO = "https://api.brevo.com/v3/smtp/email";
+const E = T.email;
+
+/** Corpo HTML dell'email: testi di testi.json (codiceSconto.email e risultato), nessun dato scritto qui. */
+export function corpoEmail({ codice, scadenza }) {
+  const riga = (s, stile = "") => `<p style="margin:0 0 16px${stile}">${h(s)}</p>`;
+  return [
+    "<!DOCTYPE html><html lang=\"it\"><body style=\"margin:0;padding:24px;font-family:Georgia,serif;font-size:17px;line-height:1.5\">",
+    riga(componi(E.apertura)),
+    riga(codice, ";font-size:32px;letter-spacing:4px;font-weight:bold"),
+    riga(T.risultatoValidita.replace("[data]", dataItaliana(scadenza))),
+    riga(componi(T.condizioni)),
+    riga(componi(E.prenota)),
+    riga(componi(E.firma)),
+    riga(componi(E.piede), ";font-size:13px"),
+    "</body></html>",
+  ].join("");
+}
+
+/** Invia il codice via Brevo. Restituisce true solo se Brevo accetta (2xx); senza chiave o mittente non invia. */
+export async function inviaEmail({ email, codice, scadenza }, mittente = centro.integrazioni?.servizioEmail?.mittente) {
+  const chiave = env("BREVO_API_KEY");
+  if (!chiave || !mittente) return false;
+  try {
+    const risposta = await fetch(BREVO, {
+      method: "POST",
+      headers: { "api-key": chiave, "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        sender: { name: centro.nome, email: mittente },
+        to: [{ email }],
+        replyTo: { email: centro.email, name: centro.nome },
+        subject: componi(E.oggetto),
+        htmlContent: corpoEmail({ codice, scadenza }),
+        tags: ["codice-sconto"],
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!risposta.ok) console.error(`codice-sconto: Brevo ${risposta.status}`); // mai l'email nei log
+    return risposta.ok;
+  } catch (e) {
+    console.error(`codice-sconto: Brevo ${e.name}`);
+    return false;
+  }
 }
 
 // ------------------------------------------------------------------ risposte
@@ -191,8 +240,9 @@ export default async (req) => {
   );
   try {
     const esito = await iscrivi({ email, pagina: percorso(campi.pagina), utm });
-    // L'invio del codice via email con Brevo arriva allo Step 9: fino ad allora emailInviata è sempre false.
-    const risposta = { ...esito, emailInviata: false };
+    // Il codice parte via email solo se è stato salvato davvero (non in modalità prova) e Brevo è configurato.
+    const emailInviata = esito.prova ? false : await inviaEmail({ email, codice: esito.codice, scadenza: esito.scadenza });
+    const risposta = { ...esito, emailInviata };
     return vuoleJson ? json(risposta) : paginaCodice(risposta, ritorno);
   } catch (e) {
     console.error(`codice-sconto: ${e.message}`); // mai l'email nei log

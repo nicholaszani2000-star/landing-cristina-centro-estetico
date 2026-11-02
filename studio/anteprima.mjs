@@ -9,7 +9,7 @@
 // Senza --step la cartella è quella dello step in corso: ultimo studio/report/stepN.md + 1.
 
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readdirSync, rmSync, statSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
@@ -85,6 +85,18 @@ function fileDi(percorso, cartella = DIST) {
   return pieno;
 }
 
+/** Header di netlify.toml per «/*» (sicurezza e Content-Security-Policy), da applicare ai file statici come fa
+ *  Netlify. upgrade-insecure-requests si toglie solo qui: l'anteprima è in http, il sito vero in https. */
+export function intestazioniNetlify() {
+  const toml = readFileSync(join(RADICE, "netlify.toml"), "utf8");
+  const blocco = toml.split("[[headers]]").find((b) => /^\s*for\s*=\s*"\/\*"\s*$/m.test(b));
+  if (!blocco) return {};
+  const valori = [...blocco.matchAll(/^\s*([A-Za-z-]+)\s*=\s*"([^"]*)"\s*$/gm)].filter(([, k]) => k !== "for");
+  return Object.fromEntries(
+    valori.map(([, k, v]) => [k, k === "Content-Security-Policy" ? v.replace(/;?\s*upgrade-insecure-requests/, "") : v]),
+  );
+}
+
 // ---------------------------------------------------------------- funzione del codice sconto
 
 let funzione = null;
@@ -118,7 +130,7 @@ async function rispondiCodice(richiesta, risposta) {
 }
 const esisteFile = (p) => p && existsSync(p) && statSync(p).isFile();
 
-async function rispondi(richiesta, risposta, cartella = DIST) {
+async function rispondi(richiesta, risposta, cartella = DIST, intestazioni = {}) {
   const url = new URL(richiesta.url, "http://anteprima.local");
   let percorso;
   try {
@@ -163,6 +175,7 @@ async function rispondi(richiesta, risposta, cartella = DIST) {
   }
   const corpo = await readFile(file);
   risposta.writeHead(stato, {
+    ...intestazioni,
     "Content-Type": TIPI[extname(file).toLowerCase()] ?? "application/octet-stream",
     "Cache-Control": "no-store",
     "X-Content-Type-Options": "nosniff",
@@ -170,10 +183,10 @@ async function rispondi(richiesta, risposta, cartella = DIST) {
   risposta.end(richiesta.method === "HEAD" ? undefined : corpo);
 }
 
-export function avviaServer(porta, { cartella = DIST } = {}) {
+export function avviaServer(porta, { cartella = DIST, intestazioni = intestazioniNetlify() } = {}) {
   return new Promise((ok, ko) => {
     const server = createServer((req, res) => {
-      rispondi(req, res, resolve(cartella)).catch((e) => {
+      rispondi(req, res, resolve(cartella), intestazioni).catch((e) => {
         console.error(e);
         if (!res.headersSent) res.writeHead(500);
         res.end();
@@ -249,7 +262,8 @@ async function screenshotCodice(browser, base, uscita, problemi, salvati) {
     const pagina = await contesto.newPage();
     sorveglia(pagina, `codice sconto ${larghezza}px`, problemi);
     await pagina.goto(base + "/viso/?utm_source=meta", { waitUntil: "networkidle" });
-    await pagina.addStyleTag({ content: ".barra-contatti{display:none!important}" });
+    // Con la CSP (style-src 'self') un <style> aggiunto verrebbe bloccato: si nasconde la barra dal CSSOM, che è ammesso.
+    await pagina.evaluate(() => document.querySelectorAll(".barra-contatti").forEach((b) => b.style.setProperty("display", "none", "important")));
     const sezione = pagina.locator("#codice-sconto");
     const salva = async (nome) => {
       const file = join(uscita, `codice-${larghezza}-${nome}.png`);

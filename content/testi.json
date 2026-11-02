@@ -1,5 +1,5 @@
 {
-  "_nota": "Tutti i testi del sito. I segnaposto tra graffe, per esempio {telefono} o {orari.giorni}, si riempiono in build con i dati di content/centro.json; se il dato è null la frase non compare. [data] nel risultato del codice sconto lo riempie il JavaScript. {cabina} è calcolato in build da macchinari e prodotti di centro.json (null se mancano entrambi). In viso.dettagli: «nome della voce del listino»: descrizione; null se i dettagli non sono indicati. Le voci «include» del pedicure (centro.json) sono separate da punto e virgola: la build fa una voce per elemento, con la prima lettera maiuscola. Nelle pagine legali (privacy, cookie) una voce con «richiede» compare solo se quell'integrazione di centro.json è indicata («tracciamenti» = GA4 o pixel Meta). legale.aggiornamento è la data di ultimo aggiornamento di privacy e cookie: fissa, si cambia a mano solo quando cambiano i testi legali (CLAUDE.md §10). codiceSconto.risultatoEmail compare solo se la funzione risponde emailInviata: true (Step 8; resta false finché lo Step 9 non collega Brevo).",
+  "_nota": "Tutti i testi del sito. I segnaposto tra graffe, per esempio {telefono} o {orari.giorni}, si riempiono in build con i dati di content/centro.json; se il dato è null la frase non compare. [data] nel risultato del codice sconto lo riempie il JavaScript. {cabina} è calcolato in build da macchinari e prodotti di centro.json (null se mancano entrambi). In viso.dettagli: «nome della voce del listino»: descrizione; null se i dettagli non sono indicati. Le voci «include» del pedicure (centro.json) sono separate da punto e virgola: la build fa una voce per elemento, con la prima lettera maiuscola. Nelle pagine legali (privacy, cookie) una voce con «richiede» compare solo se quell'integrazione di centro.json è indicata («tracciamenti» = GA4 o pixel Meta). legale.aggiornamento è la data di ultimo aggiornamento di privacy e cookie: fissa, si cambia a mano solo quando cambiano i testi legali (CLAUDE.md §10). codiceSconto.risultatoEmail compare solo se la funzione risponde emailInviata: true (Step 8; resta false finché lo Step 9 non collega Brevo). codiceSconto.email: testi dell'email con il codice (Brevo, Step 9); [data] la riempie la funzione.",
   "comuni": {
     "header": {
       "logoAlt": "{nome}",
@@ -95,6 +95,13 @@
         "email": "Controlla l'indirizzo email.",
         "consenso": "Per ricevere il codice serve il consenso.",
         "generico": "Qualcosa non ha funzionato. Riprova tra poco o scrivici su WhatsApp."
+      },
+      "email": {
+        "oggetto": "Il tuo codice sconto del {codiceSconto.percentuale}% · {nome}",
+        "apertura": "Ecco il tuo codice sconto del {codiceSconto.percentuale}%:",
+        "prenota": "Per prenotare chiama o scrivi su WhatsApp al {telefono}. Ti aspettiamo in {indirizzo.completo}.",
+        "firma": "A presto, {titolare.nome}",
+        "piede": "Ricevi questa email perché hai chiesto il codice sul sito di {nome}. Per non ricevere più le promozioni rispondi a questa email."
       }
     },
     "doveSiamo": {

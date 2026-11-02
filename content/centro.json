@@ -79,6 +79,7 @@
     "servizioEmail": {
       "nome": "Brevo",
       "sede": "Francia",
+      "mittente": null,
       "inAttivazione": true
     }
   }

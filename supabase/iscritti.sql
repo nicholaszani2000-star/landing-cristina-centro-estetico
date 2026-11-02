@@ -87,3 +87,31 @@ $$;
 
 revoke execute on function public.iscrivi_email(text, text, date, text, text, text, jsonb) from public, anon, authenticated;
 grant execute on function public.iscrivi_email(text, text, date, text, text, text, jsonb) to service_role;
+
+-- ------------------------------------------------------------------ pulizia (Step 9)
+
+-- Conservazione promessa dall'informativa privacy: fino alla revoca del consenso e comunque non oltre
+-- 24 mesi dall'ultima interazione (iscrizione o uso del codice). Restituisce quante righe ha cancellato.
+create or replace function public.pulisci_iscritti()
+returns integer
+language sql
+security invoker
+set search_path = public
+as $$
+  with cancellate as (
+    delete from public.iscritti
+    where disiscritto_il is not null
+       or greatest(creato_il, coalesce(usato_il, creato_il)) < now() - interval '24 months'
+    returning 1
+  )
+  select count(*)::integer from cancellate;
+$$;
+
+revoke execute on function public.pulisci_iscritti() from public, anon, authenticated, service_role;
+
+-- Ogni giorno alle 03:17 UTC con Supabase Cron (documentazione Supabase, «Cron › Install»).
+-- Il job gira come postgres; rieseguendo il file, cron.schedule con lo stesso nome aggiorna il job.
+create extension if not exists pg_cron with schema pg_catalog;
+grant usage on schema cron to postgres;
+grant all privileges on all tables in schema cron to postgres;
+select cron.schedule('pulizia-iscritti', '17 3 * * *', $$select public.pulisci_iscritti()$$);
