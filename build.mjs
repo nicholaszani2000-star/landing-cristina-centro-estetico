@@ -37,7 +37,10 @@ const MANIFESTO = "src/img/immagini.json";
 // --logo-piede-altezza (56 px) per le proporzioni del logo 624×508.
 const SIZES_LOGO_TESTATA = "(min-width: 1024px) 99px, 79px";
 const SIZES_LOGO_PIEDE = "69px";
-// Foto delle sezioni (03 viso, 05 pedicure, poi 04): a tutta larghezza fino a 767 px, cornice di 520 px
+// Foto 02 (orizzontale, «Dove siamo»): a tutta larghezza fino a 767 px, intera nel contenitore fino a 1023 px,
+// colonna di 7/12 (~620 px) da 1024 px.
+const SIZES_FOTO_DOVE = "(min-width: 1024px) 620px, (min-width: 768px) calc(100vw - 40px), 100vw";
+// Foto delle sezioni (03 viso, 05 pedicure, 04 chi sono): a tutta larghezza fino a 767 px, cornice di 520 px
 // tra 768 e 1023 px, colonna di 5/12 (~440 px) da 1024 px.
 const SIZES_FOTO_SEZIONE = "(min-width: 1024px) 440px, (min-width: 768px) 520px, 100vw";
 // Foto 01 dell'apertura: a tutta larghezza fino a 767 px, cornice di 520 px tra 768 e 1023 px,
@@ -87,6 +90,14 @@ export function componi(testo, dati, dove) {
 // separabile: niente «a» o «e» appese in fondo alla riga. Il testo in testi.json non cambia.
 const PAROLE_BREVI = /(^|\s)(a|e|ed|i|o|di|da|in|su|con|per|tra|fra|il|lo|la|gli|le|un|uno|una|al|allo|alla|ai|agli|alle|del|della|nel|nella) (?=\S)/giu;
 export const legaParoleBrevi = (testo) => testo.replace(PAROLE_BREVI, (_, prima, parola) => `${prima}${parola}${NBSP}`);
+
+/** Nei testi visibili il numero di telefono non va mai a capo: spazi non separabili al suo interno. */
+function numeroUnito(valore, numero) {
+  if (typeof valore === "string") return valore.split(numero).join(numero.replace(/ /g, NBSP));
+  if (Array.isArray(valore)) return valore.map((v) => numeroUnito(v, numero));
+  if (valore && typeof valore === "object") return Object.fromEntries(Object.entries(valore).map(([k, v]) => [k, numeroUnito(v, numero)]));
+  return valore;
+}
 
 function componiTutto(valore, dati, dove) {
   if (typeof valore === "string") return componi(valore, dati, dove);
@@ -416,6 +427,13 @@ export function ricavaGiorni(testo) {
   return GIORNI_SCHEMA.slice(inizio, fine + 1);
 }
 
+/** Link «Apri in Google Maps»: la scheda Google se è indicata, altrimenti la ricerca dell'indirizzo. */
+export function linkMappa(centro) {
+  if (centro.social?.schedaGoogle) return centro.social.schedaGoogle;
+  const { via, cap, comune, provincia } = centro.indirizzo;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${via}, ${cap} ${comune} ${provincia}`)}`;
+}
+
 function jsonLd(centro, base, immagineAssoluta, avvisi) {
   const dati = {
     "@context": "https://schema.org",
@@ -434,6 +452,9 @@ function jsonLd(centro, base, immagineAssoluta, avvisi) {
   };
   if (base) dati.url = `${base}/`;
   if (immagineAssoluta) dati.image = immagineAssoluta;
+  dati.hasMap = linkMappa(centro);
+  const social = ["instagram", "facebook"].map((k) => centro.social?.[k]).filter(Boolean);
+  if (social.length) dati.sameAs = social;
   else avvisi.push("JSON-LD senza image: serve un URL assoluto");
   const giorni = ricavaGiorni(centro.orari.giorni);
   if (giorni) {
@@ -623,7 +644,7 @@ async function main() {
   // {cabina}: macchinari e prodotti indicati in centro.json (null se mancano entrambi: la riga non compare)
   const cabina = sezioneViso({ listino, centro, dettagli: null }).cabina;
   const datiTesti = { ...centro, anno, cabina };
-  const t = componiTutto(testi.comuni, datiTesti, "content/testi.json › comuni");
+  const t = numeroUnito(componiTutto(testi.comuni, datiTesti, "content/testi.json › comuni"), centro.telefono);
   const viso = sezioneViso({ listino, centro, dettagli: t.viso.dettagli });
   avvisi.push(...viso.avvisi);
   // La riga info va a capo solo tra un segmento e l'altro («Su appuntamento · dal lunedì al sabato · …»).
@@ -656,6 +677,8 @@ async function main() {
       fotoApertura: immagine(manifesto, "cristina-bancone", t.apertura.altFoto, SIZES_FOTO_APERTURA, { priorita: true }),
       fotoViso: immagine(manifesto, "cabina-viso", t.viso.altFoto, SIZES_FOTO_SEZIONE),
       fotoPedicure: immagine(manifesto, "postazione-pedicure", t.pedicure.altFoto, SIZES_FOTO_SEZIONE),
+      fotoChiSono: immagine(manifesto, "cabina-lettino", t.chiSono.altFoto, SIZES_FOTO_SEZIONE),
+      fotoDove: immagine(manifesto, "ingresso", t.doveSiamo.altFoto, SIZES_FOTO_DOVE),
     },
     contatti: {
       telefono: centro.telefono.replace(/ /g, NBSP), // spazi non separabili: il numero non va a capo
@@ -673,7 +696,7 @@ async function main() {
       whatsappViso: waLink(centro.whatsappNumero, testi.whatsapp.viso),
       whatsappPedicure: waLink(centro.whatsappNumero, testi.whatsapp.pedicure),
       listino: "#listino",
-      maps: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(centro.indirizzo.completo)}`,
+      maps: linkMappa(centro),
       privacy: "/privacy/",
       cookie: "/cookie/",
     },

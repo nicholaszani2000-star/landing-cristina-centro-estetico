@@ -1,4 +1,4 @@
-/* sezioni.css — una parte per sezione (CLAUDE.md §6). Per ora: header, apertura, viso, pedicure, barra contatti mobile, footer, 404. */
+/* sezioni.css — una parte per sezione (CLAUDE.md §6). Per ora: header, apertura, viso, pedicure, chi sono, come prenotare, dove siamo, barra contatti mobile, footer, 404. */
 
 /* 1. Header: logo a sinistra, «Chiama» a destra. Non fisso. */
 .testata {
@@ -81,6 +81,7 @@
   white-space: nowrap;
 }
 .apertura-payoff {
+  text-wrap: balance;
   font-size: 1.125rem;
   color: var(--inchiostro-tenue);
 }
@@ -517,6 +518,256 @@
   }
   @media (max-width: 767.98px) {
     .pedicure-foto {
+      margin-inline: 0;
+    }
+  }
+}
+
+/* 5. Chi sono: testo, foto 04, payoff. Fino a 1023 px (§5): introduzione, foto che sfuma in basso
+   (cornice 4:5 di 520 px tra 768 e 1023 px), payoff. Da 1024 px foto a sinistra in cornice 4:5
+   (object-position 40% 55%: lettino e lampada a lente) che sfuma a destra, testo a destra. */
+.chi-griglia {
+  display: grid;
+  gap: var(--spazio-4);
+}
+.chi-intro {
+  display: grid;
+  gap: var(--spazio-2);
+}
+.chi-intro h2 {
+  margin-bottom: var(--spazio-1);
+}
+.chi-foto {
+  margin-inline: calc(-1 * var(--margine-laterale));
+}
+.chi-foto picture {
+  display: block;
+}
+.chi-foto img {
+  width: 100%;
+  height: auto;
+  -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+  mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+}
+.chi-payoff {
+  text-wrap: balance;
+  font-family: var(--font-titoli);
+  font-size: 1.5rem;
+  font-synthesis: none;
+  line-height: 1.3;
+  color: var(--accento);
+}
+@media (min-width: 768px) {
+  .chi-foto {
+    aspect-ratio: 4 / 5;
+  }
+  .chi-foto picture {
+    height: 100%;
+  }
+  .chi-foto img {
+    height: 100%;
+    object-fit: cover;
+    object-position: 40% 55%; /* lettino e lampada a lente */
+  }
+}
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .chi-intro,
+  .chi-payoff {
+    width: 100%;
+    max-width: var(--cornice-tablet);
+    margin-inline: auto;
+  }
+  .chi-foto {
+    width: 100%;
+    max-width: var(--cornice-tablet);
+    margin-inline: auto;
+    -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+    mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+  }
+  .chi-foto img {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+@media (min-width: 1024px) {
+  .chi-griglia {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-areas:
+      "foto intro"
+      "foto chiusura";
+    column-gap: var(--spazio-8);
+    row-gap: var(--spazio-4);
+    align-content: center;
+  }
+  .chi-intro {
+    grid-area: intro;
+    align-self: end;
+  }
+  .chi-payoff {
+    grid-area: chiusura;
+    align-self: start;
+  }
+  .chi-foto {
+    grid-area: foto;
+    margin: 0;
+  }
+  .chi-foto img {
+    -webkit-mask-image: linear-gradient(to left, transparent, #000 var(--sfumatura-lato));
+    mask-image: linear-gradient(to left, transparent, #000 var(--sfumatura-lato));
+  }
+}
+
+/* 6. Come prenotare: tre passi numerati (numeri grandi in Marcellus), in colonna sotto i 768 px e in riga
+   da 768 px; pulsanti «Chiama» e «Scrivi su WhatsApp». */
+.prenota-griglia {
+  display: grid;
+  gap: var(--spazio-4);
+}
+.prenota-intro {
+  display: grid;
+  gap: var(--spazio-2);
+}
+.passi {
+  display: grid;
+  gap: var(--spazio-3);
+  margin: 0;
+  padding: 0;
+  list-style-type: "\200B"; /* il numero lo disegna ::before; Safari continua ad annunciare la lista */
+  counter-reset: passo;
+}
+.passo {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  gap: var(--spazio-2);
+  align-items: baseline;
+  counter-increment: passo;
+}
+.passo::before {
+  content: counter(passo);
+  font-family: var(--font-titoli);
+  font-size: 2.75rem;
+  font-synthesis: none;
+  line-height: 1;
+  color: var(--accento);
+}
+@media (min-width: 768px) {
+  .passi {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--spazio-4);
+  }
+  .passo {
+    grid-template-columns: 1fr;
+    gap: var(--spazio-2);
+    align-content: start;
+    padding-top: var(--spazio-3);
+    border-top: 1px solid var(--linea);
+  }
+}
+
+/* 8. Dove siamo e orari: foto 02 orizzontale, indirizzo, orari, telefono, «Apri in Google Maps».
+   Fino a 1023 px (§5): introduzione, foto intera che sfuma in basso, il resto. Da 1024 px testo
+   a sinistra, foto a destra in proporzione originale che sfuma a sinistra. Niente mappa incorporata. */
+.dove-griglia {
+  display: grid;
+  gap: var(--spazio-4);
+}
+.dove-intro {
+  display: grid;
+  gap: var(--spazio-2);
+}
+.dove-foto {
+  margin-inline: calc(-1 * var(--margine-laterale));
+}
+.dove-foto picture {
+  display: block;
+}
+.dove-foto img {
+  width: 100%;
+  height: auto;
+  -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+  mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+}
+.dove-dettagli {
+  display: grid;
+  gap: var(--spazio-3);
+  justify-items: start;
+}
+.dove-contatti {
+  display: grid;
+  gap: var(--spazio-1);
+  font-style: normal;
+}
+.dove-riga {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+  min-height: var(--area-tocco);
+}
+.dove-riga .icona {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--accento);
+}
+.dove-riga a {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  min-height: var(--area-tocco);
+  font-weight: var(--peso-medio);
+}
+.dove-orari span::first-letter {
+  text-transform: uppercase; /* «dal lunedì al sabato…» resta com'è nei dati */
+}
+.dove-dettagli .pulsanti {
+  width: 100%;
+}
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .dove-foto {
+    margin-inline: 0; /* foto orizzontale: intera nel contenitore (§5) */
+  }
+}
+@media (min-width: 1024px) {
+  .dove-griglia {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-areas:
+      "intro foto"
+      "dettagli foto";
+    column-gap: var(--spazio-8);
+    row-gap: var(--spazio-4);
+    align-content: center;
+  }
+  .dove-intro {
+    grid-area: intro;
+    align-self: end;
+  }
+  .dove-dettagli {
+    grid-area: dettagli;
+    align-self: start;
+  }
+  .dove-foto {
+    grid-area: foto;
+    align-self: center;
+    margin: 0;
+  }
+  .dove-foto img {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--sfumatura-lato));
+    mask-image: linear-gradient(to right, transparent, #000 var(--sfumatura-lato));
+  }
+  .dove-dettagli .pulsanti {
+    width: auto;
+  }
+}
+
+/* Ripiego senza mask-image per le foto di chi sono e dove siamo */
+@supports not ((mask-image: none) or (-webkit-mask-image: none)) {
+  .chi-foto img,
+  .dove-foto img {
+    border-radius: var(--raggio-foto);
+  }
+  @media (max-width: 767.98px) {
+    .chi-foto,
+    .dove-foto {
       margin-inline: 0;
     }
   }

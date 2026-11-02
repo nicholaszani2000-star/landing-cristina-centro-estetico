@@ -200,7 +200,7 @@ const LINK_PAGINE = [["/", "home"], ["/viso/", "viso"], ["/pedicure/", "pedicure
 
 // ---------------------------------------------------------------- controlli
 
-console.log("Controlli automatici · Step 5\n");
+console.log("Controlli automatici · Step 6\n");
 
 await controllo("build eseguita con codice 0", () => {
   const r = spawnSync(process.execPath, ["build.mjs"], { cwd: RADICE, encoding: "utf8", env: { ...process.env, URL: "" } });
@@ -806,7 +806,7 @@ await controllo('una sola immagine con fetchpriority="high" per pagina, ed è la
 
 await controllo("JSON-LD valido: JSON corretto, tipi schema.org esistenti, solo proprietà note, nessun campo vuoto o null", () => {
   const PROPRIETA = {
-    BeautySalon: ["@context", "@type", "name", "image", "telephone", "email", "address", "url", "openingHoursSpecification", "priceRange"],
+    BeautySalon: ["@context", "@type", "name", "image", "telephone", "email", "address", "url", "openingHoursSpecification", "priceRange", "hasMap", "sameAs"],
     PostalAddress: ["@type", "streetAddress", "postalCode", "addressLocality", "addressRegion", "addressCountry"],
     OpeningHoursSpecification: ["@type", "dayOfWeek", "opens", "closes"],
   };
@@ -1312,6 +1312,144 @@ await controllo("foto 05: object-position 55% 60% da 768 px, sfumatura a sinistr
     if (st.posizione !== "55% 60%") problemi.push(`${larghezza} px: object-position ${st.posizione}`);
     if (maschera && !st.maschera.includes(maschera)) problemi.push(`${larghezza} px: sfumatura ${st.maschera}`);
     if (larghezza === 768 && st.larghezza > 520.5) problemi.push(`768 px: foto larga ${Math.round(st.larghezza)} px`);
+  }
+  verifica(!problemi.length, problemi.join(" · "));
+});
+
+// ---------------------------------------------------------------- Step 6: chi sono, come prenotare, dove siamo e orari
+
+const MAPPA_ATTESA = "https://www.google.com/maps/search/?api=1&query=Via%20Roma%202%2FA%2C%2021040%20Caronno%20Varesino%20VA";
+const sezioneDi = (html, nome) => html.match(new RegExp(`<section[^>]*data-sezione="${nome}"[\\s\\S]*?<\\/section>`))?.[0] ?? null;
+
+await controllo("sezioni 5, 6 e 8 in tutte le pagine, nell'ordine di §6 (il segnaposto del codice sconto tra 6 e 8)", () => {
+  for (const [file, id] of PAGINE.filter(([, id]) => id)) {
+    const html = pagina(file);
+    const [terza, quarta] = testi.pagine[id].ordine;
+    const segni = [
+      ["apertura", html.indexOf('class="apertura"')],
+      [terza, html.indexOf(`data-sezione="${terza}"`)],
+      [quarta, html.indexOf(`data-sezione="${quarta}"`)],
+      ["chi-sono", html.indexOf('data-sezione="chi-sono"')],
+      ["come-prenotare", html.indexOf('data-sezione="come-prenotare"')],
+      ["codice-sconto (segnaposto)", html.search(/<!-- sezione: codice-sconto|data-sezione="codice-sconto"/)],
+      ["dove-siamo", html.indexOf('data-sezione="dove-siamo"')],
+      ["listino", html.indexOf('id="listino"')],
+      ["footer", html.indexOf("<footer")],
+    ];
+    const mancanti = segni.filter(([, pos]) => pos < 0).map(([n]) => n);
+    verifica(!mancanti.length, `${file}: mancano ${mancanti.join(", ")}`);
+    const ordine = [...segni].sort((a, b) => a[1] - b[1]).map(([n]) => n);
+    verifica(ordine.join() === segni.map(([n]) => n).join(), `${file}: ordine ${ordine.join(" → ")}`);
+  }
+});
+
+await controllo("pulsanti per pagina come in §6: apertura 2, viso 1, pedicure 1, come prenotare 2, dove siamo 1, barra 2", () => {
+  const attesi = { apertura: 2, viso: 1, pedicure: 1, "come-prenotare": 2, "dove-siamo": 1 };
+  for (const [file] of PAGINE.filter(([, id]) => id)) {
+    const html = pagina(file);
+    const conta = (frammento) => (frammento?.match(/class="pulsante pulsante-/g) ?? []).length;
+    const apertura = html.match(/<section class="apertura"[\s\S]*?<\/section>/)?.[0];
+    verifica(conta(apertura) === attesi.apertura, `${file}: apertura con ${conta(apertura)} pulsanti`);
+    for (const nome of ["viso", "pedicure", "come-prenotare", "dove-siamo"]) {
+      verifica(conta(sezioneDi(html, nome)) === attesi[nome], `${file}: ${nome} con ${conta(sezioneDi(html, nome))} pulsanti`);
+    }
+    const barra = html.match(/<div class="barra-contatti"[\s\S]*?<\/div>/)?.[0];
+    verifica(conta(barra) === 2, `${file}: barra con ${conta(barra)} pulsanti`);
+    verifica(conta(html.match(/<main[\s\S]*<\/main>/)[0]) === 7, `${file}: ${conta(html.match(/<main[\s\S]*<\/main>/)[0])} pulsanti nel main invece di 7`);
+  }
+});
+
+await controllo("chi sono: testo predefinito di §8 (presentazione non indicata), payoff, foto 04 con l'alt di §8", () => {
+  for (const [file] of PAGINE.filter(([, id]) => id)) {
+    const sez = sezioneDi(pagina(file), "chi-sono");
+    const testo = testoVisibile(sez);
+    const atteso = centro.presentazione ?? testi.comuni.chiSono.testoPredefinito;
+    verifica(testo.includes(atteso), `${file}: testo di presentazione`);
+    verifica(testoVisibile(sez.match(/<p class="chi-payoff[^"]*">([\s\S]*?)<\/p>/)?.[1] ?? "") === `“${centro.payoff}”`, `${file}: payoff`);
+    verifica(sez.includes('alt="Una delle cabine del centro Migliore – Estetica Avanzata"') && /cabina-lettino-\d+\.webp/.test(sez), `${file}: foto 04`);
+    verifica(/<h2 id="chi-sono-titolo">Migliore è il\s?mio cognome\. Ed\s?è anche una\s?promessa\.<\/h2>/.test(sez.replace(/ /g, " ")), `${file}: H2`);
+  }
+});
+
+await controllo("come prenotare: tre passi di §8 in un <ol>, «Chiama» e «Scrivi su WhatsApp» con il testo della pagina", () => {
+  const attesi = [
+    "Chiama o scrivi su WhatsApp al 352 060 1109.",
+    "Scegli il giorno e l'ora: dal lunedì al sabato, dalle 08:00 alle 17:00.",
+    "Vieni in Via Roma 2/A a Caronno Varesino: il tuo appuntamento è pronto.",
+  ];
+  for (const [file, id] of PAGINE.filter(([, id]) => id)) {
+    const sez = sezioneDi(pagina(file), "come-prenotare");
+    const passi = [...(sez.match(/<ol class="passi">([\s\S]*?)<\/ol>/)?.[1] ?? "").matchAll(/<li[^>]*>([\s\S]*?)<\/li>/g)].map((m) => normalizzaSpazi(testoVisibile(m[1])));
+    verifica(passi.join(" | ") === attesi.join(" | "), `${file}: passi «${passi.join(" | ")}»`);
+    verifica(sez.includes(`href="tel:${centro.telefonoE164}"`), `${file}: pulsante Chiama`);
+    const wa = sez.match(/href="(https:\/\/wa\.me\/[^"]*)"/)?.[1];
+    verifica(wa && new URL(decodifica(wa)).searchParams.get("text") === testi.whatsapp[testi.pagine[id].whatsapp], `${file}: testo WhatsApp di «Come prenotare»`);
+    verifica(sez.includes(">Scrivi su WhatsApp</span>"), `${file}: etichetta «Scrivi su WhatsApp»`);
+  }
+});
+
+await controllo("dove siamo: <address> con indirizzo e telefono, orari, link Maps con l'indirizzo codificato (nuova scheda), foto 02; hasMap nel JSON-LD", () => {
+  for (const [file] of PAGINE.filter(([, id]) => id)) {
+    const sez = sezioneDi(pagina(file), "dove-siamo");
+    const indirizzo = sez.match(/<address[^>]*>([\s\S]*?)<\/address>/)?.[1] ?? "";
+    verifica(testoVisibile(indirizzo).includes(centro.indirizzo.completo), `${file}: indirizzo fuori da <address>`);
+    verifica(indirizzo.includes(`href="tel:${centro.telefonoE164}"`), `${file}: telefono nel blocco indirizzo`);
+    const maps = [...sez.matchAll(/<a\b[^>]*href="(https:\/\/www\.google\.com\/maps\/[^"]*)"[^>]*>/g)];
+    verifica(maps.length === 1, `${file}: ${maps.length} link Maps`);
+    verifica(decodifica(maps[0][1]) === (centro.social.schedaGoogle ?? MAPPA_ATTESA), `${file}: link Maps «${decodifica(maps[0][1])}»`);
+    verifica(/target="_blank"/.test(maps[0][0]) && /rel="noopener"/.test(maps[0][0]), `${file}: Maps senza nuova scheda`);
+    verifica(sez.includes(">Apri in Google Maps</span>") && /pulsante-secondario/.test(maps[0][0]), `${file}: pulsante secondario «Apri in Google Maps»`);
+    verifica(sez.includes('alt="L&#39;ingresso del centro Migliore – Estetica Avanzata in Via Roma 2/A"') && /ingresso-\d+\.webp/.test(sez), `${file}: foto 02`);
+    verifica(JSON.parse(jsonLdDi(pagina(file))[0]).hasMap === (centro.social.schedaGoogle ?? MAPPA_ATTESA), `${file}: hasMap del JSON-LD`);
+    verifica(!("sameAs" in JSON.parse(jsonLdDi(pagina(file))[0])) || [centro.social.instagram, centro.social.facebook].some(Boolean), `${file}: sameAs senza social indicati`);
+  }
+  const conScheda = structuredClone(centro);
+  conScheda.social.schedaGoogle = "https://maps.app.goo.gl/esempio";
+  verifica(build.linkMappa(conScheda) === "https://maps.app.goo.gl/esempio", "con la scheda Google il pulsante non usa quel link");
+});
+
+await controllo("nessun <iframe> nel sito (niente mappe incorporate)", () => {
+  const con = elenca(DIST, (p) => p.endsWith(".html")).filter((f) => /<iframe\b/i.test(readFileSync(f, "utf8")));
+  verifica(!con.length, con.map(rel).join(", "));
+});
+
+await controllo("orari scritti in modo identico (stessa fonte) in apertura, «Come prenotare» e «Dove siamo»", () => {
+  const giorni = centro.orari.giorni;
+  const ore = `dalle ${centro.orari.apertura} alle ${centro.orari.chiusura}`;
+  for (const [file] of PAGINE.filter(([, id]) => id)) {
+    const html = pagina(file);
+    const blocchi = {
+      apertura: testoVisibile(html.match(/<p class="apertura-info">([\s\S]*?)<\/p>/)?.[1] ?? ""),
+      "come prenotare": testoVisibile(sezioneDi(html, "come-prenotare")),
+      "dove siamo": testoVisibile(html.match(/<p class="dove-riga dove-orari">([\s\S]*?)<\/p>/)?.[1] ?? ""),
+    };
+    for (const [nome, testo] of Object.entries(blocchi)) {
+      verifica(testo.includes(giorni) && testo.includes(ore), `${file}: orari diversi in «${nome}»: «${testo.slice(0, 80)}»`);
+    }
+  }
+  // stessa fonte: nei testi le ore e i giorni sono segnaposto di centro.json, mai scritti a mano
+  const grezzi = [testi.comuni.apertura.rigaInfo, testi.comuni.comePrenotare.passi[1], testi.comuni.doveSiamo.orari];
+  for (const g of grezzi) verifica(g.includes("{orari.giorni}") && g.includes("{orari.apertura}") && g.includes("{orari.chiusura}") && !/\d{2}:\d{2}/.test(g), `testo scritto a mano: «${g}»`);
+});
+
+await controllo("foto 04 e 02: object-position 40% 55% (chi sono) da 768 px; foto 02 intera, sfumata a sinistra da 1024 px", async () => {
+  const { browser, base } = await browserCondiviso();
+  const problemi = [];
+  for (const [larghezza, altezza] of [[768, 1024], [1440, 900]]) {
+    const contesto = await browser.newContext({ viewport: { width: larghezza, height: altezza } });
+    const pagina = await contesto.newPage();
+    await pagina.goto(base + "/", { waitUntil: "networkidle" });
+    const st = await pagina.evaluate(() => {
+      const chi = getComputedStyle(document.querySelector(".chi-foto img"));
+      const dove = document.querySelector(".dove-foto img");
+      const r = dove.getBoundingClientRect();
+      const sd = getComputedStyle(dove);
+      return { chi: chi.objectPosition, rapporto: r.width / r.height, naturale: dove.naturalWidth / dove.naturalHeight, maschera: sd.maskImage || sd.webkitMaskImage };
+    });
+    await contesto.close();
+    if (st.chi !== "40% 55%") problemi.push(`${larghezza} px: chi sono object-position ${st.chi}`);
+    if (Math.abs(st.rapporto - st.naturale) > 0.01) problemi.push(`${larghezza} px: foto 02 ritagliata (${st.rapporto.toFixed(3)} invece di ${st.naturale.toFixed(3)})`);
+    if (larghezza === 1440 && !st.maschera.includes("to right")) problemi.push(`1440 px: foto 02 senza sfumatura a sinistra (${st.maschera})`);
   }
   verifica(!problemi.length, problemi.join(" · "));
 });

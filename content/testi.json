@@ -70,7 +70,7 @@
         "Vieni in {indirizzo.via} a {indirizzo.comune}: il tuo appuntamento è pronto."
       ],
       "pulsanteChiama": "Chiama",
-      "pulsanteWhatsapp": "WhatsApp"
+      "pulsanteWhatsapp": "Scrivi su WhatsApp"
     },
     "codiceSconto": {
       "occhiello": "Per te",
