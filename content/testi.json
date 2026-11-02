@@ -82,9 +82,15 @@
       "consensoTestoLink": "informativa privacy",
       "condizioni": "Il codice vale {codiceSconto.validitaGiorni} giorni, {codiceSconto.condizioni}. Mostralo a Cristina quando arrivi.",
       "pulsante": "Ricevi il codice",
+      "trappola": "Lascia vuoto",
       "risultatoTitolo": "Ecco il tuo codice",
       "risultatoValidita": "Valido fino al [data]. Fai uno screenshot o mostralo dal telefono quando arrivi.",
       "risultatoEmail": "Te l'abbiamo mandato anche via email.",
+      "copia": "Copia il codice",
+      "copiato": "Codice copiato",
+      "tornaAlSito": "Torna al sito",
+      "paginaErroreTitolo": "Il codice non è stato generato",
+      "tornaAlModulo": "Torna al modulo",
       "errori": {
         "email": "Controlla l'indirizzo email.",
         "consenso": "Per ricevere il codice serve il consenso.",
@@ -110,6 +116,21 @@
     "barraContatti": {
       "chiama": "Chiama",
       "whatsapp": "WhatsApp"
+    },
+    "banner": {
+      "titolo": "Preferenze cookie",
+      "testo": "Usiamo cookie di statistica e di marketing solo se li accetti. Puoi cambiare idea quando vuoi da «Preferenze cookie», in fondo alla pagina.",
+      "linkCookie": "Cookie policy",
+      "rifiuta": "Rifiuta",
+      "personalizza": "Personalizza",
+      "accetta": "Accetta",
+      "chiudi": "Chiudi e rifiuta i cookie",
+      "pannelloTitolo": "Scegli quali cookie accettare",
+      "statistiche": "Statistiche",
+      "statisticheTesto": "Ci dicono, in forma aggregata, come viene usato il sito (Google Analytics).",
+      "marketing": "Marketing",
+      "marketingTesto": "Misurano i risultati degli annunci su Facebook e Instagram (pixel Meta).",
+      "salva": "Salva le scelte"
     },
     "footer": {
       "logoAlt": "{nome}",
@@ -186,7 +207,7 @@
             "base": "Il tuo consenso, dato nel banner dei cookie (art. 6, par. 1, lett. a del GDPR). Senza consenso Google Analytics non parte.",
             "conservazione": "I cookie durano quanto indicato nella cookie policy; i dati restano in Google Analytics per il periodo impostato, al massimo 14 mesi.",
             "nota": null,
-            "richiede": "ga4"
+            "richiede": "ga4Id"
           },
           {
             "titolo": "Marketing (pixel Meta e API Conversioni)",
@@ -195,7 +216,7 @@
             "base": "Il tuo consenso, dato nel banner dei cookie (art. 6, par. 1, lett. a del GDPR). Senza consenso né il pixel né l'API Conversioni ricevono i tuoi dati.",
             "conservazione": "I cookie durano quanto indicato nella cookie policy; per i dati ricevuti valgono i tempi di conservazione di Meta.",
             "nota": null,
-            "richiede": "pixelMeta"
+            "richiede": "metaPixelId"
           }
         ]
       },
@@ -229,13 +250,13 @@
             "nome": "Google Ireland Limited",
             "sede": "Irlanda",
             "ruolo": "fornisce Google Analytics 4, con possibili trasferimenti a Google LLC negli Stati Uniti",
-            "richiede": "ga4"
+            "richiede": "ga4Id"
           },
           {
             "nome": "Meta Platforms Ireland Limited",
             "sede": "Irlanda",
             "ruolo": "fornisce il pixel Meta e l'API Conversioni, con possibili trasferimenti a Meta Platforms, Inc. negli Stati Uniti",
-            "richiede": "pixelMeta"
+            "richiede": "metaPixelId"
           }
         ],
         "trasferimento": "Alcuni fornitori hanno sede negli Stati Uniti. In questi casi il trasferimento dei dati avviene con le garanzie previste dal GDPR: l'adesione del fornitore all'EU-US Data Privacy Framework oppure le clausole contrattuali standard approvate dalla Commissione europea.",
@@ -290,11 +311,11 @@
       },
       "elenco": [
         {
-          "nome": "Preferenze cookie",
+          "nome": "migliore-consenso",
           "categoria": "Tecnico",
           "fornitore": "{nome}",
           "durata": "6 mesi",
-          "finalita": "Ricorda se hai accettato o rifiutato i cookie.",
+          "finalita": "Ricorda nel browser (archiviazione locale, non un cookie) se hai accettato o rifiutato i cookie.",
           "richiede": "tracciamenti"
         },
         {
@@ -303,7 +324,7 @@
           "fornitore": "Google",
           "durata": "2 anni",
           "finalita": "Distingue i visitatori nelle statistiche di Google Analytics.",
-          "richiede": "ga4"
+          "richiede": "ga4Id"
         },
         {
           "nome": "_ga_<ID>",
@@ -311,7 +332,7 @@
           "fornitore": "Google",
           "durata": "2 anni",
           "finalita": "Mantiene lo stato della sessione in Google Analytics.",
-          "richiede": "ga4"
+          "richiede": "ga4Id"
         },
         {
           "nome": "_fbp",
@@ -319,7 +340,7 @@
           "fornitore": "Meta",
           "durata": "3 mesi",
           "finalita": "Riconosce il browser per misurare i risultati degli annunci su Facebook e Instagram.",
-          "richiede": "pixelMeta"
+          "richiede": "metaPixelId"
         },
         {
           "nome": "_fbc",
@@ -327,7 +348,7 @@
           "fornitore": "Meta",
           "durata": "3 mesi",
           "finalita": "Conserva il riferimento all'annuncio Meta da cui arrivi, se arrivi da un annuncio.",
-          "richiede": "pixelMeta"
+          "richiede": "metaPixelId"
         }
       ],
       "scelta": {

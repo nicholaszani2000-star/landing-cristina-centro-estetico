@@ -2,13 +2,15 @@
 //
 // Uso:  node studio/anteprima.mjs                 build, server, screenshot, errori di console
 //       node studio/anteprima.mjs --step 3        salva in studio/screenshot/step3/
-//       pagine: /, /viso/, /pedicure/ (primo schermo, intera, fondo a 390), /privacy/, /cookie/ e 404 (intera)
+//       pagine: /, /viso/, /pedicure/ (primo schermo, intera, fondo a 390), /privacy/, /cookie/ e 404 (intera);
+//       modulo del codice sconto (vuoto, errori, codice ottenuto) e banner cookie della build di prova a 390 px
 //       node studio/anteprima.mjs --solo-server   tiene acceso il server (porta 4173)
 //       opzioni: --porta N · --senza-build
 // Senza --step la cartella è quella dello step in corso: ultimo studio/report/stepN.md + 1.
 
 import { spawnSync } from "node:child_process";
-import { existsSync, readdirSync, statSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, rmSync, statSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { dirname, extname, join, normalize, resolve, sep } from "node:path";
@@ -77,14 +79,46 @@ function stepCorrente() {
 
 // ---------------------------------------------------------------- server
 
-function fileDi(percorso) {
-  const pieno = normalize(join(DIST, percorso));
-  if (pieno !== DIST && !pieno.startsWith(DIST + sep)) return null; // niente uscite da dist/
+function fileDi(percorso, cartella = DIST) {
+  const pieno = normalize(join(cartella, percorso));
+  if (pieno !== cartella && !pieno.startsWith(cartella + sep)) return null; // niente uscite dalla cartella servita
   return pieno;
+}
+
+// ---------------------------------------------------------------- funzione del codice sconto
+
+let funzione = null;
+/** Importa netlify/functions/codice-sconto.mjs con un globale Netlify finto: env.get legge process.env.
+ *  Senza SUPABASE_URL e SUPABASE_SECRET_KEY la funzione lavora in «modalità prova» (§13). */
+async function funzioneCodice() {
+  if (!funzione) {
+    globalThis.Netlify ??= { env: { get: (k) => process.env[k] } };
+    funzione = (await import(pathToFileURL(join(RADICE, "netlify", "functions", "codice-sconto.mjs")).href)).default;
+  }
+  return funzione;
+}
+async function corpoDi(richiesta) {
+  const parti = [];
+  for await (const parte of richiesta) parti.push(parte);
+  return Buffer.concat(parti);
+}
+/** Passa alla funzione una Request vera (metodo, header, corpo) e scrive la sua Response. */
+async function rispondiCodice(richiesta, risposta) {
+  const intestazioni = new Headers();
+  for (let i = 0; i < richiesta.rawHeaders.length; i += 2) intestazioni.append(richiesta.rawHeaders[i], richiesta.rawHeaders[i + 1]);
+  const corpo = await corpoDi(richiesta);
+  const req = new Request(new URL(richiesta.url, `http://${richiesta.headers.host ?? "localhost"}`), {
+    method: richiesta.method,
+    headers: intestazioni,
+    body: ["GET", "HEAD"].includes(richiesta.method) ? undefined : corpo,
+  });
+  const res = await (await funzioneCodice())(req, { ip: richiesta.socket.remoteAddress, params: {} });
+  risposta.writeHead(res.status, Object.fromEntries(res.headers));
+  risposta.end(Buffer.from(await res.arrayBuffer()));
 }
 const esisteFile = (p) => p && existsSync(p) && statSync(p).isFile();
 
-async function rispondi(richiesta, risposta) {
+async function rispondi(richiesta, risposta, cartella = DIST) {
   const url = new URL(richiesta.url, "http://anteprima.local");
   let percorso;
   try {
@@ -99,9 +133,7 @@ async function rispondi(richiesta, risposta) {
       risposta.writeHead(405, { Allow: "POST" }).end();
       return;
     }
-    // Step 8: qui l'anteprima importerà netlify/functions/codice-sconto.mjs.
-    risposta.writeHead(501, { "Content-Type": "application/json; charset=utf-8" });
-    risposta.end(JSON.stringify({ errore: "Il codice sconto arriva allo Step 8." }));
+    await rispondiCodice(richiesta, risposta);
     return;
   }
   if (richiesta.method !== "GET" && richiesta.method !== "HEAD") {
@@ -110,18 +142,18 @@ async function rispondi(richiesta, risposta) {
   }
 
   // Pretty URL come su Netlify: /viso/ → viso/index.html; /viso → 301 /viso/; /pagina → pagina.html
-  let file = fileDi(percorso.endsWith("/") ? percorso + "index.html" : percorso);
+  let file = fileDi(percorso.endsWith("/") ? percorso + "index.html" : percorso, cartella);
   let stato = 200;
   if (!esisteFile(file)) {
-    const cartella = fileDi(percorso);
-    if (!percorso.endsWith("/") && cartella && esisteFile(join(cartella, "index.html"))) {
+    const sottocartella = fileDi(percorso, cartella);
+    if (!percorso.endsWith("/") && sottocartella && esisteFile(join(sottocartella, "index.html"))) {
       risposta.writeHead(301, { Location: percorso + "/" + url.search }).end();
       return;
     }
-    const html = fileDi(percorso + ".html");
+    const html = fileDi(percorso + ".html", cartella);
     if (esisteFile(html)) file = html;
     else {
-      file = join(DIST, "404.html");
+      file = join(cartella, "404.html");
       stato = 404;
       if (!esisteFile(file)) {
         risposta.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" }).end("404");
@@ -138,10 +170,10 @@ async function rispondi(richiesta, risposta) {
   risposta.end(richiesta.method === "HEAD" ? undefined : corpo);
 }
 
-export function avviaServer(porta) {
+export function avviaServer(porta, { cartella = DIST } = {}) {
   return new Promise((ok, ko) => {
     const server = createServer((req, res) => {
-      rispondi(req, res).catch((e) => {
+      rispondi(req, res, resolve(cartella)).catch((e) => {
         console.error(e);
         if (!res.headersSent) res.writeHead(500);
         res.end();
@@ -196,6 +228,75 @@ async function scorriTutta(pagina) {
     scrollTo(0, 0);
     await pausa(200);
   });
+}
+
+// ---------------------------------------------------------------- Step 8: modulo e banner
+
+const TRACCIANTI = /(^|\.)(googletagmanager\.com|google-analytics\.com|facebook\.net|facebook\.com)$/;
+
+/** Ascolta errori di console, errori JS e richieste fallite di una pagina. */
+function sorveglia(pagina, etichetta, problemi) {
+  pagina.on("console", (m) => (m.type() === "error" || m.type() === "warning") && problemi.push(`${etichetta} · console ${m.type()}: ${m.text()}`));
+  pagina.on("pageerror", (e) => problemi.push(`${etichetta} · errore JS: ${e.message}`));
+  pagina.on("requestfailed", (r) => !TRACCIANTI.test(new URL(r.url()).hostname) && problemi.push(`${etichetta} · richiesta fallita: ${r.url()}`));
+}
+
+/** Modulo del codice sconto: vuoto (390 e 1440), con gli errori e con il codice ottenuto (390). La barra contatti
+ *  mobile si nasconde solo per questi ritagli, così il blocco si vede intero. */
+async function screenshotCodice(browser, base, uscita, problemi, salvati) {
+  for (const [larghezza, altezza] of [[390, 844], [1440, 900]]) {
+    const contesto = await browser.newContext({ viewport: { width: larghezza, height: altezza }, reducedMotion: "reduce" });
+    const pagina = await contesto.newPage();
+    sorveglia(pagina, `codice sconto ${larghezza}px`, problemi);
+    await pagina.goto(base + "/viso/?utm_source=meta", { waitUntil: "networkidle" });
+    await pagina.addStyleTag({ content: ".barra-contatti{display:none!important}" });
+    const sezione = pagina.locator("#codice-sconto");
+    const salva = async (nome) => {
+      const file = join(uscita, `codice-${larghezza}-${nome}.png`);
+      await sezione.screenshot({ path: file });
+      salvati.push(file);
+    };
+    await salva("vuoto");
+    if (larghezza < 768) {
+      await pagina.click(".codice-invia");
+      await salva("errori");
+      await pagina.fill("#codice-email", "anna@esempio.it");
+      await pagina.check("#codice-consenso");
+      await pagina.click(".codice-invia");
+      await pagina.waitForSelector(".codice-ottenuto");
+      await salva("ottenuto");
+    }
+    await contesto.close();
+  }
+}
+
+/** Banner cookie nella build di prova (TEST_TRACCIAMENTI=1, ID finti) a 390 px, con Google e Meta bloccati. */
+async function screenshotBanner(browser, uscita, problemi, salvati) {
+  const tmp = mkdtempSync(join(tmpdir(), "migliore-banner-"));
+  try {
+    const build = spawnSync(process.execPath, [join(RADICE, "build.mjs"), "--dist", tmp], { cwd: RADICE, encoding: "utf8", env: { ...process.env, URL: "", CONTEXT: "", TEST_TRACCIAMENTI: "1" } });
+    if (build.status !== 0) {
+      problemi.push(`build di prova del banner fallita: ${build.stderr || build.stdout}`);
+      return;
+    }
+    const server = await avviaServer(0, { cartella: tmp });
+    const contesto = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await contesto.route((u) => TRACCIANTI.test(u.hostname), (r) => r.abort());
+    const pagina = await contesto.newPage();
+    sorveglia(pagina, "banner 390px", problemi);
+    await pagina.goto(`http://127.0.0.1:${server.address().port}/`, { waitUntil: "networkidle" });
+    await pagina.evaluate(() => document.fonts.ready);
+    for (const [nome, azione] of [["banner-390", null], ["banner-390-pannello", '[data-consenso="personalizza"]']]) {
+      if (azione) await pagina.click(azione);
+      const file = join(uscita, `${nome}.png`);
+      await pagina.screenshot({ path: file });
+      salvati.push(file);
+    }
+    await contesto.close();
+    server.close();
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
 }
 
 // ---------------------------------------------------------------- main
@@ -283,6 +384,9 @@ async function main() {
     }
     await contesto.close();
   }
+  await screenshotCodice(browser, base, uscita, problemi, salvati);
+  await screenshotBanner(browser, uscita, problemi, salvati);
+
   // Ripieghi (§3.8): il contenuto resta visibile senza JS, con «riduci movimento» e se main.js non arriva.
   const opacitaMinima = (pagina) =>
     pagina.evaluate(() => Math.min(1, ...[...document.querySelectorAll(".appare")].map((el) => Number(getComputedStyle(el).opacity))));

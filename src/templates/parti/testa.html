@@ -25,5 +25,7 @@
 <link rel="stylesheet" href="/css/base.css">
 <link rel="stylesheet" href="/css/sezioni.css">
 <script src="/js/main.js" defer></script>
-{{#se jsonld}}<script type="application/ld+json">{{{jsonld}}}</script>
+{{#se script.codice}}<script src="/js/codice.js" defer></script>
+{{/se}}{{#se tracciamenti.attivo}}<script src="/js/consenso.js" defer></script>
+{{/se}}{{#se jsonld}}<script type="application/ld+json">{{{jsonld}}}</script>
 {{/se}}

@@ -1,4 +1,4 @@
-/* sezioni.css — una parte per sezione (CLAUDE.md §6): header, apertura, viso, pedicure, chi sono, come prenotare, dove siamo, listino, barra contatti mobile, footer, 404, pagine legali. */
+/* sezioni.css — una parte per sezione (CLAUDE.md §6): header, apertura, viso, pedicure, chi sono, come prenotare, codice sconto, dove siamo, listino, barra contatti mobile, footer, 404, pagine legali, banner cookie. */
 
 /* 1. Header: logo a sinistra, «Chiama» a destra. Non fisso. */
 .testata {
@@ -665,6 +665,191 @@
   }
 }
 
+/* 7. Codice sconto: introduzione, poi il blocco in rilievo (--sabbia-profonda) con il modulo.
+   Campi su --crema con bordo 1,5 px --inchiostro-tenue, errori in --accento con icona. Da 1024 px colonne 5/7. */
+.codice-griglia {
+  display: grid;
+  gap: var(--spazio-4);
+}
+.codice-intro {
+  display: grid;
+  gap: var(--spazio-2);
+  align-content: start;
+}
+.codice-blocco {
+  padding: var(--spazio-3);
+  border-radius: var(--raggio-scheda);
+  background: var(--sabbia-profonda);
+}
+.codice-modulo,
+.codice-ottenuto {
+  display: grid;
+  gap: var(--spazio-3);
+}
+.campo {
+  display: grid;
+  gap: var(--spazio-1);
+}
+.campo-etichetta {
+  font-weight: var(--peso-medio);
+}
+.campo-testo {
+  width: 100%;
+  min-height: var(--pulsante-altezza);
+  padding: 0 1rem;
+  border: var(--bordo-scheda) solid var(--inchiostro-tenue);
+  border-radius: 0.5rem;
+  background: var(--crema);
+  color: var(--inchiostro);
+  font: inherit;
+}
+.campo-testo::placeholder {
+  color: var(--inchiostro-tenue);
+}
+.campo-testo[aria-invalid="true"],
+.campo-casella[aria-invalid="true"]::before {
+  border-color: var(--accento);
+}
+/* Casella del consenso: area di tocco di 44 px, quadratino disegnato di 24 px. */
+.campo-consenso {
+  grid-template-columns: var(--area-tocco) minmax(0, 1fr);
+  column-gap: var(--spazio-1);
+  align-items: start;
+  font-size: var(--testo-piccolo);
+}
+.campo-consenso .campo-avviso {
+  grid-column: 2;
+}
+.campo-casella {
+  display: grid;
+  place-content: center;
+  width: var(--area-tocco);
+  height: var(--area-tocco);
+  margin: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+.campo-casella::before,
+.campo-casella::after {
+  content: "";
+  grid-area: 1 / 1;
+}
+.campo-casella::before {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: var(--bordo-scheda) solid var(--inchiostro-tenue);
+  border-radius: 0.3rem;
+  background: var(--crema);
+}
+.campo-casella::after {
+  justify-self: center;
+  width: 0.45rem;
+  height: 0.8rem;
+  margin-top: -0.2rem;
+  border: solid var(--sabbia);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  visibility: hidden;
+}
+.campo-casella:checked::before {
+  border-color: var(--inchiostro);
+  background: var(--inchiostro);
+}
+.campo-casella:checked::after {
+  visibility: visible;
+}
+.campo-casella:focus-visible {
+  outline-offset: -6px;
+}
+.campo-consenso label {
+  padding-top: 0.55rem;
+  line-height: 1.5;
+}
+.campo-errore {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin-top: 0.25rem;
+  font-size: var(--testo-piccolo);
+  font-weight: var(--peso-medio);
+  color: var(--accento);
+}
+.campo-errore .icona {
+  margin-top: 0.1rem;
+}
+/* Campo trappola: fuori dallo schermo (non display:none), così i robot lo compilano e le persone no. */
+.trappola {
+  position: absolute;
+  left: -10000px;
+  width: 20rem;
+}
+.codice-invia {
+  width: 100%;
+}
+.codice-invia:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+.codice-condizioni {
+  font-size: var(--testo-piccolo);
+  color: var(--inchiostro-tenue);
+}
+.codice-risultato:empty {
+  display: none;
+}
+.codice-ottenuto-titolo {
+  font-size: var(--testo-h3);
+}
+.codice-ottenuto-titolo:focus {
+  outline: none;
+}
+.codice-ottenuto-titolo:focus-visible {
+  outline: var(--focus-spessore) solid var(--accento);
+}
+.codice-valore {
+  justify-self: start;
+  padding: 0.5rem 1rem;
+  border: var(--bordo-scheda) dashed var(--accento);
+  border-radius: 0.5rem;
+  font-family: var(--font-titoli);
+  font-size: clamp(2rem, 1.6rem + 1.6vw, 2.75rem);
+  font-synthesis: none;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  user-select: all;
+}
+.codice-ottenuto .pulsante {
+  justify-self: start;
+}
+@media (min-width: 768px) {
+  .codice-invia {
+    width: auto;
+    justify-self: start;
+  }
+  .codice-blocco {
+    padding: var(--spazio-4);
+  }
+}
+@media (min-width: 1024px) {
+  .codice-griglia {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    column-gap: var(--spazio-8);
+  }
+}
+/* Pagina della funzione per chi invia senza JavaScript */
+.codice-pagina .contenitore {
+  display: grid;
+  gap: var(--spazio-3);
+  justify-items: start;
+}
+.codice-pagina-link a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--area-tocco);
+  font-weight: var(--peso-medio);
+}
+
 /* 8. Dove siamo e orari: foto 02 orizzontale, indirizzo, orari, telefono, «Apri in Google Maps».
    Fino a 1023 px (§5): introduzione, foto intera che sfuma in basso, il resto. Da 1024 px testo
    a sinistra, foto a destra in proporzione originale che sfuma a sinistra. Niente mappa incorporata. */
@@ -1090,4 +1275,123 @@
 .legale-cookie-nome {
   font-family: var(--font-testo);
   font-weight: var(--peso-medio);
+}
+
+/* Banner cookie (solo con GA4 o Meta indicati): in basso, non bloccante. «Rifiuta», «Personalizza» e
+   «Accetta» hanno lo stesso stile e la stessa misura (§10); la X chiude rifiutando. */
+.banner-cookie {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 30;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding-block: var(--spazio-3) calc(var(--spazio-3) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--linea);
+  background: var(--sabbia);
+  box-shadow: 0 -0.5rem 1.5rem rgb(31 22 18 / 0.12);
+}
+.banner-interno {
+  position: relative;
+  display: grid;
+  gap: var(--spazio-2);
+}
+.banner-testo {
+  padding-right: var(--area-tocco);
+  font-size: var(--testo-piccolo);
+}
+.banner-pulsanti {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spazio-1);
+}
+.banner-cookie .pulsante {
+  padding-inline: 0.75rem;
+  font-size: 0.9375rem;
+}
+.banner-pannello {
+  display: grid;
+  gap: var(--spazio-2);
+  justify-items: start;
+}
+.banner-pannello-titolo {
+  font-weight: var(--peso-medio);
+}
+.interruttore {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--spazio-2);
+  align-items: start;
+  font-size: var(--testo-piccolo);
+  cursor: pointer;
+}
+.interruttore input {
+  position: relative;
+  width: 2.75rem;
+  height: 1.5rem;
+  margin: 0.1rem 0 0;
+  border: var(--bordo-scheda) solid var(--inchiostro-tenue);
+  border-radius: var(--raggio-pillola);
+  background: var(--crema);
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+.interruttore input::before {
+  content: "";
+  position: absolute;
+  top: 0.15rem;
+  left: 0.15rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: var(--inchiostro-tenue);
+}
+.interruttore input:checked {
+  border-color: var(--inchiostro);
+  background: var(--inchiostro);
+}
+.interruttore input:checked::before {
+  left: auto;
+  right: 0.15rem;
+  background: var(--sabbia);
+}
+.banner-chiudi {
+  position: absolute;
+  top: calc(-1 * var(--spazio-1));
+  right: var(--margine-laterale);
+  display: grid;
+  place-items: center;
+  width: var(--area-tocco);
+  height: var(--area-tocco);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--inchiostro);
+  cursor: pointer;
+}
+.banner-chiudi .icona {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+/* Mentre il banner è aperto la barra contatti mobile si nasconde e la pagina lascia spazio in fondo. */
+.banner-aperto .barra-contatti {
+  display: none;
+}
+.banner-aperto body {
+  padding-bottom: var(--spazio-banner, 0px);
+}
+/* «Preferenze cookie» funziona solo con JavaScript: senza, non compare. */
+html:not(.js) .piede-preferenze {
+  display: none;
+}
+@media (min-width: 768px) {
+  .banner-pulsanti {
+    grid-template-columns: repeat(3, auto);
+    justify-content: start;
+  }
+  .banner-cookie .pulsante {
+    min-width: 10rem;
+  }
 }

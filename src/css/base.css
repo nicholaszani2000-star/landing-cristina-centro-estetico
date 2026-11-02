@@ -51,6 +51,10 @@ body {
 h1, h2, h3, p, ul, ol, figure, blockquote {
   margin: 0;
 }
+/* L'attributo hidden vince sempre, anche sugli elementi a cui il CSS dà display: grid o flex. */
+[hidden] {
+  display: none !important;
+}
 img {
   display: block;
   max-width: 100%;

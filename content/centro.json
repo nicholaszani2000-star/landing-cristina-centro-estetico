@@ -73,8 +73,8 @@
     "unoPerEmail": true
   },
   "integrazioni": {
-    "ga4": null,
-    "pixelMeta": null,
+    "ga4Id": null,
+    "metaPixelId": null,
     "supabase": null,
     "servizioEmail": {
       "nome": "Brevo",

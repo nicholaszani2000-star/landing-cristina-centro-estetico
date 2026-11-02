@@ -204,7 +204,7 @@ const PAGINE_LEGALI = [["privacy/index.html", "privacy", "/privacy/"], ["cookie/
 
 // ---------------------------------------------------------------- controlli
 
-console.log("Controlli automatici · Step 7 (dominio esteticamigliore.it)\n");
+console.log("Controlli automatici · Step 8\n");
 
 await controllo("build eseguita con codice 0", () => {
   const r = spawnSync(process.execPath, ["build.mjs"], { cwd: RADICE, encoding: "utf8", env: { ...process.env, URL: "" } });
@@ -477,8 +477,8 @@ await controllo("dati facoltativi: null se non indicati, mai la stringa «non in
   const nulli = [
     "legale.rea", "legale.sedeLegale", "presentazione", "dominio", "social.instagram", "social.facebook",
     "social.schedaGoogle", "trattamenti.viso.macchinari", "trattamenti.pedicure.estetico.durata",
-    "trattamenti.pedicure.avanzato.durata", "trattamenti.pedicure.strumentiIgiene", "integrazioni.ga4",
-    "integrazioni.pixelMeta", "integrazioni.supabase",
+    "trattamenti.pedicure.avanzato.durata", "trattamenti.pedicure.strumentiIgiene", "integrazioni.ga4Id",
+    "integrazioni.metaPixelId", "integrazioni.supabase",
   ];
   for (const k of nulli) {
     const r = build.ottieni(centro, k);
@@ -495,7 +495,7 @@ await controllo("footer condizionale: niente REA, sede legale, social o «Prefer
     [centro.social.instagram, /Instagram/, "Instagram"],
     [centro.social.facebook, /Facebook/, "Facebook"],
     [centro.social.schedaGoogle, /Scheda Google/, "Scheda Google"],
-    [centro.integrazioni.ga4 || centro.integrazioni.pixelMeta, /Preferenze cookie/, "Preferenze cookie"],
+    [centro.integrazioni.ga4Id || centro.integrazioni.metaPixelId, /Preferenze cookie/, "Preferenze cookie"],
   ];
   for (const [file] of PAGINE) {
     const piede = testoVisibile(pagina(file).match(/<footer[\s\S]*?<\/footer>/)?.[0] ?? "");
@@ -871,8 +871,12 @@ await controllo("390×844: pulsanti dell'apertura nel primo schermo, elementi cl
         const r = el.getBoundingClientRect();
         return st.visibility !== "hidden" && st.display !== "none" && r.width > 0 && r.height > 0;
       };
+      // Esenti, come in WCAG 2.5.8: i link dentro una frase (in linea, con altro testo attorno). Dallo Step 8.
+      const inFrase = (el) =>
+        el.tagName === "A" && getComputedStyle(el).display === "inline" && el.parentElement.textContent.trim().length > el.textContent.trim().length + 20;
       const piccoli = [...document.querySelectorAll("a[href], button, summary, input, select, textarea, [role='button']")]
         .filter(visibile)
+        .filter((el) => !inFrase(el))
         .map((el) => ({ el, r: el.getBoundingClientRect() }))
         .filter(({ r }) => r.width < 44 || r.height < 44)
         .map(({ el, r }) => `«${(el.textContent || el.getAttribute("aria-label") || el.tagName).trim().slice(0, 30)}» ${Math.round(r.width)}×${Math.round(r.height)}`);
@@ -1142,7 +1146,7 @@ await controllo("landing tutta color sabbia (§5): nessun fondo di altri colori 
       const pagina = await contesto.newPage();
       await pagina.goto(base + percorso, { waitUntil: "networkidle" });
       const fondi = await pagina.evaluate(() =>
-        [document.documentElement, document.body, ...document.body.querySelectorAll("*")].map((el) => {
+        [document.documentElement, document.body, ...[...document.body.querySelectorAll("*")].filter((el) => el.getClientRects().length)].map((el) => {
           const st = getComputedStyle(el);
           return { el: `${el.tagName.toLowerCase()}${el.className && typeof el.className === "string" ? "." + el.className.split(" ")[0] : ""}`, colore: st.backgroundColor, immagine: st.backgroundImage };
         }),
@@ -1173,8 +1177,8 @@ const rgb = (hex) => {
 };
 // Colori presi da CLAUDE.md §5, non da tokens.css: così anche un token cambiato per sbaglio si vede.
 const PALETTE = { sabbia: rgb("#F4DBCA"), chiara: rgb("#FAEDE4"), profonda: rgb("#EBCBB5"), crema: rgb("#FFF8F3"), linea: rgb("#D9B49C"), accento: rgb("#8C4318") };
-// Gli unici blocchi in rilievo su --sabbia-profonda (§5). Lo Step 8 aggiunge il blocco del codice sconto.
-const RILIEVI = [".etichetta", ".scheda-avanzato"];
+// Gli unici blocchi in rilievo su --sabbia-profonda (§5): pillola, scheda «Pedicure avanzato», blocco del codice sconto.
+const RILIEVI = [".etichetta", ".scheda-avanzato", ".codice-blocco"];
 
 await controllo("fondo unico (§5): <body> e ogni <section> su --sabbia in ogni pagina, a 390, 768 e 1440 px; filetto --linea largo quanto il contenuto tra le sezioni e sopra il footer; sabbia profonda, crema e sabbia chiara solo dove ammessi", async () => {
   const { browser, base } = await browserCondiviso();
@@ -1473,7 +1477,9 @@ await controllo("pulsanti per pagina come in §6: apertura 2, viso 1, pedicure 1
   const attesi = { apertura: 2, viso: 1, pedicure: 1, "come-prenotare": 2, "dove-siamo": 1 };
   for (const [file] of PAGINE.filter(([, id]) => id)) {
     const html = pagina(file);
-    const conta = (frammento) => (frammento?.match(/class="pulsante pulsante-/g) ?? []).length;
+    // Dallo Step 8: §6 conta i pulsanti di contatto, che sono link (<a>). Il pulsante d'invio del modulo del
+    // codice sconto e «Copia il codice» sono controlli del modulo e si verificano a parte.
+    const conta = (frammento) => (frammento?.match(/<a class="pulsante pulsante-/g) ?? []).length;
     const apertura = html.match(/<section class="apertura"[\s\S]*?<\/section>/)?.[0];
     verifica(conta(apertura) === attesi.apertura, `${file}: apertura con ${conta(apertura)} pulsanti`);
     for (const nome of ["viso", "pedicure", "come-prenotare", "dove-siamo"]) {
@@ -1697,7 +1703,7 @@ function verificaFooter(file) {
     [centro.legale.sedeLegale, /Sede legale/, "sede legale"],
     [centro.social.instagram, /Instagram/, "Instagram"],
     [centro.social.facebook, /Facebook/, "Facebook"],
-    [centro.integrazioni.ga4 || centro.integrazioni.pixelMeta, /Preferenze cookie/, "Preferenze cookie"],
+    [centro.integrazioni.ga4Id || centro.integrazioni.metaPixelId, /Preferenze cookie/, "Preferenze cookie"],
   ];
   for (const [dato, re, nome] of regole) verifica(Boolean(dato) === re.test(piede), `${file}: ${nome} ${dato ? "assente" : "presente senza dato"}`);
 }
@@ -1786,7 +1792,7 @@ await controllo("informativa privacy: titolare con i dati di §2.1, trattamenti 
 await controllo("pagine legali con GA4, pixel Meta e servizio email indicati (build in una copia): trattamenti c), fornitori Google, Meta e email, elenco dei cookie e «Preferenze cookie»; datiLegali() filtra per integrazione", () => {
   // Funzione: voci filtrate per integrazione, «richiede» sconosciuto = errore, bozza spenta solo in produzione.
   const t = { privacy: { trattamenti: { voci: testi.comuni.privacy.trattamenti.voci }, fornitori: { voci: testi.comuni.privacy.fornitori.voci } }, cookie: { elenco: testi.comuni.cookie.elenco } };
-  const conTutto = { ...centro, integrazioni: { ...centro.integrazioni, ga4: "G-PROVA", pixelMeta: "123", servizioEmail: { nome: "Posta di prova", sede: "Paese di prova", inAttivazione: false } } };
+  const conTutto = { ...centro, integrazioni: { ...centro.integrazioni, ga4Id: "G-PROVA123", metaPixelId: "123456789012345", servizioEmail: { nome: "Posta di prova", sede: "Paese di prova", inAttivazione: false } } };
   const senzaEmail = { ...centro, integrazioni: { ...centro.integrazioni, servizioEmail: null } };
   const aggiornamento = testi.legale.aggiornamento;
   const pieno = build.datiLegali({ centro: conTutto, t, aggiornamento, contestoNetlify: "deploy-preview" });
@@ -1823,7 +1829,7 @@ await controllo("pagine legali con GA4, pixel Meta e servizio email indicati (bu
     verifica(!privacy.includes("in attivazione"), "privacy con il servizio email attivo: c'è ancora «in attivazione»");
     verifica(!privacy.includes("Oggi il sito non usa strumenti di statistica"), "privacy con integrazioni: c'è ancora la frase sui tracciamenti spenti");
     const nomi = [...cookie.matchAll(/<h3 class="legale-cookie-nome">([^<]*)<\/h3>/g)].map((m) => decodifica(m[1]));
-    verifica(nomi.join() === "Preferenze cookie,_ga,_ga_<ID>,_fbp,_fbc", `cookie con integrazioni: ${nomi.join(", ")}`);
+    verifica(nomi.join() === "migliore-consenso,_ga,_ga_<ID>,_fbp,_fbc", `cookie con integrazioni: ${nomi.join(", ")}`);
     verifica(!testoVisibile(cookie).includes("Oggi il sito non usa cookie"), "cookie con integrazioni: c'è ancora «Oggi il sito non usa cookie»");
     verifica(/Preferenze cookie/.test(testoVisibile(cookie.match(/<footer[\s\S]*?<\/footer>/)[0])), "footer senza «Preferenze cookie» con i tracciamenti indicati");
   } finally {
@@ -1917,6 +1923,448 @@ await controllo("codice sconto anche via email (§2.4): privacy, brief e testi d
   verifica(email?.nome === "Brevo" && email.sede === "Francia", "centro.json: servizio email diverso da Brevo (Francia)");
   const riga = `${email.nome} (${email.sede}), per l'invio del codice sconto e delle promo${email.inAttivazione ? ", in attivazione" : ""}.`;
   verifica(privacy.includes(riga), `privacy: manca «${riga}»`);
+});
+
+// ---------------------------------------------------------------- Step 8: codice sconto, banner cookie e tracciamenti spenti
+
+const FUNZIONE = join(RADICE, "netlify", "functions", "codice-sconto.mjs");
+const TRACCIANTI = /(^|\.)(googletagmanager\.com|google-analytics\.com|facebook\.net|facebook\.com)$/;
+const oggiPiu = (giorni) => {
+  const [a, m, g] = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()).split("-").map(Number);
+  return new Date(Date.UTC(a, m - 1, g + giorni)).toISOString().slice(0, 10);
+};
+async function postaCodice(base, corpo, { json = true, accept = "application/json" } = {}) {
+  const r = await fetch(`${base}/api/codice-sconto`, {
+    method: "POST",
+    headers: { "Content-Type": json ? "application/json" : "application/x-www-form-urlencoded", Accept: accept },
+    body: json ? (typeof corpo === "string" ? corpo : JSON.stringify(corpo)) : new URLSearchParams(corpo).toString(),
+  });
+  const testo = await r.text();
+  let dati = null;
+  try { dati = JSON.parse(testo); } catch { /* HTML */ }
+  return { stato: r.status, cache: r.headers.get("cache-control"), tipo: r.headers.get("content-type"), testo, dati };
+}
+
+await controllo("codice sconto in anteprima (modalità prova): email valida e consenso → codice MIG-XXXXXX, scadenza oggi + 30 giorni (ora italiana), prova true, emailInviata false, Cache-Control no-store", async () => {
+  const { base } = await browserCondiviso();
+  const r = await postaCodice(base, { email: "anna@esempio.it", consenso: true, pagina: "/viso/" });
+  verifica(r.stato === 200 && r.dati, `stato ${r.stato}: ${r.testo.slice(0, 80)}`);
+  verifica(/^MIG-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/.test(r.dati.codice), `codice «${r.dati.codice}»`);
+  verifica(r.dati.scadenza === oggiPiu(centro.codiceSconto.validitaGiorni) && centro.codiceSconto.validitaGiorni === 30, `scadenza ${r.dati.scadenza} invece di ${oggiPiu(30)}`);
+  verifica(r.dati.prova === true && r.dati.nuovo === true && r.dati.emailInviata === false, `campi: ${JSON.stringify(r.dati)}`);
+  verifica(Object.keys(r.dati).sort().join() === "codice,emailInviata,nuovo,prova,scadenza", `chiavi della risposta: ${Object.keys(r.dati).join(", ")}`);
+  verifica(r.cache === "no-store", `Cache-Control «${r.cache}»`);
+});
+
+await controllo("modalità prova: la stessa email due volte non dà errore (e maiuscole o spazi diversi nemmeno)", async () => {
+  const { base } = await browserCondiviso();
+  for (const email of ["luca@esempio.it", "luca@esempio.it", "  Luca@Esempio.IT "]) {
+    const r = await postaCodice(base, { email, consenso: true });
+    verifica(r.stato === 200 && /^MIG-/.test(r.dati?.codice ?? ""), `«${email}»: stato ${r.stato}`);
+  }
+});
+
+await controllo("errori della funzione: email non valida → 400 «email», senza consenso → 400 «consenso», trappola piena → 400 senza dettagli, JSON rotto → 400, GET → 405; sempre no-store", async () => {
+  const { base } = await browserCondiviso();
+  const casi = [
+    [{ email: "anna@", consenso: true }, 400, "email"],
+    [{ email: "anna esempio.it", consenso: true }, 400, "email"],
+    [{ email: `${"a".repeat(250)}@esempio.it`, consenso: true }, 400, "email"],
+    [{ email: "anna@esempio.it" }, 400, "consenso"],
+    [{ email: "anna@esempio.it", consenso: false }, 400, "consenso"],
+    [{ email: "anna@esempio.it", consenso: true, sito: "https://spam.example" }, 400, "richiesta"],
+    ["{rotto", 400, "richiesta"],
+  ];
+  for (const [corpo, stato, chiave] of casi) {
+    const r = await postaCodice(base, corpo);
+    verifica(r.stato === stato && r.dati?.errore === chiave, `${JSON.stringify(corpo).slice(0, 50)}: ${r.stato} ${r.testo.slice(0, 60)}`);
+    verifica(Object.keys(r.dati).length === 1 && r.cache === "no-store", `${JSON.stringify(corpo).slice(0, 40)}: risposta con dettagli o senza no-store`);
+  }
+  const get = await fetch(`${base}/api/codice-sconto`);
+  verifica(get.status === 405, `GET: ${get.status}`);
+});
+
+await controllo("invio senza JavaScript (Playwright, javaScriptEnabled: false): la funzione risponde con una pagina HTML con il codice, la scadenza e il link per tornare; senza consenso, pagina d'errore", async () => {
+  const { browser, base } = await browserCondiviso();
+  const contesto = await browser.newContext({ viewport: { width: 390, height: 844 }, javaScriptEnabled: false });
+  const pg = await contesto.newPage();
+  await pg.goto(base + "/pedicure/", { waitUntil: "networkidle" });
+  await pg.fill("#codice-email", "anna@esempio.it");
+  await pg.check("#codice-consenso");
+  await Promise.all([pg.waitForNavigation(), pg.click(".codice-invia")]);
+  const ok = await pg.evaluate(() => ({ url: location.pathname, h1: document.querySelector("h1")?.textContent, codice: document.querySelector(".codice-valore")?.textContent, testo: document.body.innerText, ritorno: document.querySelector(".codice-pagina-link a")?.getAttribute("href"), fondo: getComputedStyle(document.body).backgroundColor }));
+  verifica(ok.url === "/api/codice-sconto" && ok.h1 === testi.comuni.codiceSconto.risultatoTitolo, `pagina: ${ok.url} «${ok.h1}»`);
+  verifica(/^MIG-[A-Z2-9]{6}$/.test(ok.codice ?? ""), `codice «${ok.codice}»`);
+  const data = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${oggiPiu(30)}T00:00:00Z`));
+  verifica(ok.testo.includes(`Valido fino al ${data}.`), `scadenza mancante (${data})`);
+  verifica(ok.ritorno === "/pedicure/#codice-sconto", `link di ritorno «${ok.ritorno}»`);
+  verifica(ok.fondo === "rgb(244, 219, 202)", `fondo ${ok.fondo}: la pagina non è sabbia`);
+  // Senza consenso: required blocca il browser; la funzione, chiamata lo stesso, risponde con una pagina d'errore.
+  const r = await postaCodice(base, { email: "anna@esempio.it", pagina: "/" }, { json: false, accept: "text/html" });
+  verifica(r.stato === 400 && r.tipo.startsWith("text/html") && r.testo.includes(testi.comuni.codiceSconto.errori.consenso), `senza consenso: ${r.stato}`);
+  await contesto.close();
+});
+
+await controllo("invio con JavaScript: codice grande con «Valido fino al …» in italiano, «Copia il codice», niente «Te l'abbiamo mandato anche via email.»; errori accanto al campo con focus sul primo; UTM, pagina ed evento_id (UUID) inviati", async () => {
+  const { browser, base } = await browserCondiviso();
+  const contesto = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const pg = await contesto.newPage();
+  const inviati = [];
+  pg.on("request", (r) => { if (r.url().endsWith("/api/codice-sconto")) inviati.push({ corpo: JSON.parse(r.postData()), accept: r.headers().accept }); });
+  await pg.goto(base + "/viso/?utm_source=meta&utm_medium=paid&utm_campaign=viso-nov&utm_content=video1", { waitUntil: "networkidle" });
+  await pg.click(".codice-invia");
+  const primo = await pg.evaluate(() => ({ focus: document.activeElement.id, email: !document.getElementById("codice-errore-email").hidden, consenso: !document.getElementById("codice-errore-consenso").hidden, invalido: document.getElementById("codice-email").getAttribute("aria-invalid") }));
+  verifica(primo.focus === "codice-email" && primo.email && primo.consenso && primo.invalido === "true", `errori: ${JSON.stringify(primo)}`);
+  verifica(inviati.length === 0, "con errori il modulo non deve partire");
+  await pg.fill("#codice-email", "anna@esempio.it");
+  await pg.click(".codice-invia");
+  verifica((await pg.evaluate(() => document.activeElement.id)) === "codice-consenso", "focus non sul consenso");
+  await pg.check("#codice-consenso");
+  await pg.click(".codice-invia");
+  await pg.waitForSelector(".codice-ottenuto");
+  const r = await pg.evaluate(() => ({ testo: document.querySelector(".codice-ottenuto").innerText, codice: document.querySelector(".codice-valore").textContent, modulo: document.querySelector("[data-codice-modulo]").hidden, copia: document.querySelector("[data-codice-copia]")?.textContent, focus: document.activeElement.className, live: document.querySelector("[data-codice-risultato]").getAttribute("aria-live") }));
+  const data = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${oggiPiu(30)}T00:00:00Z`));
+  verifica(/^MIG-[A-Z2-9]{6}$/.test(r.codice) && r.testo.includes(`Valido fino al ${data}.`), `risultato: ${r.testo.slice(0, 80)}`);
+  verifica(r.copia === testi.comuni.codiceSconto.copia && r.modulo && r.live === "polite", `copia/modulo/live: ${JSON.stringify(r)}`);
+  verifica(!r.testo.includes(testi.comuni.codiceSconto.risultatoEmail), "«Te l'abbiamo mandato anche via email.» con emailInviata false");
+  verifica(r.focus.includes("codice-ottenuto-titolo"), `focus dopo il codice: ${r.focus}`);
+  const c = inviati[0];
+  verifica(inviati.length === 1 && c.accept.includes("application/json"), "invio JSON con Accept: application/json");
+  verifica(c.corpo.utm_source === "meta" && c.corpo.utm_medium === "paid" && c.corpo.utm_campaign === "viso-nov" && c.corpo.utm_content === "video1" && c.corpo.pagina === "/viso/", `campi: ${JSON.stringify(c.corpo)}`);
+  verifica(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(c.corpo.evento_id), `evento_id «${c.corpo.evento_id}»`);
+  // La riga dell'email compare solo con emailInviata true (risposta finta).
+  const pg2 = await contesto.newPage();
+  await pg2.route("**/api/codice-sconto", (rt) => rt.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ codice: "MIG-ABCDEF", scadenza: "2026-12-15", nuovo: true, prova: false, emailInviata: true }) }));
+  await pg2.goto(base + "/", { waitUntil: "networkidle" });
+  await pg2.fill("#codice-email", "anna@esempio.it");
+  await pg2.check("#codice-consenso");
+  await pg2.click(".codice-invia");
+  await pg2.waitForSelector(".codice-ottenuto");
+  const t2 = await pg2.evaluate(() => document.querySelector(".codice-ottenuto").innerText);
+  verifica(t2.includes(testi.comuni.codiceSconto.risultatoEmail) && t2.includes("Valido fino al 15 dicembre 2026."), `con emailInviata true: ${t2.slice(0, 120)}`);
+  await contesto.close();
+});
+
+await controllo("modulo come richiesto: post su /api/codice-sconto; email con <label>, type email, autocomplete, inputmode, required; consenso non spuntato, required, testo completo e link a /privacy/; trappola «sito» fuori schermo (non display:none), tabindex -1, autocomplete off, etichetta «Lascia vuoto»; campi nascosti; condizioni sotto il pulsante; risultato aria-live", async () => {
+  const cs = testi.comuni.codiceSconto;
+  for (const [file] of PAGINE.filter(([, id]) => id)) {
+    const s = sezioneDi(pagina(file), "codice-sconto");
+    verifica(s, `${file}: sezione codice sconto mancante`);
+    verifica(/<form class="codice-modulo" method="post" action="\/api\/codice-sconto"/.test(s), `${file}: form`);
+    verifica(/<label class="campo-etichetta" for="codice-email">La tua email<\/label>/.test(s), `${file}: etichetta email`);
+    const email = s.match(/<input[^>]*id="codice-email"[^>]*>/)?.[0] ?? "";
+    for (const a of ['type="email"', 'autocomplete="email"', 'inputmode="email"', "required", 'name="email"', `placeholder="${cs.campoSegnaposto}"`]) verifica(email.includes(a), `${file}: campo email senza ${a}`);
+    const casella = s.match(/<input[^>]*id="codice-consenso"[^>]*>/)?.[0] ?? "";
+    verifica(casella.includes('type="checkbox"') && casella.includes("required") && !/\schecked/.test(casella), `${file}: casella del consenso`);
+    const etichetta = s.match(/<label for="codice-consenso">([\s\S]*?)<\/label>/)?.[1] ?? "";
+    verifica(decodifica(etichetta.replace(/<[^>]+>/g, "")) === build.componi(cs.consenso, centro, "testi") && /<a href="\/privacy\/">informativa privacy<\/a>/.test(etichetta), `${file}: testo del consenso o link`);
+    const trappola = s.match(/<div class="trappola">([\s\S]*?)<\/div>/)?.[1] ?? "";
+    verifica(/<label for="codice-sito">Lascia vuoto<\/label>/.test(trappola) && /name="sito"/.test(trappola) && /tabindex="-1"/.test(trappola) && /autocomplete="off"/.test(trappola), `${file}: campo trappola`);
+    for (const n of ["pagina", "utm_source", "utm_medium", "utm_campaign", "utm_content", "evento_id"]) verifica(new RegExp(`<input type="hidden" name="${n}"`).test(s), `${file}: campo nascosto ${n}`);
+    verifica(s.indexOf('class="pulsante pulsante-principale codice-invia" type="submit"') < s.indexOf('class="codice-condizioni"'), `${file}: condizioni non sotto il pulsante`);
+    verifica((s.match(/type="submit"/g) ?? []).length === 1, `${file}: più di un pulsante d'invio`);
+    verifica(/<div class="codice-risultato" aria-live="polite"/.test(s), `${file}: area risultato senza aria-live`);
+  }
+  const { browser, base } = await browserCondiviso();
+  const contesto = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const pg = await contesto.newPage();
+  await pg.goto(base + "/", { waitUntil: "networkidle" });
+  const st = await pg.evaluate(() => {
+    const el = document.querySelector(".trappola"), r = el.getBoundingClientRect(), campo = document.getElementById("codice-email"), cs = getComputedStyle(campo);
+    const blocco = getComputedStyle(document.querySelector(".codice-blocco")).backgroundColor;
+    return { display: getComputedStyle(el).display, fuori: r.right <= 0, fondoCampo: cs.backgroundColor, bordo: cs.borderTopColor, blocco };
+  });
+  await contesto.close();
+  verifica(st.display !== "none" && st.fuori, `trappola: display ${st.display}, fuori schermo ${st.fuori}`);
+  verifica(st.fondoCampo === "rgb(255, 248, 243)" && st.bordo === "rgb(92, 69, 55)" && st.blocco === "rgb(235, 203, 181)", `stile: ${JSON.stringify(st)}`);
+});
+
+await controllo("funzione: config con path /api/codice-sconto, method POST e rateLimit (ip e dominio, 5 in 60 s); Netlify.env.get; consenso e versione dal server (SHA-256, 12 caratteri) uguali alla pagina; mai l'email nei log", async () => {
+  const f = await import(pathToFileURL(FUNZIONE).href);
+  const atteso = { path: "/api/codice-sconto", method: ["POST"], rateLimit: { action: "rate_limit", aggregateBy: ["ip", "domain"], windowSize: 60, windowLimit: 5 } };
+  verifica(JSON.stringify(f.config) === JSON.stringify(atteso), `config: ${JSON.stringify(f.config)}`);
+  const sorgente = readFileSync(FUNZIONE, "utf8");
+  verifica(/globalThis\.Netlify\?\.env\.get\(k\) \?\? process\.env\[k\]/.test(sorgente), "lettura delle variabili senza Netlify.env.get");
+  verifica(/import testi from "\.\.\/\.\.\/content\/testi\.json" with \{ type: "json" \}/.test(sorgente), "testi.json non importato come modulo");
+  verifica(!/campi\.consenso_(testo|versione)|campi\.consensoTesto/.test(sorgente), "testo o versione del consenso letti dal browser");
+  const testo = build.componi(testi.comuni.codiceSconto.consenso, centro, "testi");
+  verifica(f.CONSENSO_TESTO === testo, "testo del consenso del server diverso da quello della pagina");
+  verifica(f.CONSENSO_VERSIONE === createHash("sha256").update(testo).digest("hex").slice(0, 12), `versione «${f.CONSENSO_VERSIONE}»`);
+  for (const m of sorgente.matchAll(/console\.\w+\(([^;]*)\);/g)) verifica(!/email/i.test(m[1]), `log con l'email: ${m[0].slice(0, 60)}`);
+  verifica(!/SUPABASE_SECRET_KEY.*console|console.*chiave/.test(sorgente), "chiave nei log");
+});
+
+await controllo("funzione con Supabase finto: chiama POST /rest/v1/rpc/iscrivi_email con apikey; codice in collisione (409/23505) → nuovo tentativo; dopo 4 tentativi o su errore → 500 «server»; email mai nei log", async () => {
+  const f = await import(pathToFileURL(FUNZIONE).href);
+  const salvati = { url: process.env.SUPABASE_URL, chiave: process.env.SUPABASE_SECRET_KEY, fetch: globalThis.fetch, errore: console.error };
+  const chiamate = [];
+  const log = [];
+  let risposte = [];
+  try {
+    process.env.SUPABASE_URL = "https://progetto-finto.supabase.co/";
+    process.env.SUPABASE_SECRET_KEY = "chiave-finta-per-i-controlli";
+    globalThis.fetch = async (url, opz) => {
+      chiamate.push({ url, opz, corpo: JSON.parse(opz.body) });
+      return risposte.shift()(JSON.parse(opz.body));
+    };
+    console.error = (...a) => log.push(a.join(" "));
+    const invia = () => f.default(new Request("http://x/api/codice-sconto", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ email: "anna@esempio.it", consenso: true, pagina: "/viso/", utm_source: "meta" }) }));
+    const collisione = () => new Response(JSON.stringify({ code: "23505" }), { status: 409 });
+    risposte = [collisione, (b) => Response.json([{ codice: b.p_codice, scadenza: b.p_scadenza, nuovo: false }])];
+    const r1 = await invia();
+    const d1 = await r1.json();
+    verifica(r1.status === 200 && d1.prova === false && d1.nuovo === false && d1.codice === chiamate[1].corpo.p_codice, `con collisione: ${JSON.stringify(d1)}`);
+    verifica(chiamate[0].url === "https://progetto-finto.supabase.co/rest/v1/rpc/iscrivi_email" && chiamate[0].opz.method === "POST", `chiamata: ${chiamate[0].url}`);
+    verifica(chiamate[0].opz.headers.apikey === "chiave-finta-per-i-controlli", "header apikey mancante");
+    verifica(chiamate[0].corpo.p_codice !== chiamate[1].corpo.p_codice, "dopo la collisione il codice non cambia");
+    verifica(Object.keys(chiamate[0].corpo).join() === "p_email,p_codice,p_scadenza,p_consenso_testo,p_consenso_versione,p_pagina,p_utm", `parametri: ${Object.keys(chiamate[0].corpo).join(",")}`);
+    verifica(chiamate[0].corpo.p_consenso_testo === f.CONSENSO_TESTO && chiamate[0].corpo.p_utm.source === "meta" && chiamate[0].corpo.p_pagina === "/viso/", "consenso, utm o pagina inviati male");
+    chiamate.length = 0;
+    risposte = [collisione, collisione, collisione, collisione];
+    const r2 = await invia();
+    verifica(r2.status === 500 && (await r2.json()).errore === "server" && chiamate.length === 4, `4 collisioni: ${r2.status}, ${chiamate.length} tentativi`);
+    risposte = [() => new Response("{}", { status: 503 })];
+    const r3 = await invia();
+    verifica(r3.status === 500 && JSON.stringify(await r3.json()) === '{"errore":"server"}', `errore Supabase: ${r3.status}`);
+    verifica(log.length >= 2 && log.every((l) => !l.includes("anna") && !l.includes("chiave-finta")), `log: ${log.join(" | ")}`);
+  } finally {
+    if (salvati.url === undefined) delete process.env.SUPABASE_URL; else process.env.SUPABASE_URL = salvati.url;
+    if (salvati.chiave === undefined) delete process.env.SUPABASE_SECRET_KEY; else process.env.SUPABASE_SECRET_KEY = salvati.chiave;
+    globalThis.fetch = salvati.fetch;
+    console.error = salvati.errore;
+  }
+});
+
+await controllo("supabase/iscritti.sql: tabella con email_norm generata e unica, codice unico; RLS attivo senza policy; niente permessi ad anon e authenticated; service_role solo select, insert, update; iscrivi_email security invoker, search_path public, on conflict do nothing; execute solo a service_role; istruzioni in testa", () => {
+  const sql = leggi("supabase/iscritti.sql");
+  const senzaCommenti = sql.replace(/--[^\n]*/g, "");
+  const attesi = [
+    /create table if not exists public\.iscritti/,
+    /id\s+bigint generated always as identity primary key/,
+    /email_norm\s+text generated always as \(lower\(trim\(email\)\)\) stored/,
+    /unique \(email_norm\)/,
+    /unique \(codice\)/,
+    /utm\s+jsonb/,
+    /creato_il\s+timestamptz not null default now\(\)/,
+    /usato_il\s+timestamptz null/,
+    /disiscritto_il\s+timestamptz null/,
+    /alter table public\.iscritti enable row level security;/,
+    /revoke all on table public\.iscritti from anon, authenticated, service_role;/,
+    /grant select, insert, update on table public\.iscritti to service_role;/,
+    /create or replace function public\.iscrivi_email\(\s*p_email\s+text,\s*p_codice\s+text,\s*p_scadenza\s+date,\s*p_consenso_testo\s+text,\s*p_consenso_versione\s+text,\s*p_pagina\s+text,\s*p_utm\s+jsonb\s*\)/,
+    /returns table \(codice text, scadenza date, nuovo boolean\)/,
+    /security invoker/,
+    /set search_path = public/,
+    /on conflict \(email_norm\) do nothing/,
+    /revoke execute on function public\.iscrivi_email\([^)]*\) from public, anon, authenticated;/,
+    /grant execute on function public\.iscrivi_email\([^)]*\) to service_role;/,
+  ];
+  for (const re of attesi) verifica(re.test(senzaCommenti), `manca: ${re.source.slice(0, 70)}`);
+  verifica(!/create policy/i.test(senzaCommenti), "c'è una policy");
+  verifica(!/security definer/i.test(senzaCommenti), "funzione security definer");
+  verifica(/^-- supabase\/iscritti\.sql[\s\S]*?COME APPLICARLO[\s\S]*?SUPABASE_SECRET_KEY/.test(sql), "istruzioni in testa al file");
+  verifica(!/sb_secret_[A-Za-z0-9_-]{8,}/.test(sql), "una chiave nel file SQL");
+});
+
+await controllo("build normale (nessun ID di GA4 e Meta): niente banner, niente consenso.js (né nell'HTML né in dist/js), niente «Preferenze cookie»; nessuna richiesta verso Google o Meta, neanche inviando il codice o toccando i contatti", async () => {
+  verifica(!centro.integrazioni.ga4Id && !centro.integrazioni.metaPixelId, "centro.json ha un ID di GA4 o Meta");
+  verifica(!existsSync(join(DIST, "js", "consenso.js")), "dist/js/consenso.js presente");
+  for (const file of elenca(DIST, (p) => p.endsWith(".html"))) {
+    const html = readFileSync(file, "utf8");
+    verifica(!/data-banner-cookie|consenso\.js|data-preferenze-cookie|Preferenze cookie/.test(html), `${rel(file)}: banner, consenso.js o «Preferenze cookie»`);
+    verifica(!/googletagmanager|google-analytics|facebook\.net|fbq\(|gtag\(/.test(html), `${rel(file)}: riferimenti a Google o Meta`);
+  }
+  const { browser, base } = await browserCondiviso();
+  const contesto = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const tentate = [];
+  await contesto.route((u) => TRACCIANTI.test(u.hostname), (r) => { tentate.push(r.request().url()); return r.abort(); });
+  const pg = await contesto.newPage();
+  for (const percorso of percorsiDist()) {
+    await pg.goto(base + percorso, { waitUntil: "networkidle" });
+    await pg.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+  }
+  await pg.goto(base + "/", { waitUntil: "networkidle" });
+  await pg.evaluate(() => window.addEventListener("click", (e) => { if (e.target.closest("a")) e.preventDefault(); }, true));
+  await pg.click('[data-pulsanti-apertura] a[href^="tel:"]');
+  await pg.fill("#codice-email", "anna@esempio.it");
+  await pg.check("#codice-consenso");
+  await pg.evaluate(() => document.querySelector(".codice-invia").form.requestSubmit());
+  await pg.waitForSelector(".codice-ottenuto");
+  verifica(await pg.evaluate(() => typeof window.migliore === "undefined" && typeof window.gtag === "undefined" && typeof window.fbq === "undefined"), "window.migliore, gtag o fbq definiti senza tracciamenti");
+  await contesto.close();
+  verifica(!tentate.length, `richieste: ${tentate.join(", ")}`);
+});
+
+/** Build di prova con TEST_TRACCIAMENTI=1 (ID finti) in una cartella temporanea, servita da un secondo server. */
+async function buildDiProva() {
+  const tmp = mkdtempSync(join(tmpdir(), "migliore-tracciamenti-"));
+  const r = spawnSync(process.execPath, ["build.mjs", "--dist", tmp], { cwd: RADICE, encoding: "utf8", env: { ...process.env, URL: "", CONTEXT: "", TEST_TRACCIAMENTI: "1" } });
+  if (r.status !== 0) throw new Error(`build di prova fallita: ${r.stderr || r.stdout}`);
+  const { avviaServer } = await import(pathToFileURL(join(STUDIO, "anteprima.mjs")).href);
+  const server = await avviaServer(0, { cartella: tmp });
+  return { tmp, server, base: `http://127.0.0.1:${server.address().port}`, chiudi: () => { server.close(); rmSync(tmp, { recursive: true, force: true }); } };
+}
+
+await controllo("build di prova (TEST_TRACCIAMENTI=1, ID finti, Google e Meta bloccati): nessuna richiesta prima del consenso; «Rifiuta» e X → ancora nessuna; «Accetta» → richieste verso entrambi; la scelta resta dopo il ricaricamento e scade dopo 182 giorni; vietata con CONTEXT=production", async () => {
+  const vietata = spawnSync(process.execPath, ["build.mjs", "--dist", join(tmpdir(), "migliore-vietata")], { cwd: RADICE, encoding: "utf8", env: { ...process.env, TEST_TRACCIAMENTI: "1", CONTEXT: "production" } });
+  verifica(vietata.status !== 0 && /TEST_TRACCIAMENTI/.test(vietata.stderr + vietata.stdout), "TEST_TRACCIAMENTI accettato con CONTEXT=production");
+  const prova = await buildDiProva();
+  const { browser } = await browserCondiviso();
+  const problemi = [];
+  try {
+    verifica(readFileSync(join(prova.tmp, "index.html"), "utf8").includes('data-ga4="G-TEST000000" data-meta="000000000000000"'), "ID finti assenti dal banner");
+    const validatore = join(STUDIO, "node_modules", "html-validate", "bin", "html-validate.mjs");
+    const v = spawnSync(process.execPath, [validatore, ...elenca(prova.tmp, (f) => f.endsWith(".html"))], { cwd: RADICE, encoding: "utf8" });
+    verifica(v.status === 0, `html-validate sulla build di prova:\n${(v.stdout + v.stderr).trim().slice(0, 400)}`);
+    const nuovoContesto = async () => {
+      const contesto = await browser.newContext({ viewport: { width: 390, height: 844 } });
+      const tentate = [];
+      await contesto.route((u) => TRACCIANTI.test(u.hostname), (r) => { tentate.push(new URL(r.request().url()).hostname); return r.abort(); });
+      const pg = await contesto.newPage();
+      await pg.goto(prova.base + "/", { waitUntil: "networkidle" });
+      return { contesto, pg, tentate };
+    };
+    const banner = (pg) => pg.isVisible("[data-banner-cookie]");
+    // Rifiuta
+    let { contesto, pg, tentate } = await nuovoContesto();
+    if (!(await banner(pg))) problemi.push("banner non visibile alla prima visita");
+    if (tentate.length) problemi.push(`richieste prima del consenso: ${tentate.join(", ")}`);
+    await pg.click('[data-consenso="rifiuta"]');
+    await pg.waitForTimeout(300);
+    if ((await banner(pg)) || tentate.length) problemi.push(`dopo «Rifiuta»: banner ${await banner(pg)}, richieste ${tentate.join(", ")}`);
+    await pg.reload({ waitUntil: "networkidle" });
+    if ((await banner(pg)) || tentate.length) problemi.push("dopo «Rifiuta» e ricaricamento: banner di nuovo o richieste");
+    // Scadenza: una scelta di 183 giorni fa non vale più
+    await pg.evaluate(() => { const s = JSON.parse(localStorage.getItem("migliore-consenso")); s.t -= 183 * 864e5; localStorage.setItem("migliore-consenso", JSON.stringify(s)); });
+    await pg.reload({ waitUntil: "networkidle" });
+    if (!(await banner(pg))) problemi.push("dopo 182 giorni il banner non ricompare");
+    await contesto.close();
+    // X = rifiuto
+    ({ contesto, pg, tentate } = await nuovoContesto());
+    await pg.click('[data-consenso="chiudi"]');
+    const sceltaX = await pg.evaluate(() => JSON.parse(localStorage.getItem("migliore-consenso")));
+    if (!sceltaX || sceltaX.statistiche || sceltaX.marketing || tentate.length) problemi.push(`X: ${JSON.stringify(sceltaX)}, richieste ${tentate.length}`);
+    await contesto.close();
+    // Accetta
+    ({ contesto, pg, tentate } = await nuovoContesto());
+    await pg.click('[data-consenso="accetta"]');
+    await pg.waitForTimeout(800);
+    const host = [...new Set(tentate)];
+    if (!host.some((h) => /googletagmanager\.com$/.test(h)) || !host.some((h) => /facebook\.net$/.test(h))) problemi.push(`dopo «Accetta»: ${host.join(", ") || "nessuna richiesta"}`);
+    tentate.length = 0;
+    await pg.reload({ waitUntil: "networkidle" });
+    await pg.waitForTimeout(500);
+    if (await banner(pg)) problemi.push("dopo «Accetta» e ricaricamento il banner ricompare");
+    if (!tentate.some((h) => /googletagmanager/.test(h)) || !tentate.some((h) => /facebook\.net/.test(h))) problemi.push(`dopo il ricaricamento gli script non ripartono: ${tentate.join(", ")}`);
+    await contesto.close();
+  } finally {
+    prova.chiudi();
+  }
+  verifica(!problemi.length, problemi.join(" · "));
+});
+
+await controllo("banner della build di prova: «Rifiuta», «Personalizza», «Accetta» con lo stesso stile e la stessa misura; pannello con «Statistiche» e «Marketing» spenti (role=switch); salvare solo «Statistiche» carica solo Google; «Preferenze cookie» nel footer riapre il pannello; barra contatti nascosta col banner aperto; link alla cookie policy", async () => {
+  const prova = await buildDiProva();
+  const { browser } = await browserCondiviso();
+  const problemi = [];
+  try {
+    const contesto = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const tentate = [];
+    await contesto.route((u) => TRACCIANTI.test(u.hostname), (r) => { tentate.push(new URL(r.request().url()).hostname); return r.abort(); });
+    const pg = await contesto.newPage();
+    await pg.goto(prova.base + "/", { waitUntil: "networkidle" });
+    const pulsanti = await pg.$$eval(".banner-pulsanti .pulsante", (b) => b.map((x) => { const r = x.getBoundingClientRect(); return { classe: x.className, testo: x.textContent.trim(), w: Math.round(r.width), h: Math.round(r.height), fondo: getComputedStyle(x).backgroundColor, bordo: getComputedStyle(x).borderTopColor }; }));
+    if (pulsanti.map((p) => p.testo).join() !== "Rifiuta,Personalizza,Accetta") problemi.push(`pulsanti: ${pulsanti.map((p) => p.testo).join(", ")}`);
+    if (new Set(pulsanti.map((p) => `${p.classe}|${p.w}|${p.h}|${p.fondo}|${p.bordo}`)).size !== 1) problemi.push(`pulsanti diversi: ${JSON.stringify(pulsanti)}`);
+    if (pulsanti.some((p) => p.h < 44)) problemi.push("pulsanti sotto i 44 px");
+    const chiudi = await pg.$eval("[data-consenso='chiudi']", (x) => { const r = x.getBoundingClientRect(); return [r.width, r.height, x.getAttribute("aria-label")]; });
+    if (chiudi[0] < 44 || chiudi[1] < 44 || !chiudi[2]) problemi.push(`X: ${chiudi.join(" ")}`);
+    if (!(await pg.isVisible('[data-banner-cookie] a[href="/cookie/"]'))) problemi.push("manca il link alla cookie policy");
+    await pg.evaluate(() => scrollTo(0, document.documentElement.scrollHeight / 2));
+    await pg.waitForTimeout(400);
+    if (await pg.isVisible(".barra-contatti")) problemi.push("barra contatti visibile col banner aperto");
+    await pg.click('[data-consenso="personalizza"]');
+    const interruttori = await pg.$$eval("[data-categoria]", (c) => c.map((x) => [x.dataset.categoria, x.checked, x.getAttribute("role")]));
+    if (JSON.stringify(interruttori) !== JSON.stringify([["statistiche", false, "switch"], ["marketing", false, "switch"]])) problemi.push(`interruttori: ${JSON.stringify(interruttori)}`);
+    await pg.check('[data-categoria="statistiche"]');
+    await pg.click('[data-consenso="salva"]');
+    await pg.waitForTimeout(800);
+    if (!tentate.some((h) => /googletagmanager/.test(h)) || tentate.some((h) => /facebook/.test(h))) problemi.push(`solo statistiche: ${[...new Set(tentate)].join(", ")}`);
+    if (!(await pg.isVisible(".barra-contatti"))) problemi.push("barra contatti non torna dopo la scelta");
+    await pg.click("[data-preferenze-cookie]");
+    const stato = await pg.evaluate(() => ({ pannello: !document.getElementById("banner-pannello").hidden, stat: document.querySelector('[data-categoria="statistiche"]').checked, mkt: document.querySelector('[data-categoria="marketing"]').checked }));
+    if (!stato.pannello || !stato.stat || stato.mkt) problemi.push(`«Preferenze cookie»: ${JSON.stringify(stato)}`);
+    await contesto.close();
+    const senzaJs = await browser.newContext({ viewport: { width: 390, height: 844 }, javaScriptEnabled: false });
+    const pj = await senzaJs.newPage();
+    await pj.goto(prova.base + "/", { waitUntil: "networkidle" });
+    if ((await pj.isVisible("[data-banner-cookie]")) || (await pj.isVisible("[data-preferenze-cookie]"))) problemi.push("senza JavaScript compaiono il banner o «Preferenze cookie»");
+    await senzaJs.close();
+  } finally {
+    prova.chiudi();
+  }
+  verifica(!problemi.length, problemi.join(" · "));
+});
+
+await controllo("eventi (build di prova, dopo «Accetta»): tel → GA4 clic_chiama e Meta Contact; wa.me → GA4 clic_whatsapp e Meta Contact; codice ottenuto → GA4 generate_lead e Meta Lead con eventID = evento_id; prima del consenso nessun evento", async () => {
+  const prova = await buildDiProva();
+  const { browser } = await browserCondiviso();
+  const problemi = [];
+  try {
+    const contesto = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await contesto.route((u) => TRACCIANTI.test(u.hostname), (r) => r.abort());
+    const pg = await contesto.newPage();
+    await pg.goto(prova.base + "/", { waitUntil: "networkidle" });
+    await pg.evaluate(() => window.addEventListener("click", (e) => { if (e.target.closest("a")) e.preventDefault(); }, true));
+    await pg.evaluate(() => document.querySelector('[data-pulsanti-apertura] a[href^="tel:"]').click());
+    if (await pg.evaluate(() => Boolean(window.dataLayer || window.fbq))) problemi.push("eventi o script prima del consenso");
+    await pg.click('[data-consenso="accetta"]');
+    await pg.evaluate(() => {
+      document.querySelector('[data-pulsanti-apertura] a[href^="tel:"]').click();
+      document.querySelector('[data-pulsanti-apertura] a[href^="https://wa.me/"]').click();
+    });
+    await pg.fill("#codice-email", "anna@esempio.it");
+    await pg.check("#codice-consenso");
+    await pg.evaluate(() => document.querySelector(".codice-invia").form.requestSubmit());
+    await pg.waitForSelector(".codice-ottenuto");
+    const ev = await pg.evaluate(() => ({
+      ga4: window.dataLayer.filter((a) => a[0] === "event").map((a) => [a[1], a[2] && a[2].event_id]),
+      meta: window.fbq.queue.filter((a) => a[0] === "track").map((a) => [a[1], a[3] && a[3].eventID]),
+      evento: document.querySelector('[name="evento_id"]').value,
+    }));
+    const ga4 = ev.ga4.map((e) => e[0]).join();
+    const meta = ev.meta.map((e) => e[0]).join();
+    if (ga4 !== "clic_chiama,clic_whatsapp,generate_lead") problemi.push(`GA4: ${ga4}`);
+    if (meta !== "PageView,Contact,Contact,Lead") problemi.push(`Meta: ${meta}`);
+    if (ev.meta.at(-1)[1] !== ev.evento || ev.ga4.at(-1)[1] !== ev.evento || !ev.evento) problemi.push(`eventID del Lead diverso da evento_id (${JSON.stringify(ev)})`);
+    await contesto.close();
+  } finally {
+    prova.chiudi();
+  }
+  verifica(!problemi.length, problemi.join(" · "));
+});
+
+await controllo("nessuna chiave nel repository: nei file versionati (e nei nuovi non ignorati) nessuna chiave segreta Supabase (sb_secret_…), nessun JWT (eyJhbGciOi…) e nessun token Meta (EAA…)", () => {
+  const r = spawnSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], { cwd: RADICE, encoding: "utf8" });
+  verifica(r.status === 0, `git ls-files: ${r.stderr}`);
+  const CHIAVI = [new RegExp("sb_" + "secret_[A-Za-z0-9_-]{8,}"), new RegExp("eyJhbGc" + "iOi[A-Za-z0-9_-]{8,}"), /EAA[A-Za-z0-9]{20,}/];
+  const trovate = [];
+  for (const f of r.stdout.split("\0").filter(Boolean)) {
+    const pieno = join(RADICE, f);
+    if (!existsSync(pieno) || !statSync(pieno).isFile() || statSync(pieno).size > 2_000_000 || /\.(png|jpe?g|webp|avif|woff2|ico|zip)$/i.test(f)) continue;
+    const testo = readFileSync(pieno, "utf8");
+    for (const re of CHIAVI) if (re.test(testo)) trovate.push(`${f}: ${re.source.slice(0, 12)}…`);
+  }
+  verifica(!trovate.length, trovate.join(", "));
+  const prova = ["sb_" + "secret_abcdefgh12345678_x", "eyJhbGc" + "iOiJIUzI1NiIsInR5cCI6IkpXVCJ9", "EAA" + "BwzLixnjYBO1234567890abcd"];
+  verifica(prova.every((p, i) => CHIAVI[i].test(p)), "le espressioni non riconoscono una chiave di prova");
+});
+
+await controllo("codice.js ≤ 3 KB; con il banner (build di prova) main.js, codice.js e consenso.js compressi restano ≤ 12 KB", async () => {
+  const codice = statSync(join(RADICE, "src", "js", "codice.js")).size;
+  verifica(codice <= 3072, `codice.js ${codice} B`);
+  const somma = ["main.js", "codice.js", "consenso.js"].reduce((t, f) => t + gzipSync(readFileSync(join(RADICE, "src", "js", f))).length, 0);
+  verifica(somma <= 12288, `JS compresso con il banner: ${somma} B`);
 });
 
 await controllo("pesi: main.js ≤ 3 KB, JS ≤ 12 KB e CSS ≤ 20 KB compressi, font ≤ 100 KB", () => {

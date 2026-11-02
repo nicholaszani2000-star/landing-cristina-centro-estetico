@@ -48,6 +48,11 @@ const SIZES_FOTO_SEZIONE = "(min-width: 1024px) 440px, (min-width: 768px) 520px,
 const SIZES_FOTO_APERTURA = "(min-width: 1024px) 480px, (min-width: 768px) 520px, 100vw";
 // Listino stampato (foto 06): il link «Vedi il listino stampato» apre il WebP a questa larghezza (§9: ≤ 300 KB).
 const LARGHEZZA_STAMPATO = 1536;
+// Tracciamenti (Step 8): ID finti per TEST_TRACCIAMENTI=1, solo per i controlli; mai in produzione.
+const ID_PROVA = { ga4Id: "G-TEST000000", metaPixelId: "000000000000000" };
+const FORMATO_ID = { ga4Id: /^G-[A-Z0-9]{6,12}$/, metaPixelId: /^\d{15,16}$/ };
+// Modulo del codice sconto: la Netlify Function netlify/functions/codice-sconto.mjs (config.path).
+const AZIONE_CODICE = "/api/codice-sconto";
 // Sitemap: le pagine della landing prima, le pagine legali con priorità bassa; la 404 è esclusa.
 const PRIORITA_LANDING = "1.0";
 const PRIORITA_LEGALI = "0.3";
@@ -281,7 +286,7 @@ export function dataIso(testo, dove = "content/testi.json › legale.aggiornamen
  *  non dipende dal giorno della build. */
 export function datiLegali({ centro, t, aggiornamento, contestoNetlify = process.env.CONTEXT }) {
   const integrazioni = centro.integrazioni ?? {};
-  const tracciamenti = Boolean(integrazioni.ga4 || integrazioni.pixelMeta);
+  const tracciamenti = Boolean(integrazioni.ga4Id || integrazioni.metaPixelId);
   const attiva = (chiave, dove) => {
     if (chiave === null || chiave === undefined) return true;
     if (chiave === "tracciamenti") return tracciamenti;
@@ -302,6 +307,35 @@ export function datiLegali({ centro, t, aggiornamento, contestoNetlify = process
     fornitori: filtra(t.privacy.fornitori.voci, "content/testi.json › privacy.fornitori"),
     cookie: filtra(t.cookie.elenco, "content/testi.json › cookie.elenco"),
   };
+}
+
+// ---------------------------------------------------------------- tracciamenti e codice sconto
+
+/** ID di GA4 e del pixel Meta da centro.json (o finti con TEST_TRACCIAMENTI=1). Senza ID: niente banner,
+ *  niente consenso.js, niente «Preferenze cookie» (§10). */
+export function datiTracciamenti(centro, ambiente = process.env, avvisi = []) {
+  const integrazioni = { ...(centro.integrazioni ?? {}) };
+  if (ambiente.TEST_TRACCIAMENTI === "1") {
+    if (ambiente.CONTEXT === "production") errore("TEST_TRACCIAMENTI", "vietato con CONTEXT=production: gli ID finti non vanno mai online");
+    Object.assign(integrazioni, ID_PROVA);
+    avvisi.push(`TEST_TRACCIAMENTI=1: ID finti ${ID_PROVA.ga4Id} e ${ID_PROVA.metaPixelId} (solo per i controlli)`);
+  }
+  for (const [chiave, formato] of Object.entries(FORMATO_ID)) {
+    const valore = integrazioni[chiave];
+    if (valore !== null && valore !== undefined && !formato.test(String(valore))) {
+      errore("content/centro.json", `integrazioni.${chiave} «${valore}» non ha il formato atteso`);
+    }
+  }
+  const ga4Id = integrazioni.ga4Id || null;
+  const metaPixelId = integrazioni.metaPixelId ? String(integrazioni.metaPixelId) : null;
+  return { integrazioni, tracciamenti: { attivo: Boolean(ga4Id || metaPixelId), ga4Id, metaPixelId } };
+}
+
+/** Testo del consenso diviso attorno a «informativa privacy», che diventa il link a /privacy/. */
+export function consensoConLink(consenso, testoLink, dove = "content/testi.json › codiceSconto.consenso") {
+  const parti = consenso.split(testoLink);
+  if (parti.length !== 2) errore(dove, `«${testoLink}» deve comparire una volta sola nel testo del consenso`);
+  return { consensoPrima: parti[0], consensoLink: testoLink, consensoDopo: parti[1] };
 }
 
 // ---------------------------------------------------------------- template
@@ -589,7 +623,7 @@ async function elencaFile(cartella) {
 const hash8 = (contenuto) => createHash("sha256").update(contenuto).digest("hex").slice(0, 8);
 
 /** Copia src/{fonts,img,js,css} in dist/ e restituisce gli hash per URL ("/css/base.css" → "1a2b3c4d"). */
-async function copiaRisorse(dist) {
+async function copiaRisorse(dist, { escludi = [] } = {}) {
   const hash = new Map();
   const scrivi = async (sorgente, contenuto) => {
     const url = "/" + relative(SRC, sorgente).split(sep).join("/");
@@ -601,6 +635,7 @@ async function copiaRisorse(dist) {
   for (const cartella of ["fonts", "img", "js"]) {
     for (const file of await elencaFile(join(SRC, cartella))) {
       if (file === join(RADICE, MANIFESTO)) continue; // il manifesto serve alla build, non al sito
+      if (escludi.includes(file)) continue;
       await scrivi(file, await readFile(file));
     }
   }
@@ -708,7 +743,9 @@ async function main() {
   }
   const avvisi = [];
 
-  const centro = await leggiJson("content/centro.json");
+  const centroFile = await leggiJson("content/centro.json");
+  const { integrazioni, tracciamenti } = datiTracciamenti(centroFile, process.env, avvisi);
+  const centro = { ...centroFile, integrazioni };
   const testi = await leggiJson("content/testi.json");
   const listino = await leggiJson("content/listino.json");
   const { id: categorie, voci } = validaListino(listino);
@@ -742,7 +779,7 @@ async function main() {
 
   await rm(dist, { recursive: true, force: true });
   await mkdir(dist, { recursive: true });
-  const hash = await copiaRisorse(dist);
+  const hash = await copiaRisorse(dist, { escludi: tracciamenti.attivo ? [] : [join(SRC, "js", "consenso.js")] });
 
   const motore = new Motore();
   const comune = {
@@ -764,7 +801,9 @@ async function main() {
       email: centro.email,
       indirizzo: centro.indirizzo.completo,
     },
-    banner: { attivo: Boolean(centro.integrazioni.ga4 || centro.integrazioni.pixelMeta) },
+    tracciamenti,
+    codice: { azione: AZIONE_CODICE, ...consensoConLink(t.codiceSconto.consenso, t.codiceSconto.consensoTestoLink) },
+    script: { codice: false },
     viso: { voci: viso.voci },
     pedicure: sezionePedicure({ centro, t }),
     link: {
@@ -810,6 +849,7 @@ async function main() {
       p,
       link: { ...comune.link, whatsapp: waLink(centro.whatsappNumero, testi.whatsapp[p.whatsapp]) },
       listino: { categorie: categorieListino.map((c) => ({ ...c, aperta: c.id === p.listinoAperto })) },
+      script: { codice: true },
       meta: {
         title: p.title,
         description: p.description,
@@ -864,7 +904,8 @@ async function main() {
   for (const avviso of avvisi) console.log(`  · ${avviso}`);
   console.log(
     `✔ build in ${Date.now() - inizio} ms → ${rel(dist) || dist}: ${[...generate, ...pagineLegali].join(", ")}, 404.html, robots.txt` +
-      `${base ? ", sitemap.xml" : ""} · listino ${voci} voci · riquadro «Bozza» ${legali.bozza ? "sì" : "no (CONTEXT=production)"}`,
+      `${base ? ", sitemap.xml" : ""} · listino ${voci} voci · riquadro «Bozza» ${legali.bozza ? "sì" : "no (CONTEXT=production)"}` +
+      ` · banner cookie ${tracciamenti.attivo ? "sì" : "no (nessun ID di GA4 o Meta)"}`,
   );
 }
 
