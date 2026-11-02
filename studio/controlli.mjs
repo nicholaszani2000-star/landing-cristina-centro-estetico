@@ -1906,6 +1906,19 @@ await controllo("pagine legali a 390 px: nessuno scroll orizzontale, colonna di 
   verifica(!problemi.length, problemi.join(" · "));
 });
 
+await controllo("codice sconto anche via email (§2.4): privacy, brief e testi dicono la stessa cosa (via email solo quando Brevo è attivo; «Te l'abbiamo mandato anche via email.» solo se l'email parte)", () => {
+  const brief = leggi("CLAUDE.md");
+  verifica(brief.includes("Quando Brevo è attivo (Step 9) arriva anche via email, nello stesso momento, così la cliente non lo perde; fino ad allora solo a schermo."), "CLAUDE.md §2.4 senza la regola sull'email del codice");
+  verifica(brief.includes("+ solo se l'email è partita davvero: «Te l'abbiamo mandato anche via email.»"), "CLAUDE.md §8 senza la riga del risultato via email");
+  verifica(testi.comuni.codiceSconto.risultatoEmail === "Te l'abbiamo mandato anche via email.", "testi.json: codiceSconto.risultatoEmail diverso da §8");
+  const privacy = normalizzaSpazi(testoVisibile(pagina("privacy/index.html")));
+  verifica(privacy.includes("mandartelo anche via email, quando l'invio è attivo"), "privacy: la finalità b) non dice che il codice arriva via email quando l'invio è attivo");
+  const email = centro.integrazioni.servizioEmail;
+  verifica(email?.nome === "Brevo" && email.sede === "Francia", "centro.json: servizio email diverso da Brevo (Francia)");
+  const riga = `${email.nome} (${email.sede}), per l'invio del codice sconto e delle promo${email.inAttivazione ? ", in attivazione" : ""}.`;
+  verifica(privacy.includes(riga), `privacy: manca «${riga}»`);
+});
+
 await controllo("pesi: main.js ≤ 3 KB, JS ≤ 12 KB e CSS ≤ 20 KB compressi, font ≤ 100 KB", () => {
   const somma = (filtro, gz) =>
     elenca(DIST, filtro).reduce((t, f) => t + (gz ? gzipSync(readFileSync(f)).length : statSync(f).size), 0);

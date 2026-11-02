@@ -220,3 +220,32 @@ Il DNS non è stato toccato: il collegamento a Netlify, con il DNS di Register.i
   - con l'indirizzo principale senza www, il controllo lo segnala;
   - con un dominio diverso, la build si ferma.
 - Anteprima: 30 screenshot rifatti, console a 0 errori e 0 richieste fallite.
+
+## Aggiornamento: codice sconto anche via email
+
+Decisione: quando Brevo è attivo, il codice arriva anche via email. La riga di Brevo nella privacy («per l'invio del codice sconto e delle promo») resta com'è.
+
+1. **File modificati**
+- `CLAUDE.md`:
+  - §2.4, dopo «si mostra a Cristina all'arrivo.»: «Quando Brevo è attivo (Step 9) arriva anche via email, nello stesso momento, così la cliente non lo perde; fino ad allora solo a schermo.»;
+  - §8, codice sconto, riga «risultato»: «+ solo se l'email è partita davvero: «Te l'abbiamo mandato anche via email.»».
+- `content/testi.json`:
+  - `codiceSconto.risultatoEmail`: «Te l'abbiamo mandato anche via email.» (lo mostrerà lo Step 8, solo con `emailInviata: true`);
+  - privacy, trattamento b), finalità allineata a §2.4. Prima: «Generare e mostrarti il codice sconto del 10% e inviarti via email le promozioni del centro, circa una volta al mese.» Ora: «Generare il codice sconto del 10% e mostrartelo; mandartelo anche via email, quando l'invio è attivo; inviarti via email le promozioni del centro, circa una volta al mese.»
+- `studio/controlli.mjs`: controllo nuovo. Verifica che §2.4, §8, `testi.json` e la privacy dicano la stessa cosa:
+  - il codice arriva via email solo quando l'invio è attivo;
+  - la riga di Brevo è esatta, con «in attivazione» finché `inAttivazione` è vero;
+  - la frase del risultato coincide con §8.
+
+  Prova a vuoto: rimessa la finalità vecchia, il controllo la segnala.
+
+2. **Coerenza tra privacy e §2.4**: ora coincidono.
+- **§2.4**: a schermo sempre, via email quando Brevo è attivo.
+- **Privacy**:
+  - finalità b): «mandartelo anche via email, quando l'invio è attivo»;
+  - fornitori: «Brevo (Francia), per l'invio del codice sconto e delle promo, in attivazione».
+- **Testo della sezione codice sconto** («Lascia la tua email: ricevi subito un codice sconto…»): resta vero, perché il codice si vede subito a schermo.
+
+3. **Da fare allo Step 8**: la funzione risponde anche con `emailInviata`, sempre `false` finché lo Step 9 non collega Brevo. «Te l'abbiamo mandato anche via email.» compare solo se `emailInviata` è `true`.
+
+4. **Controlli**: build OK · html-validate **0 errori** · `node --check` OK · **controlli 77/77**.

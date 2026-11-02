@@ -185,7 +185,7 @@ Le voci viso della sezione viso (§6) sono 5: Pulizia viso base, Trattamento vis
 - Validità del codice: 30 giorni dalla generazione
 - Condizioni: su un trattamento a scelta, uno per persona, non cumulabile con altre promozioni
 - Frequenza delle promo: circa una volta al mese
-- Il codice si genera al momento, si mostra subito a schermo e si mostra a Cristina all'arrivo. Uno per email: se la stessa email si iscrive di nuovo, riceve lo stesso codice.
+- Il codice si genera al momento, si mostra subito a schermo e si mostra a Cristina all'arrivo. Quando Brevo è attivo (Step 9) arriva anche via email, nello stesso momento, così la cliente non lo perde; fino ad allora solo a schermo. Uno per email: se la stessa email si iscrive di nuovo, riceve lo stesso codice.
 
 ### §2.5 Integrazioni (si collegano solo all'ultimo step)
 
@@ -460,7 +460,7 @@ Codice sconto
 - consenso (casella non spuntata, obbligatoria per ricevere il codice): «Voglio ricevere via email le promozioni di Migliore – Estetica Avanzata su trattamenti viso e corpo, mani e piedi, epilazione e massaggi, circa una volta al mese. Posso cancellarmi quando voglio. Ho letto l'informativa privacy.» con link a `/privacy/`
 - condizioni sotto il modulo: «Il codice vale 30 giorni, su un trattamento a scelta, uno per persona, non cumulabile con altre promozioni. Mostralo a Cristina quando arrivi.»
 - pulsante: «Ricevi il codice»
-- risultato: «Ecco il tuo codice» + codice grande + «Valido fino al [data]. Fai uno screenshot o mostralo dal telefono quando arrivi.»
+- risultato: «Ecco il tuo codice» + codice grande + «Valido fino al [data]. Fai uno screenshot o mostralo dal telefono quando arrivi.» + solo se l'email è partita davvero: «Te l'abbiamo mandato anche via email.»
 - errori: «Controlla l'indirizzo email.» · «Per ricevere il codice serve il consenso.» · «Qualcosa non ha funzionato. Riprova tra poco o scrivici su WhatsApp.»
 
 Dove siamo e orari

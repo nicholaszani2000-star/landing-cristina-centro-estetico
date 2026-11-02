@@ -1,5 +1,5 @@
 {
-  "_nota": "Tutti i testi del sito. I segnaposto tra graffe, per esempio {telefono} o {orari.giorni}, si riempiono in build con i dati di content/centro.json; se il dato è null la frase non compare. [data] nel risultato del codice sconto lo riempie il JavaScript. {cabina} è calcolato in build da macchinari e prodotti di centro.json (null se mancano entrambi). In viso.dettagli: «nome della voce del listino»: descrizione; null se i dettagli non sono indicati. Le voci «include» del pedicure (centro.json) sono separate da punto e virgola: la build fa una voce per elemento, con la prima lettera maiuscola. Nelle pagine legali (privacy, cookie) una voce con «richiede» compare solo se quell'integrazione di centro.json è indicata («tracciamenti» = GA4 o pixel Meta). legale.aggiornamento è la data di ultimo aggiornamento di privacy e cookie: fissa, si cambia a mano solo quando cambiano i testi legali (CLAUDE.md §10).",
+  "_nota": "Tutti i testi del sito. I segnaposto tra graffe, per esempio {telefono} o {orari.giorni}, si riempiono in build con i dati di content/centro.json; se il dato è null la frase non compare. [data] nel risultato del codice sconto lo riempie il JavaScript. {cabina} è calcolato in build da macchinari e prodotti di centro.json (null se mancano entrambi). In viso.dettagli: «nome della voce del listino»: descrizione; null se i dettagli non sono indicati. Le voci «include» del pedicure (centro.json) sono separate da punto e virgola: la build fa una voce per elemento, con la prima lettera maiuscola. Nelle pagine legali (privacy, cookie) una voce con «richiede» compare solo se quell'integrazione di centro.json è indicata («tracciamenti» = GA4 o pixel Meta). legale.aggiornamento è la data di ultimo aggiornamento di privacy e cookie: fissa, si cambia a mano solo quando cambiano i testi legali (CLAUDE.md §10). codiceSconto.risultatoEmail compare solo se la funzione risponde emailInviata: true (Step 8; resta false finché lo Step 9 non collega Brevo).",
   "comuni": {
     "header": {
       "logoAlt": "{nome}",
@@ -84,6 +84,7 @@
       "pulsante": "Ricevi il codice",
       "risultatoTitolo": "Ecco il tuo codice",
       "risultatoValidita": "Valido fino al [data]. Fai uno screenshot o mostralo dal telefono quando arrivi.",
+      "risultatoEmail": "Te l'abbiamo mandato anche via email.",
       "errori": {
         "email": "Controlla l'indirizzo email.",
         "consenso": "Per ricevere il codice serve il consenso.",
@@ -172,7 +173,7 @@
           {
             "titolo": "Codice sconto e promozioni via email",
             "dati": "Il tuo indirizzo email, data e ora dell'iscrizione, il testo del consenso che hai accettato con la sua versione, la pagina del sito da cui ti iscrivi e il codice sconto che ti viene assegnato.",
-            "finalita": "Generare e mostrarti il codice sconto del {codiceSconto.percentuale}% e inviarti via email le promozioni del centro, {codiceSconto.frequenzaPromo}.",
+            "finalita": "Generare il codice sconto del {codiceSconto.percentuale}% e mostrartelo; mandartelo anche via email, quando l'invio è attivo; inviarti via email le promozioni del centro, {codiceSconto.frequenzaPromo}.",
             "base": "Il tuo consenso (art. 6, par. 1, lett. a del GDPR). Puoi revocarlo quando vuoi: la revoca vale da quel momento in poi.",
             "conservazione": "Fino alla revoca del consenso e comunque non oltre 24 mesi dall'ultima interazione.",
             "nota": "Lasciare l'email è facoltativo: senza consenso non ricevi il codice, ma puoi prenotare come sempre. Le promozioni sono uguali per tutti: nessuna profilazione.",
