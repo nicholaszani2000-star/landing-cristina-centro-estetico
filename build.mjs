@@ -4,8 +4,8 @@
 // Uso:  node build.mjs               → dist/
 //       node build.mjs --dist <dir>  → un'altra cartella (usato dai controlli)
 // Variabile d'ambiente URL (la imposta Netlify): indirizzo principale del sito,
-// serve per canonical, og:url e sitemap. Senza URL né dominio, gli URL assoluti
-// vengono omessi.
+// serve per canonical, og:url, og:image, JSON-LD e sitemap. Se manca si usa
+// l'indirizzo principale di content/centro.json (https://www.esteticamigliore.it).
 //
 // Motore di template, modalità severa:
 //   {{chiave.annidata}}      testo con escape HTML (null o mancante = errore)
@@ -519,7 +519,7 @@ function jsonLd(centro, base, immagineAssoluta, avvisi) {
   dati.hasMap = linkMappa(centro);
   const social = ["instagram", "facebook"].map((k) => centro.social?.[k]).filter(Boolean);
   if (social.length) dati.sameAs = social;
-  else avvisi.push("JSON-LD senza image: serve un URL assoluto");
+  if (!immagineAssoluta) avvisi.push("JSON-LD senza image: serve un URL assoluto");
   const giorni = ricavaGiorni(centro.orari.giorni);
   if (giorni) {
     dati.openingHoursSpecification = [
@@ -638,11 +638,20 @@ async function leggiJson(percorso) {
 }
 
 function urlBase(centro, avvisi) {
-  const candidato = process.env.URL?.trim() || (centro.dominio ? `https://${centro.dominio}` : "");
+  // L'indirizzo principale di centro.json deve stare sul dominio indicato (con o senza www).
+  const principale = centro.indirizzoPrincipale?.trim() || "";
+  if (principale) {
+    const host = /^https:\/\/([^/\s]+)\/?$/.exec(principale)?.[1];
+    if (!host || (centro.dominio && host !== centro.dominio && host !== `www.${centro.dominio}`)) {
+      errore("content/centro.json", `indirizzoPrincipale «${principale}» non è https:// sul dominio «${centro.dominio}»`);
+    }
+  }
+  const candidato = process.env.URL?.trim() || principale || (centro.dominio ? `https://${centro.dominio}` : "");
   if (!candidato) {
-    avvisi.push("nessun URL assoluto (variabile URL e dominio assenti): canonical, og:url e sitemap omessi");
+    avvisi.push("nessun URL assoluto (variabile URL, indirizzo principale e dominio assenti): canonical, og:url e sitemap omessi");
     return null;
   }
+  if (!process.env.URL?.trim()) avvisi.push(`URL assoluti dall'indirizzo principale di centro.json: ${candidato}`);
   if (!/^https?:\/\/[^\s/]+/.test(candidato)) errore("URL", `indirizzo non valido: «${candidato}»`);
   return candidato.replace(/\/+$/, "");
 }

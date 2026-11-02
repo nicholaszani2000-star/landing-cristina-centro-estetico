@@ -185,3 +185,38 @@ Le tre domande qui sopra hanno risposta. Superati i punti «Data di ultimo aggio
 5. **Anteprima**: 30 screenshot rifatti in `studio/screenshot/step7/`. Console: 0 errori, 0 richieste fallite.
 
 6. **Nota sul codice sconto**: la riga di Brevo dice «per l'invio del codice sconto». Oggi §2.4 e il trattamento b) dicono che il codice si mostra a schermo, e le email servono alle promo. Se allo Step 8 il codice parte anche via email, aggiorno §2.4 e il trattamento b).
+
+## Aggiornamento: dominio esteticamigliore.it
+
+Il DNS non è stato toccato: il collegamento a Netlify, con il DNS di Register.it, si fa allo Step 9.
+
+1. **File modificati**
+- `CLAUDE.md`:
+  - §2.1, riga «Dominio»: il testo indicato (esteticamigliore.it su Register.it, indirizzo principale https://www.esteticamigliore.it);
+  - §4, riga della variabile `URL`: «se manca, usa l'indirizzo principale di §2.1 (https://www.esteticamigliore.it)».
+- `content/centro.json`: `"dominio": "esteticamigliore.it"`, `"indirizzoPrincipale": "https://www.esteticamigliore.it"`.
+- `build.mjs`:
+  - per gli URL assoluti usa la variabile `URL` di Netlify se c'è, altrimenti l'indirizzo principale;
+  - se l'indirizzo principale non è `https://` sul dominio indicato (con o senza www), la build si ferma;
+  - corretto un avviso sbagliato: «JSON-LD senza image» compariva quando mancavano i social. Ora compare solo se manca davvero l'immagine assoluta.
+- `studio/controlli.mjs`: i due controlli sugli URL assoluti usano la stessa verifica, su:
+  - canonical e og:url delle tre pagine;
+  - canonical delle pagine legali;
+  - og:image, anche sulla 404;
+  - `url` e `image` del JSON-LD;
+  - sitemap con le 5 pagine e le priorità, senza la 404;
+  - riga `Sitemap:` di robots.txt.
+
+2. **Cosa cambia nel sito**
+- Senza la variabile `URL` (anteprima locale) la build ha ora sempre un URL assoluto:
+  - canonical, og:url, og:image e JSON-LD (`url`, `image`) puntano a https://www.esteticamigliore.it;
+  - la sitemap esiste sempre, e robots.txt la cita.
+- Su Netlify vale la variabile `URL`. Finché il dominio non è collegato è l'indirizzo `.netlify.app`; dallo Step 9 sarà https://www.esteticamigliore.it.
+
+3. **Controlli**: build OK · html-validate **0 errori** · `node --check` OK · **controlli 76/76**.
+- «senza la variabile URL…»: prima verificava che canonical e sitemap mancassero; ora che usino l'indirizzo principale, e che `centro.json` abbia dominio e indirizzo principale di §2.1.
+- «con URL=https://esempio.netlify.app…»: ora c'è solo quell'indirizzo, mai quello principale.
+- Prova a vuoto, in una copia:
+  - con l'indirizzo principale senza www, il controllo lo segnala;
+  - con un dominio diverso, la build si ferma.
+- Anteprima: 30 screenshot rifatti, console a 0 errori e 0 richieste fallite.

@@ -85,7 +85,7 @@ Regola generale: se un dato manca non inventarlo. Usa un testo neutro, oppure om
 - Email: esteticamigliore@gmail.com
 - Giorni: dal lunedì al sabato · Orario: dalle 08:00 alle 17:00 · solo su appuntamento
 - Presentazione di Cristina: non indicata (usa il testo predefinito di §8)
-- Dominio: non indicato (usa l'indirizzo .netlify.app)
+- Dominio: esteticamigliore.it, registrato su Register.it, DNS esterno puntato a Netlify. Indirizzo principale del sito: https://www.esteticamigliore.it (con DNS esterno Netlify consiglia il www come principale; esteticamigliore.it senza www porta lì da solo).
 - Instagram: non indicato (nessun link) · Facebook: non indicato (nessun link) · Scheda Google: non indicata (il pulsante Maps usa la ricerca dell'indirizzo)
 
 Regole condizionali:
@@ -261,7 +261,7 @@ Requisiti verificati sulla documentazione ufficiale, con le loro insidie:
 - Gli header di `netlify.toml` valgono solo per i file statici, non per le risposte delle Functions: quelle impostano i propri header nel codice.
 - Pretty URLs è attivo di default: non creare redirect per aggiungere o togliere la barra finale, causano cicli.
 - I Deploy Preview non vengono indicizzati da Google (`X-Robots-Tag: noindex` automatico).
-- La variabile `URL` è disponibile durante la build con l'indirizzo principale del sito: usala per URL assoluti (canonical, og:url, sitemap); se manca, usa il dominio di §2.1 con `https://`; se anche il dominio non è indicato, ometti gli URL assoluti e segnalalo.
+- La variabile `URL` è disponibile durante la build con l'indirizzo principale del sito: usala per URL assoluti (canonical, og:url, sitemap); se manca, usa l'indirizzo principale di §2.1 (https://www.esteticamigliore.it); se anche il dominio non è indicato, ometti gli URL assoluti e segnalalo.
 - `.netlify/` va in `.gitignore`.
 - Supabase: RLS sempre attivo sulle tabelle in `public`. Creando la tabella in SQL bisogna attivarlo e dare i permessi esplicitamente. Qui: nessun permesso ad `anon` e `authenticated`, permessi solo a `service_role`. La chiave segreta o `service_role` scavalca RLS e non va mai nel browser.
 

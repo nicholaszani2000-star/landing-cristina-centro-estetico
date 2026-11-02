@@ -57,6 +57,8 @@ const ATTESI_404 = {
   pulsanti: ["Chiama", "Scrivi su WhatsApp"],
 };
 const URL_PROVA = "https://esempio.netlify.app";
+// Indirizzo principale del sito, da CLAUDE.md §2.1 (scritto a mano qui, di proposito)
+const INDIRIZZO_PRINCIPALE = "https://www.esteticamigliore.it";
 // Listino atteso, voce per voce da CLAUDE.md §2.3 (scritto a mano qui, di proposito)
 const LISTINO_ATTESO = {
   "mani-piedi|Manicure e pedicure": [
@@ -202,7 +204,7 @@ const PAGINE_LEGALI = [["privacy/index.html", "privacy", "/privacy/"], ["cookie/
 
 // ---------------------------------------------------------------- controlli
 
-console.log("Controlli automatici · Step 7\n");
+console.log("Controlli automatici · Step 7 (dominio esteticamigliore.it)\n");
 
 await controllo("build eseguita con codice 0", () => {
   const r = spawnSync(process.execPath, ["build.mjs"], { cwd: RADICE, encoding: "utf8", env: { ...process.env, URL: "" } });
@@ -219,42 +221,52 @@ await controllo("studio/ e content/ non finiscono in dist/", () => {
   verifica(!sospetti.length, sospetti.join(", "));
 });
 
-await controllo("senza URL: canonical, og:url e sitemap.xml omessi", () => {
-  verifica(!existsSync(join(DIST, "sitemap.xml")), "sitemap.xml presente senza URL assoluto");
-  for (const [file] of PAGINE) {
-    const html = pagina(file);
-    verifica(!/rel="canonical"/.test(html), `${file}: canonical presente senza URL`);
-    verifica(!/property="og:url"/.test(html), `${file}: og:url presente senza URL`);
+/** URL assoluti di una build in «cartella»: canonical, og:url, og:image, JSON-LD, sitemap e robots usano «indirizzo». */
+function verificaUrlAssoluti(cartella, indirizzo) {
+  const leggiDa = (f) => readFileSync(join(cartella, f), "utf8");
+  for (const [file, id] of PAGINE.filter(([, id]) => id)) {
+    const html = leggiDa(file);
+    const qui = indirizzo + testi.pagine[id].percorso;
+    verifica(html.includes(`<link rel="canonical" href="${qui}">`), `${file}: canonical diverso da ${qui}`);
+    verifica(html.includes(`<meta property="og:url" content="${qui}">`), `${file}: og:url diverso da ${qui}`);
+    verifica(html.includes(`<meta property="og:image" content="${indirizzo}/img/og.jpg">`), `${file}: og:image diverso da ${indirizzo}/img/og.jpg`);
+    const ld = JSON.parse(jsonLdDi(html)[0]);
+    verifica(ld.url === `${indirizzo}/`, `${file}: url del JSON-LD «${ld.url}»`);
+    verifica(ld.image === `${indirizzo}/img/og.jpg`, `${file}: image del JSON-LD «${ld.image}»`);
   }
-  const robots = readFileSync(join(DIST, "robots.txt"), "utf8");
-  verifica(/^User-agent: \*/m.test(robots), "robots.txt mancante o vuoto");
-  verifica(!/Sitemap:/.test(robots), "robots.txt cita una sitemap che non esiste");
+  for (const [file, , percorso] of PAGINE_LEGALI) {
+    const html = leggiDa(file);
+    verifica(html.includes(`<link rel="canonical" href="${indirizzo}${percorso}">`), `${file}: canonical diverso da ${indirizzo}${percorso}`);
+    verifica(html.includes(`<meta property="og:image" content="${indirizzo}/img/og.jpg">`), `${file}: og:image non assoluto`);
+  }
+  // Dallo Step 7: anche /privacy/ e /cookie/, con priorità bassa; la 404 resta esclusa.
+  const sitemap = leggiDa("sitemap.xml");
+  const voci = [...sitemap.matchAll(/<url><loc>([^<]*)<\/loc><priority>([^<]*)<\/priority><\/url>/g)].map((m) => `${m[1]} ${m[2]}`);
+  const attese = [["/", "1.0"], ["/viso/", "1.0"], ["/pedicure/", "1.0"], ["/privacy/", "0.3"], ["/cookie/", "0.3"]].map(([p, q]) => `${indirizzo}${p} ${q}`);
+  verifica(voci.join() === attese.join(), `sitemap: ${voci.join(", ")}`);
+  verifica(!/404/.test(sitemap), "la 404 è nella sitemap");
+  const robots = leggiDa("robots.txt");
+  verifica(/^User-agent: \*/m.test(robots) && robots.includes(`Sitemap: ${indirizzo}/sitemap.xml`), `robots.txt senza «Sitemap: ${indirizzo}/sitemap.xml»`);
+  const html404 = leggiDa("404.html");
+  verifica(!/rel="canonical"|property="og:url"/.test(html404), "la 404 non deve avere canonical né og:url");
+  verifica(html404.includes(`<meta property="og:image" content="${indirizzo}/img/og.jpg">`), "404: og:image non assoluto");
+}
+
+await controllo(`senza la variabile URL: canonical, og:url, og:image, JSON-LD e sitemap.xml usano l'indirizzo principale ${INDIRIZZO_PRINCIPALE}`, () => {
+  verifica(centro.dominio === "esteticamigliore.it", `dominio di centro.json «${centro.dominio}»`);
+  verifica(centro.indirizzoPrincipale === INDIRIZZO_PRINCIPALE, `indirizzo principale di centro.json «${centro.indirizzoPrincipale}»`);
+  // dist/ viene dalla build del primo controllo, eseguita con URL vuoto.
+  verificaUrlAssoluti(DIST, INDIRIZZO_PRINCIPALE);
 });
 
-await controllo(`con URL=${URL_PROVA} node build.mjs: canonical, og:url, og:image e sitemap.xml usano quell'indirizzo`, () => {
+await controllo(`con URL=${URL_PROVA} node build.mjs: canonical, og:url, og:image, JSON-LD e sitemap.xml usano quell'indirizzo`, () => {
   // Stessa build con la variabile URL, ma in una cartella temporanea: dist/ resta la versione senza URL.
   const tmp = mkdtempSync(join(tmpdir(), "migliore-build-"));
   try {
     const r = spawnSync(process.execPath, ["build.mjs", "--dist", tmp], { cwd: RADICE, encoding: "utf8", env: { ...process.env, URL: URL_PROVA } });
     verifica(r.status === 0, `build con URL fallita: ${r.stderr || r.stdout}`);
-    for (const [file, id] of PAGINE.filter(([, id]) => id)) {
-      const html = readFileSync(join(tmp, file), "utf8");
-      const indirizzo = URL_PROVA + testi.pagine[id].percorso;
-      verifica(html.includes(`<link rel="canonical" href="${indirizzo}">`), `${file}: canonical diverso da ${indirizzo}`);
-      verifica(html.includes(`<meta property="og:url" content="${indirizzo}">`), `${file}: og:url diverso da ${indirizzo}`);
-      verifica(JSON.parse(jsonLdDi(html)[0]).url === `${URL_PROVA}/`, `${file}: url del JSON-LD`);
-      verifica(html.includes(`<meta property="og:image" content="${URL_PROVA}/img/og.jpg">`), `${file}: og:image non assoluto`);
-      verifica(JSON.parse(jsonLdDi(html)[0]).image === `${URL_PROVA}/img/og.jpg`, `${file}: image del JSON-LD`);
-    }
-    // Dallo Step 7: anche /privacy/ e /cookie/, con priorità bassa; la 404 resta esclusa.
-    const sitemap = readFileSync(join(tmp, "sitemap.xml"), "utf8");
-    const voci = [...sitemap.matchAll(/<url><loc>([^<]*)<\/loc><priority>([^<]*)<\/priority><\/url>/g)].map((m) => `${m[1]} ${m[2]}`);
-    const attese = [["/", "1.0"], ["/viso/", "1.0"], ["/pedicure/", "1.0"], ["/privacy/", "0.3"], ["/cookie/", "0.3"]].map(([p, q]) => `${URL_PROVA}${p} ${q}`);
-    verifica(voci.join() === attese.join(), `sitemap: ${voci.join(", ")}`);
-    verifica(!/404/.test(sitemap), "la 404 è nella sitemap");
-    verifica(readFileSync(join(tmp, "robots.txt"), "utf8").includes(`Sitemap: ${URL_PROVA}/sitemap.xml`), "robots.txt senza Sitemap");
-    const html404 = readFileSync(join(tmp, "404.html"), "utf8");
-    verifica(!/rel="canonical"|property="og:url"/.test(html404), "la 404 non deve avere canonical né og:url");
+    verificaUrlAssoluti(tmp, URL_PROVA);
+    verifica(!readFileSync(join(tmp, "index.html"), "utf8").includes(INDIRIZZO_PRINCIPALE), "con URL impostata compare ancora l'indirizzo principale");
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
