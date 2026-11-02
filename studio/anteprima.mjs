@@ -2,6 +2,7 @@
 //
 // Uso:  node studio/anteprima.mjs                 build, server, screenshot, errori di console
 //       node studio/anteprima.mjs --step 3        salva in studio/screenshot/step3/
+//       pagine: /, /viso/, /pedicure/ (primo schermo, intera, fondo a 390), /privacy/, /cookie/ e 404 (intera)
 //       node studio/anteprima.mjs --solo-server   tiene acceso il server (porta 4173)
 //       opzioni: --porta N · --senza-build
 // Senza --step la cartella è quella dello step in corso: ultimo studio/report/stepN.md + 1.
@@ -21,6 +22,11 @@ const PAGINE = [
   ["home", "/"],
   ["viso", "/viso/"],
   ["pedicure", "/pedicure/"],
+];
+// Pagine legali (Step 7): solo pagina intera, a ogni misura.
+const LEGALI = [
+  ["privacy", "/privacy/"],
+  ["cookie", "/cookie/"],
 ];
 const MISURE = [
   [390, 844],
@@ -233,7 +239,7 @@ async function main() {
   const salvati = [];
   for (const [larghezza, altezza] of MISURE) {
     const contesto = await browser.newContext({ viewport: { width: larghezza, height: altezza }, deviceScaleFactor: 1 });
-    const giri = [...PAGINE, ["404", "/pagina-che-non-esiste/"]];
+    const giri = [...PAGINE, ...LEGALI, ["404", "/pagina-che-non-esiste/"]];
     for (const [nome, percorso] of giri) {
       const pagina = await contesto.newPage();
       const etichetta = `${nome} ${larghezza}px`;
@@ -253,13 +259,14 @@ async function main() {
       const risposta = await pagina.goto(base + percorso, { waitUntil: "networkidle" });
       if (nome === "404" && risposta.status() !== 404) problemi.push(`404: stato ${risposta.status()} invece di 404`);
       await pagina.evaluate(() => document.fonts.ready);
-      if (nome !== "404") {
+      const landing = PAGINE.some(([n]) => n === nome);
+      if (landing) {
         const schermo = join(uscita, `${nome}-${larghezza}-schermo.png`);
         await pagina.screenshot({ path: schermo });
         salvati.push(schermo);
       }
       await scorriTutta(pagina);
-      if (larghezza < 768 && nome !== "404") {
+      if (larghezza < 768 && landing) {
         // Fondo pagina con la barra contatti mobile visibile
         await pagina.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
         await pagina.waitForTimeout(500);

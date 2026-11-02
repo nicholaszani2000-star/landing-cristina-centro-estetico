@@ -3,7 +3,7 @@
 
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -197,10 +197,12 @@ async function browserCondiviso() {
   return sessione;
 }
 const LINK_PAGINE = [["/", "home"], ["/viso/", "viso"], ["/pedicure/", "pedicure"]];
+// Pagine legali (Step 7): file in dist, chiave di testi.json, percorso
+const PAGINE_LEGALI = [["privacy/index.html", "privacy", "/privacy/"], ["cookie/index.html", "cookie", "/cookie/"]];
 
 // ---------------------------------------------------------------- controlli
 
-console.log("Controlli automatici · Step 6 (decisioni sul report)\n");
+console.log("Controlli automatici · Step 7\n");
 
 await controllo("build eseguita con codice 0", () => {
   const r = spawnSync(process.execPath, ["build.mjs"], { cwd: RADICE, encoding: "utf8", env: { ...process.env, URL: "" } });
@@ -244,9 +246,12 @@ await controllo(`con URL=${URL_PROVA} node build.mjs: canonical, og:url, og:imag
       verifica(html.includes(`<meta property="og:image" content="${URL_PROVA}/img/og.jpg">`), `${file}: og:image non assoluto`);
       verifica(JSON.parse(jsonLdDi(html)[0]).image === `${URL_PROVA}/img/og.jpg`, `${file}: image del JSON-LD`);
     }
+    // Dallo Step 7: anche /privacy/ e /cookie/, con priorità bassa; la 404 resta esclusa.
     const sitemap = readFileSync(join(tmp, "sitemap.xml"), "utf8");
-    const loc = [...sitemap.matchAll(/<loc>([^<]*)<\/loc>/g)].map((m) => m[1]);
-    verifica(loc.join() === ["/", "/viso/", "/pedicure/"].map((p) => URL_PROVA + p).join(), `sitemap: ${loc.join(", ")}`);
+    const voci = [...sitemap.matchAll(/<url><loc>([^<]*)<\/loc><priority>([^<]*)<\/priority><\/url>/g)].map((m) => `${m[1]} ${m[2]}`);
+    const attese = [["/", "1.0"], ["/viso/", "1.0"], ["/pedicure/", "1.0"], ["/privacy/", "0.3"], ["/cookie/", "0.3"]].map(([p, q]) => `${URL_PROVA}${p} ${q}`);
+    verifica(voci.join() === attese.join(), `sitemap: ${voci.join(", ")}`);
+    verifica(!/404/.test(sitemap), "la 404 è nella sitemap");
     verifica(readFileSync(join(tmp, "robots.txt"), "utf8").includes(`Sitemap: ${URL_PROVA}/sitemap.xml`), "robots.txt senza Sitemap");
     const html404 = readFileSync(join(tmp, "404.html"), "utf8");
     verifica(!/rel="canonical"|property="og:url"/.test(html404), "la 404 non deve avere canonical né og:url");
@@ -257,7 +262,7 @@ await controllo(`con URL=${URL_PROVA} node build.mjs: canonical, og:url, og:imag
 
 await controllo("nessun {{, }}, undefined, null, NaN o segnaposto ⟪ ⟫ nel testo delle pagine", () => {
   const trovati = [];
-  for (const [file] of PAGINE) {
+  for (const [file] of [...PAGINE, ...PAGINE_LEGALI]) {
     const testo = testoVisibile(pagina(file)) + " \n " + testiNascosti(pagina(file));
     for (const [nome, re] of [
       ["{{", /\{\{/], ["}}", /\}\}/], ["undefined", /\bundefined\b/], ["null", /\bnull\b/], ["NaN", /\bNaN\b/],
@@ -302,18 +307,18 @@ await controllo("title e H1 delle tre pagine come in §7", () => {
 });
 
 await controllo('lang="it" su ogni pagina', () => {
-  for (const [file] of PAGINE) verifica(/<html lang="it">/.test(pagina(file)), file);
+  for (const [file] of [...PAGINE, ...PAGINE_LEGALI]) verifica(/<html lang="it">/.test(pagina(file)), file);
 });
 
 await controllo("partita IVA 04123400121 in ogni pagina", () => {
-  for (const [file] of PAGINE) verifica(testoVisibile(pagina(file)).includes(`P.IVA ${centro.legale.partitaIva}`), file);
+  for (const [file] of [...PAGINE, ...PAGINE_LEGALI]) verifica(testoVisibile(pagina(file)).includes(`P.IVA ${centro.legale.partitaIva}`), file);
   verifica(centro.legale.partitaIva === "04123400121", "partita IVA diversa da §2.1 in content/centro.json");
 });
 
 await controllo("parole vietate di §8 assenti (testo, alt, meta, JSON-LD; eccezione: riga sul limite)", () => {
   const rigaLimite = testi.comuni.pedicure.rigaLimite;
   const trovate = [];
-  for (const [file] of PAGINE) {
+  for (const [file] of [...PAGINE, ...PAGINE_LEGALI]) {
     const html = pagina(file);
     let testo = [testoVisibile(html), testiNascosti(html), ...jsonLdDi(html)].join(" \n ");
     testo = normalizzaSpazi(testo).split(rigaLimite).join(" ");
@@ -1017,7 +1022,8 @@ await controllo("sezione viso in tutte e tre le pagine: terza su / e /viso/, qua
     verifica(posApertura < posViso, `${file}: la sezione viso viene prima dell'apertura`);
     verifica(visoPrima ? posViso < posPedicure : posPedicure < posViso, `${file}: sezione viso ${visoPrima ? "non terza" : "non quarta"}`);
   }
-  verifica(/id="listino" hidden/.test(pagina("index.html")), "manca l'ancora nascosta #listino");
+  // Dallo Step 7 #listino è la sezione del listino vera (prima era un'ancora nascosta): il link «Vedi i prezzi» porta lì.
+  verifica(/<section class="sezione listino" id="listino"/.test(pagina("index.html")) && !/id="listino" hidden/.test(pagina("index.html")), "#listino non è la sezione del listino");
 });
 
 await controllo("voci viso: esattamente le 5 di §2.3, nomi presi da listino.json, «Trattamento viso Antiage» per prima con «In evidenza»", () => {
@@ -1557,6 +1563,294 @@ await controllo("foto 04 e 02: object-position 40% 55% (chi sono) da 768 px; fot
     if (st.chi !== "40% 55%") problemi.push(`${larghezza} px: chi sono object-position ${st.chi}`);
     if (Math.abs(st.rapporto - st.naturale) > 0.01) problemi.push(`${larghezza} px: foto 02 ritagliata (${st.rapporto.toFixed(3)} invece di ${st.naturale.toFixed(3)})`);
     if (larghezza === 1440 && !st.maschera.includes("to right")) problemi.push(`1440 px: foto 02 senza sfumatura a sinistra (${st.maschera})`);
+  }
+  verifica(!problemi.length, problemi.join(" · "));
+});
+
+// ---------------------------------------------------------------- Step 7: listino, footer e pagine legali
+
+const sezioneListinoDi = (html) => html.match(/<section class="sezione listino" id="listino"[\s\S]*?<\/section>/)?.[0] ?? null;
+/** Il listino com'è nell'HTML: [{ id, titolo, conteggio, aperta, voci: [[nome, prezzo]] }]. */
+function listinoDi(html) {
+  return [...sezioneListinoDi(html).matchAll(/<details class="listino-categoria" id="listino-([\w-]+)"( open)?>([\s\S]*?)<\/details>/g)].map((m) => ({
+    id: m[1],
+    aperta: Boolean(m[2]),
+    titolo: testoVisibile(m[3].match(/<span class="listino-titolo">([\s\S]*?)<\/span>/)?.[1] ?? ""),
+    conteggio: normalizzaSpazi(testoVisibile(m[3].match(/<span class="listino-conteggio">([\s\S]*?)<\/span>/)?.[1] ?? "")),
+    dl: /<dl class="listino-voci">/.test(m[3]),
+    voci: [...m[3].matchAll(/<div class="listino-voce"><dt>([\s\S]*?)<\/dt><dd>([\s\S]*?)<\/dd><\/div>/g)].map((v) => [
+      normalizzaSpazi(testoVisibile(v[1])),
+      normalizzaSpazi(testoVisibile(v[2])),
+    ]),
+  }));
+}
+// Categoria aperta di default per pagina, da CLAUDE.md §6 (scritta a mano qui, di proposito)
+const APERTA_6 = { home: null, viso: "corpo-viso", pedicure: "mani-piedi" };
+
+await controllo("listino nell'HTML: 40 righe in ogni pagina, identiche a §2.3 (categorie, ordine, nomi, prezzi, numero di voci), in <dl>", () => {
+  const attese = Object.entries(LISTINO_ATTESO);
+  for (const [file] of PAGINE.filter(([, id]) => id)) {
+    const html = pagina(file);
+    verifica(sezioneListinoDi(html), `${file}: sezione listino mancante`);
+    const categorie = listinoDi(html);
+    verifica(categorie.length === attese.length, `${file}: ${categorie.length} categorie invece di ${attese.length}`);
+    let righe = 0;
+    categorie.forEach((c, i) => {
+      const [chiave, voci] = attese[i];
+      verifica(`${c.id}|${c.titolo}` === chiave, `${file}: categoria ${i + 1} «${c.id}|${c.titolo}» invece di «${chiave}»`);
+      verifica(c.dl, `${file}: «${c.titolo}» senza <dl>`);
+      verifica(c.conteggio === `${voci.length} voci`, `${file}: «${c.titolo}» conteggio «${c.conteggio}»`);
+      verifica(c.voci.length === voci.length, `${file}: «${c.titolo}» con ${c.voci.length} righe invece di ${voci.length}`);
+      c.voci.forEach(([nome, prezzo], j) => {
+        verifica(nome === voci[j][0] && prezzo === voci[j][1], `${file}: «${c.titolo}» riga ${j + 1}: «${nome} — ${prezzo}» invece di «${voci[j].join(" — ")}»`);
+        righe++;
+      });
+    });
+    verifica(righe === 40, `${file}: ${righe} righe invece di 40`);
+    // Nessun altro prezzo nella sezione oltre a quelli delle righe
+    const euro = (testoVisibile(sezioneListinoDi(html)).match(/€/g) ?? []).length;
+    const attesi = attese.flatMap(([, v]) => v).reduce((n, [, prezzo]) => n + (prezzo.match(/€/g) ?? []).length, 0);
+    verifica(euro === attesi, `${file}: ${euro} «€» nella sezione invece di ${attesi}`);
+  }
+});
+
+await controllo("una sola <details open> per pagina, quella di §6: corpo-viso su /viso/, mani-piedi su /pedicure/, nessuna su /", () => {
+  for (const [file, id] of PAGINE.filter(([, id]) => id)) {
+    const html = pagina(file);
+    const aperte = [...html.matchAll(/<details\b[^>]*\sopen\b[^>]*>/g)];
+    const attesa = APERTA_6[id];
+    verifica(aperte.length === (attesa ? 1 : 0), `${file}: ${aperte.length} <details open>`);
+    if (attesa) verifica(listinoDi(html).find((c) => c.aperta)?.id === attesa, `${file}: aperta «${listinoDi(html).find((c) => c.aperta)?.id}» invece di «${attesa}»`);
+  }
+  verifica(!/<details\b[^>]*\sopen/.test(pagina("404.html")), "404 con <details open>");
+});
+
+await controllo("listino a 390 px: ogni riga visibile una volta aperte le categorie, prezzo a destra (in basso se il nome va a capo), freccia SVG che ruota di 90° (senza transizione con «riduci movimento»), link al listino stampato", async () => {
+  const problemi = [];
+  for (const riduci of [false, true]) {
+    const { contesto, pagina: pg } = await apriMobile("/", riduci ? { reducedMotion: "reduce" } : {});
+    const r = await pg.evaluate(async () => {
+      const icona = (d) => getComputedStyle(d.querySelector("summary .icona-apri"));
+      const categorie = [...document.querySelectorAll("#listino details")];
+      const chiusa = { transform: icona(categorie[0]).transform, durata: icona(categorie[0]).transitionDuration };
+      categorie.forEach((d) => (d.open = true));
+      await new Promise((ok) => setTimeout(ok, 500)); // fine della rotazione (160 ms)
+      const righe = [...document.querySelectorAll("#listino .listino-voce")].map((riga) => {
+        const [dt, dd] = [riga.querySelector("dt"), riga.querySelector("dd")].map((el) => el.getBoundingClientRect());
+        const r = riga.getBoundingClientRect();
+        const lineaDt = parseFloat(getComputedStyle(riga.querySelector("dt")).lineHeight);
+        return { testo: riga.innerText.replace(/\s+/g, " ").trim(), visibile: r.height > 0 && r.width > 0, destra: Math.abs(dd.right - r.right), aCapo: dt.height > lineaDt * 1.5, basso: Math.abs(dd.bottom - dt.bottom), fuori: r.right > innerWidth || dd.right > innerWidth };
+      });
+      const aperta = icona(categorie[0]).transform;
+      const sommari = categorie.map((d) => d.querySelector("summary").getBoundingClientRect().height);
+      const link = document.querySelector("#listino .listino-stampato a");
+      return { chiusa, aperta, righe, sommari, link: link && { href: link.getAttribute("href"), target: link.target, rel: link.rel } };
+    });
+    await contesto.close();
+    const etichetta = riduci ? "riduci movimento" : "390 px";
+    if (r.righe.length !== 40) problemi.push(`${etichetta}: ${r.righe.length} righe`);
+    const attese = Object.values(LISTINO_ATTESO).flat().map(([n, p]) => `${n} ${p}`);
+    r.righe.forEach((riga, i) => {
+      if (!riga.visibile) problemi.push(`${etichetta}: riga ${i + 1} invisibile`);
+      if (normalizzaSpazi(riga.testo) !== attese[i]) problemi.push(`${etichetta}: riga ${i + 1} «${riga.testo}» invece di «${attese[i]}»`);
+      if (riga.destra > 1 || riga.fuori) problemi.push(`${etichetta}: prezzo non allineato a destra in «${riga.testo}»`);
+      if (riga.aCapo && riga.basso > 6) problemi.push(`${etichetta}: prezzo non in basso in «${riga.testo}» (${riga.basso.toFixed(1)} px)`);
+    });
+    if (!r.righe.some((riga) => riga.aCapo)) problemi.push(`${etichetta}: nessun nome va a capo a 390 px (il caso non è verificato)`);
+    if (r.chiusa.transform !== "none") problemi.push(`${etichetta}: freccia ruotata a categoria chiusa (${r.chiusa.transform})`);
+    const m = r.aperta.match(/^matrix\(([-\d.e]+), ([-\d.e]+), ([-\d.e]+), ([-\d.e]+)/);
+    if (!m || Math.abs(m[1]) > 0.01 || Math.abs(m[2] - 1) > 0.01) problemi.push(`${etichetta}: freccia non ruotata di 90° a categoria aperta (${r.aperta})`);
+    if (riduci && parseFloat(r.chiusa.durata) !== 0) problemi.push(`riduci movimento: la freccia ha ancora una transizione (${r.chiusa.durata})`);
+    if (!riduci && !(parseFloat(r.chiusa.durata) > 0)) problemi.push("390 px: la freccia non ha transizione");
+    if (r.sommari.some((h) => h < 44)) problemi.push(`${etichetta}: <summary> più basso di 44 px`);
+    if (!r.link || r.link.href !== "/img/listino-stampato-1536.webp" || r.link.target !== "_blank" || r.link.rel !== "noopener") problemi.push(`${etichetta}: link al listino stampato ${JSON.stringify(r.link)}`);
+  }
+  verifica(existsSync(join(DIST, "img", "listino-stampato-1536.webp")), "dist/img/listino-stampato-1536.webp mancante");
+  const freccia = readFileSync(join(RADICE, "src", "templates", "icone", "apri.svg"), "utf8");
+  verifica(/^<svg[^>]*aria-hidden="true"/.test(freccia), "la freccia non è un SVG decorativo (aria-hidden)");
+  verifica(!problemi.length, [...new Set(problemi)].slice(0, 8).join(" · "));
+});
+
+/** Footer condizionale (§2.1, §8) su una pagina qualsiasi. */
+function verificaFooter(file) {
+  const piede = testoVisibile(pagina(file).match(/<footer[\s\S]*?<\/footer>/)?.[0] ?? "");
+  verifica(piede, `${file}: footer mancante`);
+  verifica(normalizzaSpazi(piede).includes(`${centro.legale.denominazione} · P.IVA ${centro.legale.partitaIva}`), `${file}: footer senza denominazione e P.IVA`);
+  verifica(piede.includes(centro.indirizzo.completo) && piede.includes(centro.email) && normalizzaSpazi(piede).includes(centro.telefono), `${file}: footer senza indirizzo, email o telefono`);
+  verifica(piede.includes(`© ${new Date().getFullYear()} ${centro.nome}`), `${file}: footer senza «© anno ${centro.nome}»`);
+  verifica(/<a href="\/privacy\/">Privacy<\/a>/.test(pagina(file)) && /<a href="\/cookie\/">Cookie<\/a>/.test(pagina(file)), `${file}: link Privacy e Cookie`);
+  const regole = [
+    [centro.legale.rea, /\bREA\b/, "riga REA"],
+    [centro.legale.sedeLegale, /Sede legale/, "sede legale"],
+    [centro.social.instagram, /Instagram/, "Instagram"],
+    [centro.social.facebook, /Facebook/, "Facebook"],
+    [centro.integrazioni.ga4 || centro.integrazioni.pixelMeta, /Preferenze cookie/, "Preferenze cookie"],
+  ];
+  for (const [dato, re, nome] of regole) verifica(Boolean(dato) === re.test(piede), `${file}: ${nome} ${dato ? "assente" : "presente senza dato"}`);
+}
+
+await controllo("footer definitivo su tutte le pagine (landing, 404, privacy, cookie): denominazione e P.IVA, indirizzo, telefono, email, «© anno», Privacy e Cookie; REA, sede legale, social e «Preferenze cookie» solo se indicati", () => {
+  for (const [file] of [...PAGINE, ...PAGINE_LEGALI]) verificaFooter(file);
+});
+
+await controllo("/privacy/ e /cookie/: esistono, un solo H1, header e footer della landing, partita IVA, title e description, niente barra contatti, link tra le due pagine", () => {
+  for (const [file, id, percorso] of PAGINE_LEGALI) {
+    verifica(existsSync(join(DIST, file)), `${file} mancante`);
+    const html = pagina(file);
+    const h1 = [...html.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1>/g)];
+    verifica(h1.length === 1 && testoVisibile(h1[0][1]) === testi.comuni[id].h1, `${file}: H1`);
+    verifica(/<header class="testata">/.test(html) && /<footer class="piede">/.test(html), `${file}: header o footer mancanti`);
+    verifica(testoVisibile(html).includes(`P.IVA ${centro.legale.partitaIva}`), `${file}: partita IVA`);
+    const title = decodifica(html.match(/<title>([\s\S]*?)<\/title>/)[1]);
+    verifica(title.length <= 60 && title.includes(centro.nome), `${file}: title «${title}»`);
+    const description = decodifica(html.match(/<meta name="description" content="([^"]*)"/)?.[1] ?? "");
+    verifica(description.length >= 60 && description.length <= 160, `${file}: description di ${description.length} caratteri`);
+    verifica(!/class="barra-contatti"|class="con-barra"/.test(html), `${file}: barra contatti presente`);
+    verifica(!/<script type="application\/ld\+json">/.test(html), `${file}: JSON-LD presente`);
+    const altra = id === "privacy" ? "/cookie/" : "/privacy/";
+    verifica(new RegExp(`<p class="legale-link"><a href="${altra}">`).test(html), `${file}: manca il link a ${altra}`);
+    const oggi = new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: "Europe/Rome" }).format(new Date());
+    verifica(html.includes(`<time datetime="${oggi}">`), `${file}: data di ultimo aggiornamento diversa dalla build (${oggi})`);
+    void percorso;
+  }
+});
+
+await controllo("informativa privacy: titolare con i dati di §2.1, trattamenti a) e b) con dati, finalità, base giuridica e conservazione, fornitori Netlify e Supabase, garanzie USA, diritti e Garante", () => {
+  const html = pagina("privacy/index.html");
+  const testo = normalizzaSpazi(testoVisibile(html));
+  for (const dato of [centro.legale.denominazione, centro.legale.partitaIva, centro.indirizzo.completo, centro.email, centro.telefono]) {
+    verifica(testo.includes(dato), `titolare senza «${dato}»`);
+  }
+  const blocchi = [...html.matchAll(/<div class="legale-blocco">([\s\S]*?)<\/div>\s*(?=<div class="legale-blocco">|<h2)/g)].map((m) => m[1]);
+  const schede = blocchi.filter((b) => /<dl class="legale-scheda">/.test(b));
+  verifica(schede.length === 2, `${schede.length} trattamenti con scheda invece di 2 (GA4 e Meta non sono indicati)`);
+  for (const b of schede) {
+    const dt = [...b.matchAll(/<dt>([^<]*)<\/dt>/g)].map((m) => m[1]);
+    verifica(dt.join() === "Dati,Finalità,Base giuridica,Conservazione", `scheda «${testoVisibile(b.match(/<h3>([\s\S]*?)<\/h3>/)?.[1] ?? "")}»: ${dt.join(", ")}`);
+  }
+  verifica(/art\. 6, par\. 1, lett\. b/.test(testo) && /art\. 6, par\. 1, lett\. a/.test(testo), "basi giuridiche (misure precontrattuali e consenso)");
+  verifica(testo.includes("non oltre 24 mesi dall'ultima interazione"), "conservazione delle iscrizioni: 24 mesi");
+  verifica(testo.includes("Oggi il sito non usa strumenti di statistica né di marketing"), "manca la frase sui tracciamenti spenti");
+  verifica(/Netlify, Inc\./.test(testo) && /Supabase, Inc\./.test(testo), "fornitori Netlify e Supabase");
+  verifica(!/Google Ireland|Meta Platforms/.test(testo), "Google o Meta citati come fornitori senza integrazione");
+  verifica(/EU-US Data Privacy Framework/.test(testo) && /clausole contrattuali standard/.test(testo), "garanzie per gli Stati Uniti");
+  for (const diritto of ["accesso", "rettifica", "cancellazione", "limitazione", "opposizione", "portabilità", "revocare il consenso", "Garante per la protezione dei dati personali"]) {
+    verifica(testo.includes(diritto), `diritti: manca «${diritto}»`);
+  }
+  verifica(new RegExp(`<a href="mailto:${centro.email}">`).test(html), "diritti: manca il link email");
+});
+
+await controllo("pagine legali con GA4, pixel Meta e servizio email indicati (build in una copia): trattamenti c), fornitori Google, Meta e email, elenco dei cookie e «Preferenze cookie»; datiLegali() filtra per integrazione", () => {
+  // Funzione: voci filtrate per integrazione, «richiede» sconosciuto = errore, bozza spenta solo in produzione.
+  const t = { privacy: { trattamenti: { voci: testi.comuni.privacy.trattamenti.voci }, fornitori: { voci: testi.comuni.privacy.fornitori.voci } }, cookie: { elenco: testi.comuni.cookie.elenco } };
+  const conTutto = { ...centro, integrazioni: { ...centro.integrazioni, ga4: "G-PROVA", pixelMeta: "123", servizioEmail: "Posta di prova" } };
+  const pieno = build.datiLegali({ centro: conTutto, t, contestoNetlify: "deploy-preview" });
+  const vuoto = build.datiLegali({ centro, t, contestoNetlify: "production" });
+  verifica(pieno.trattamenti.length === 4 && vuoto.trattamenti.length === 2, `trattamenti ${pieno.trattamenti.length}/${vuoto.trattamenti.length}`);
+  verifica(pieno.fornitori.length === 5 && vuoto.fornitori.length === 2, `fornitori ${pieno.fornitori.length}/${vuoto.fornitori.length}`);
+  verifica(pieno.cookie.length === 5 && vuoto.cookie.length === 0, `cookie ${pieno.cookie.length}/${vuoto.cookie.length}`);
+  verifica(pieno.bozza === true && vuoto.bozza === false, "bozza: deve sparire solo con CONTEXT=production");
+  verifica(pieno.trattamenti.every((v) => !("richiede" in v)), "la chiave «richiede» arriva al template");
+  let fermato = false;
+  try {
+    build.datiLegali({ centro, t: { ...t, cookie: { elenco: [{ nome: "x", richiede: "inesistente" }] } } });
+  } catch {
+    fermato = true;
+  }
+  verifica(fermato, "«richiede» con un'integrazione inesistente accettato");
+  // Build vera in una copia, con le integrazioni indicate: i blocchi condizionali si rendono senza errori.
+  const tmp = mkdtempSync(join(tmpdir(), "migliore-legali-"));
+  try {
+    for (const voce of ["build.mjs", "content", "src"]) cpSync(join(RADICE, voce), join(tmp, voce), { recursive: true });
+    writeFileSync(join(tmp, "content", "centro.json"), JSON.stringify(conTutto, null, 2));
+    const r = spawnSync(process.execPath, ["build.mjs"], { cwd: tmp, encoding: "utf8", env: { ...process.env, URL: "", CONTEXT: "" } });
+    verifica(r.status === 0, `build con integrazioni fallita: ${r.stderr || r.stdout}`);
+    const privacy = normalizzaSpazi(testoVisibile(readFileSync(join(tmp, "dist", "privacy", "index.html"), "utf8")));
+    const cookie = readFileSync(join(tmp, "dist", "cookie", "index.html"), "utf8");
+    for (const atteso of ["Statistiche (Google Analytics 4)", "Marketing (pixel Meta e API Conversioni)", "Google Ireland Limited", "Meta Platforms Ireland Limited", "Posta di prova"]) {
+      verifica(privacy.includes(atteso), `privacy con integrazioni: manca «${atteso}»`);
+    }
+    verifica(!privacy.includes("Oggi il sito non usa strumenti di statistica"), "privacy con integrazioni: c'è ancora la frase sui tracciamenti spenti");
+    const nomi = [...cookie.matchAll(/<h3 class="legale-cookie-nome">([^<]*)<\/h3>/g)].map((m) => decodifica(m[1]));
+    verifica(nomi.join() === "Preferenze cookie,_ga,_ga_<ID>,_fbp,_fbc", `cookie con integrazioni: ${nomi.join(", ")}`);
+    verifica(!testoVisibile(cookie).includes("Oggi il sito non usa cookie"), "cookie con integrazioni: c'è ancora «Oggi il sito non usa cookie»");
+    verifica(/Preferenze cookie/.test(testoVisibile(cookie.match(/<footer[\s\S]*?<\/footer>/)[0])), "footer senza «Preferenze cookie» con i tracciamenti indicati");
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+  // Oggi: la cookie policy dice che il sito non usa cookie e non elenca nessun cookie.
+  const oggi = pagina("cookie/index.html");
+  verifica(testoVisibile(oggi).includes("Oggi il sito non usa cookie") && !/legale-cookie-nome/.test(oggi), "cookie policy di oggi: deve dire che il sito non usa cookie");
+});
+
+await controllo("riquadro «Bozza»: in cima a privacy e cookie nell'anteprima e nei Deploy Preview, mai con CONTEXT=production (build ripetuta)", () => {
+  const testoBozza = testi.comuni.legali.bozza;
+  const build2 = (contesto) => {
+    const tmp = mkdtempSync(join(tmpdir(), "migliore-bozza-"));
+    const r = spawnSync(process.execPath, ["build.mjs", "--dist", tmp], { cwd: RADICE, encoding: "utf8", env: { ...process.env, URL: "", CONTEXT: contesto } });
+    verifica(r.status === 0, `build con CONTEXT=${contesto} fallita: ${r.stderr || r.stdout}`);
+    const pagine = Object.fromEntries(elenca(tmp, (p) => p.endsWith(".html")).map((f) => [relative(tmp, f).split(sep).join("/"), readFileSync(f, "utf8")]));
+    rmSync(tmp, { recursive: true, force: true });
+    return pagine;
+  };
+  for (const contesto of ["", "deploy-preview", "branch-deploy"]) {
+    const pagine = build2(contesto);
+    for (const [file, html] of Object.entries(pagine)) {
+      const legale = PAGINE_LEGALI.some(([f]) => f === file);
+      const presente = html.includes('class="legale-bozza"') && testoVisibile(html).includes(testoBozza);
+      verifica(presente === legale, `CONTEXT=«${contesto}»: ${file} ${legale ? "senza" : "con"} riquadro «Bozza»`);
+      if (legale) verifica(html.indexOf('class="legale-bozza"') < html.indexOf("<h1"), `CONTEXT=«${contesto}»: ${file}: il riquadro non è in cima`);
+    }
+  }
+  const produzione = build2("production");
+  for (const [file, html] of Object.entries(produzione)) {
+    verifica(!html.includes("legale-bozza") && !testoVisibile(html).includes(testoBozza), `CONTEXT=production: ${file} con riquadro «Bozza»`);
+  }
+  verifica(Object.keys(produzione).includes("privacy/index.html") && Object.keys(produzione).includes("cookie/index.html"), "CONTEXT=production: pagine legali mancanti");
+});
+
+await controllo("nessun codice fiscale e nessun indirizzo diverso da §2.1 in nessuna pagina (testo, alt, meta, JSON-LD)", () => {
+  const CODICE_FISCALE = /[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]/;
+  const VIA = /(?<!\p{L})(?:via|viale|piazza|piazzale|corso|largo|vicolo|strada|contrada|località|borgo|frazione)\s+(?:[A-ZÀ-Ý][\p{L}'’.]*\s+){1,4}\d+[A-Za-z]?(?:\/[A-Za-z0-9]+)?(?!\p{L})/giu;
+  const problemi = [];
+  for (const file of elenca(DIST, (p) => p.endsWith(".html"))) {
+    const html = readFileSync(file, "utf8");
+    const testo = normalizzaSpazi([testoVisibile(html), testiNascosti(html), ...jsonLdDi(html)].join(" \n "));
+    if (CODICE_FISCALE.test(html) || new RegExp(CODICE_FISCALE.source, "i").test(testo)) problemi.push(`${rel(file)}: formato di codice fiscale`);
+    for (const m of testo.matchAll(VIA)) if (m[0] !== centro.indirizzo.via) problemi.push(`${rel(file)}: indirizzo «${m[0]}»`);
+    for (const m of testo.matchAll(/(?<!\d)\d{5}(?!\d)/g)) if (m[0] !== centro.indirizzo.cap) problemi.push(`${rel(file)}: CAP «${m[0]}»`);
+  }
+  verifica(centro.indirizzo.via === "Via Roma 2/A" && centro.indirizzo.cap === "21040", "indirizzo di centro.json diverso da §2.1");
+  // Prova: le espressioni riconoscono davvero un codice fiscale e un indirizzo diverso.
+  verifica(CODICE_FISCALE.test("RSSMRA80A01H501U") && [..."Ci trovi in Via Garibaldi 12, 21100 Varese".matchAll(VIA)].length === 1, "espressioni di controllo non funzionano");
+  verifica(!problemi.length, [...new Set(problemi)].slice(0, 8).join(" · "));
+});
+
+await controllo("pagine legali a 390 px: nessuno scroll orizzontale, colonna di testo ≤ 62ch, link fuori dal testo ≥ 44 px", async () => {
+  const problemi = [];
+  for (const [, , percorso] of PAGINE_LEGALI) {
+    const { contesto, pagina: pg } = await apriMobile(percorso);
+    const r = await pg.evaluate(() => {
+      const colonna = document.querySelector(".legale-testo");
+      const ch = (() => {
+        const prova = document.createElement("span");
+        prova.style.cssText = "position:absolute;visibility:hidden;font:inherit;width:62ch";
+        colonna.append(prova);
+        const w = prova.getBoundingClientRect().width;
+        prova.remove();
+        return w;
+      })();
+      const piccoli = [...document.querySelectorAll("a[href], button, summary")]
+        .filter((el) => !el.closest("p:not(.legale-link), li:not(.piede-elenco li)") || el.closest(".piede-elenco"))
+        .map((el) => ({ el, r: el.getBoundingClientRect() }))
+        .filter(({ r }) => r.width > 0 && (r.width < 44 || r.height < 44))
+        .map(({ el, r }) => `«${el.textContent.trim().slice(0, 25)}» ${Math.round(r.width)}×${Math.round(r.height)}`);
+      return { scroll: document.documentElement.scrollWidth > innerWidth, colonna: colonna.getBoundingClientRect().width, ch, piccoli };
+    });
+    await contesto.close();
+    if (r.scroll) problemi.push(`${percorso}: scroll orizzontale`);
+    if (r.colonna > r.ch + 1) problemi.push(`${percorso}: colonna di ${Math.round(r.colonna)} px oltre i 62ch (${Math.round(r.ch)} px)`);
+    if (r.piccoli.length) problemi.push(`${percorso}: area di tocco < 44 px: ${r.piccoli.join(", ")}`);
   }
   verifica(!problemi.length, problemi.join(" · "));
 });

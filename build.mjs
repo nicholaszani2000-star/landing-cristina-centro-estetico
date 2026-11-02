@@ -46,6 +46,11 @@ const SIZES_FOTO_SEZIONE = "(min-width: 1024px) 440px, (min-width: 768px) 520px,
 // Foto 01 dell'apertura: a tutta larghezza fino a 767 px, cornice di 520 px tra 768 e 1023 px,
 // colonna destra (~480 px) da 1024 px.
 const SIZES_FOTO_APERTURA = "(min-width: 1024px) 480px, (min-width: 768px) 520px, 100vw";
+// Listino stampato (foto 06): il link «Vedi il listino stampato» apre il WebP a questa larghezza (§9: ≤ 300 KB).
+const LARGHEZZA_STAMPATO = 1536;
+// Sitemap: le pagine della landing prima, le pagine legali con priorità bassa; la 404 è esclusa.
+const PRIORITA_LANDING = "1.0";
+const PRIORITA_LEGALI = "0.3";
 
 export class ErroreBuild extends Error {}
 const errore = (dove, messaggio) => {
@@ -238,6 +243,50 @@ export function formattaPrezzo(voce) {
     return `da ${numeroIt.format(voce.da)} a ${euro(voce.a)}`;
   }
   return `da ${euro(num(voce.da))}`;
+}
+
+// ---------------------------------------------------------------- listino
+
+/** Categorie del listino per la sezione 9: ordine di listino.json, prezzi scritti solo da formattaPrezzo(),
+ *  conteggio delle voci con le parole di testi.json. «aperta» la decide ogni pagina (§6). */
+export function sezioneListino({ listino, t }) {
+  return listino.categorie.map((c) => ({
+    id: c.id,
+    titolo: c.titolo,
+    conteggio: `${c.voci.length} ${c.voci.length === 1 ? t.listino.voce : t.listino.voci}`,
+    voci: c.voci.map((v) => ({ nome: v.nome, prezzo: formattaPrezzo(v) })),
+  }));
+}
+
+// ---------------------------------------------------------------- pagine legali
+
+const DATA_IT = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Rome" });
+const DATA_ISO = new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: "Europe/Rome" });
+
+/** Dati delle pagine privacy e cookie. Le voci di testi.json con «richiede» compaiono solo se quell'integrazione
+ *  di centro.json è indicata («tracciamenti» = GA4 o pixel Meta). Il riquadro «Bozza» compare sempre tranne
+ *  quando Netlify costruisce la produzione (CONTEXT=production). La data è quella della build, ora italiana. */
+export function datiLegali({ centro, t, oggi = new Date(), contestoNetlify = process.env.CONTEXT }) {
+  const integrazioni = centro.integrazioni ?? {};
+  const tracciamenti = Boolean(integrazioni.ga4 || integrazioni.pixelMeta);
+  const attiva = (chiave, dove) => {
+    if (chiave === null || chiave === undefined) return true;
+    if (chiave === "tracciamenti") return tracciamenti;
+    if (!(chiave in integrazioni)) errore(dove, `«richiede»: integrazione «${chiave}» inesistente in content/centro.json`);
+    return Boolean(integrazioni[chiave]);
+  };
+  const filtra = (lista, dove) =>
+    lista.filter((voce) => attiva(voce.richiede, dove)).map(({ richiede, ...resto }) => resto);
+  return {
+    bozza: contestoNetlify !== "production",
+    data: DATA_IT.format(oggi),
+    dataIso: DATA_ISO.format(oggi),
+    sede: centro.legale.sedeLegale ?? centro.indirizzo.completo,
+    tracciamenti,
+    trattamenti: filtra(t.privacy.trattamenti.voci, "content/testi.json › privacy.trattamenti"),
+    fornitori: filtra(t.privacy.fornitori.voci, "content/testi.json › privacy.fornitori"),
+    cookie: filtra(t.cookie.elenco, "content/testi.json › cookie.elenco"),
+  };
 }
 
 // ---------------------------------------------------------------- template
@@ -653,6 +702,12 @@ async function main() {
   if (!existsSync(join(RADICE, MANIFESTO))) errore(MANIFESTO, "manca: esegui node studio/esporta-immagini.mjs");
   const manifesto = await leggiJson(MANIFESTO);
   const og = manifesto.immagini.og;
+  const stampato = manifesto.immagini["listino-stampato"];
+  if (!stampato?.larghezze?.includes(LARGHEZZA_STAMPATO) || !stampato.formati?.includes("webp")) {
+    errore(MANIFESTO, `listino stampato a ${LARGHEZZA_STAMPATO} px in WebP mancante`);
+  }
+  const categorieListino = sezioneListino({ listino, t });
+  const legali = datiLegali({ centro, t });
   if (!og?.file || !existsSync(join(SRC, "img", og.file))) errore(MANIFESTO, "immagine di condivisione mancante");
   const condivisione = {
     ogImage: base ? `${base}/img/${og.file}` : `/img/${og.file}`,
@@ -696,6 +751,7 @@ async function main() {
       whatsappViso: waLink(centro.whatsappNumero, testi.whatsapp.viso),
       whatsappPedicure: waLink(centro.whatsappNumero, testi.whatsapp.pedicure),
       listino: "#listino",
+      listinoStampato: `/img/listino-stampato-${LARGHEZZA_STAMPATO}.webp`,
       maps: linkMappa(centro),
       privacy: "/privacy/",
       cookie: "/cookie/",
@@ -728,6 +784,7 @@ async function main() {
       ...comune,
       p,
       link: { ...comune.link, whatsapp: waLink(centro.whatsappNumero, testi.whatsapp[p.whatsapp]) },
+      listino: { categorie: categorieListino.map((c) => ({ ...c, aperta: c.id === p.listinoAperto })) },
       meta: {
         title: p.title,
         description: p.description,
@@ -751,9 +808,28 @@ async function main() {
   };
   await scrivi("404.html", motore.rendi(await readFile(join(TEMPLATES, "404.html"), "utf8"), contesto404, "src/templates/404.html"));
 
+  // Pagine legali (§10): stesso layout della landing, testi da testi.json (privacy, cookie, legali).
+  const pagineLegali = [];
+  for (const [id, percorso] of [["privacy", comune.link.privacy], ["cookie", comune.link.cookie]]) {
+    const doc = t[id];
+    const contestoLegale = {
+      ...comune,
+      doc,
+      legali,
+      link: { ...comune.link, whatsapp: comune.link.whatsappGenerale },
+      meta: { title: doc.title, description: doc.description, canonical: base ? base + percorso : null, robots: null, ...condivisione, themeColor: tema },
+      jsonld: null,
+    };
+    const file = `${percorso.slice(1)}index.html`;
+    await scrivi(file, motore.rendi(await readFile(join(TEMPLATES, `${id}.html`), "utf8"), contestoLegale, `src/templates/${id}.html`));
+    pagineLegali.push(percorso);
+  }
+
   await writeFile(join(dist, "robots.txt"), `User-agent: *\nAllow: /\n${base ? `\nSitemap: ${base}/sitemap.xml\n` : ""}`);
   if (base) {
-    const url = generate.map((p) => `  <url><loc>${escapeHtml(base + p)}</loc></url>`).join("\n");
+    const url = [...generate.map((p) => [p, PRIORITA_LANDING]), ...pagineLegali.map((p) => [p, PRIORITA_LEGALI])]
+      .map(([p, priorita]) => `  <url><loc>${escapeHtml(base + p)}</loc><priority>${priorita}</priority></url>`)
+      .join("\n");
     await writeFile(
       join(dist, "sitemap.xml"),
       `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${url}\n</urlset>\n`,
@@ -762,8 +838,8 @@ async function main() {
 
   for (const avviso of avvisi) console.log(`  · ${avviso}`);
   console.log(
-    `✔ build in ${Date.now() - inizio} ms → ${rel(dist) || dist}: ${generate.join(", ")}, 404.html, robots.txt` +
-      `${base ? ", sitemap.xml" : ""} · listino ${voci} voci`,
+    `✔ build in ${Date.now() - inizio} ms → ${rel(dist) || dist}: ${[...generate, ...pagineLegali].join(", ")}, 404.html, robots.txt` +
+      `${base ? ", sitemap.xml" : ""} · listino ${voci} voci · riquadro «Bozza» ${legali.bozza ? "sì" : "no (CONTEXT=production)"}`,
   );
 }
 

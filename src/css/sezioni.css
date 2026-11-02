@@ -1,4 +1,4 @@
-/* sezioni.css — una parte per sezione (CLAUDE.md §6). Per ora: header, apertura, viso, pedicure, chi sono, come prenotare, dove siamo, barra contatti mobile, footer, 404. */
+/* sezioni.css — una parte per sezione (CLAUDE.md §6): header, apertura, viso, pedicure, chi sono, come prenotare, dove siamo, listino, barra contatti mobile, footer, 404, pagine legali. */
 
 /* 1. Header: logo a sinistra, «Chiama» a destra. Non fisso. */
 .testata {
@@ -774,6 +774,114 @@
   }
 }
 
+/* 9. Listino: una categoria per <details> (funziona senza JS), una voce per riga: nome, puntini, prezzo.
+   Se il nome va a capo, il prezzo resta in basso a destra, sull'ultima riga del nome.
+   Fino a 1023 px: introduzione, categorie, link al listino stampato. Da 1024 px colonne 5/7. */
+.listino-griglia {
+  display: grid;
+  gap: var(--spazio-4);
+}
+.listino-intro,
+.listino-corpo {
+  display: grid;
+  gap: var(--spazio-2);
+  align-content: start;
+}
+.listino-categorie {
+  border-top: 1px solid var(--linea);
+}
+.listino-categoria {
+  border-bottom: 1px solid var(--linea);
+}
+.listino-categoria > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--spazio-2);
+  min-height: var(--area-tocco);
+  padding: var(--spazio-2) var(--spazio-1);
+  list-style: none;
+  cursor: pointer;
+}
+.listino-categoria > summary::-webkit-details-marker {
+  display: none;
+}
+/* Sabbia chiara solo come piccolo dettaglio (§5): la riga della categoria aperta o sotto il mouse. */
+.listino-categoria > summary:hover,
+.listino-categoria[open] > summary {
+  background: var(--sabbia-chiara);
+}
+.listino-titolo {
+  flex: 1 1 auto;
+  font-family: var(--font-titoli);
+  font-size: 1.25rem;
+  font-synthesis: none;
+  line-height: 1.3;
+}
+.listino-conteggio {
+  flex: none;
+  font-size: var(--testo-piccolo);
+  color: var(--inchiostro-tenue);
+  white-space: nowrap;
+}
+.listino-categoria .icona-apri {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--accento);
+  transition: transform var(--durata-rapida) var(--curva);
+}
+.listino-categoria[open] .icona-apri {
+  transform: rotate(90deg);
+}
+.listino-voci {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: var(--spazio-2) var(--spazio-1) var(--spazio-3);
+}
+.listino-voce {
+  display: flex;
+  align-items: flex-end;
+  align-items: last baseline;
+}
+.listino-voce dt {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.listino-voce dd {
+  display: flex;
+  flex: 1 0 auto;
+  align-items: baseline;
+  margin: 0;
+  font-weight: var(--peso-medio);
+  white-space: nowrap;
+}
+.listino-voce dd::before {
+  content: "";
+  position: relative;
+  bottom: 0.3em;
+  flex: 1 1 auto;
+  min-width: 1.5rem;
+  margin-inline: 0.5rem;
+  border-bottom: 1.5px dotted var(--linea);
+}
+.listino-stampato a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--area-tocco);
+  font-weight: var(--peso-medio);
+}
+@media (min-width: 1024px) {
+  .listino-griglia {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    column-gap: var(--spazio-8);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .listino-categoria .icona-apri {
+    transition: none; /* la freccia indica lo stato aperto, ma senza ruotare in movimento */
+  }
+}
+
 /* Barra contatti mobile: sotto i 768 px, fissa in basso. Con JS si nasconde mentre i pulsanti
    dell'apertura sono visibili; senza JS resta sempre visibile (ripiego dopo 3 s se main.js non parte). */
 .barra-contatti {
@@ -810,8 +918,9 @@
     visibility: visible;
   }
 }
+/* Spazio in fondo pari alla barra, solo nelle pagine che la hanno (non 404 e pagine legali). */
 @media (max-width: 767.98px) {
-  body {
+  .con-barra {
     padding-bottom: calc(var(--barra-altezza) + env(safe-area-inset-bottom));
   }
 }
@@ -897,4 +1006,88 @@
   display: inline-flex;
   align-items: center;
   min-height: var(--area-tocco);
+}
+
+/* Pagine legali (privacy e cookie): stesso layout della landing, testo su una colonna di 62ch. */
+.legale {
+  padding-top: var(--spazio-4);
+}
+.legale-testo {
+  display: grid;
+  gap: var(--spazio-2);
+  max-width: var(--misura-testo);
+}
+.legale-testo h2 {
+  margin-top: var(--spazio-5);
+  font-size: clamp(1.5rem, 1.3143rem + 0.7619vw, 2rem);
+}
+.legale-testo h3 {
+  font-size: var(--testo-h3);
+}
+.legale-data {
+  font-size: var(--testo-piccolo);
+  color: var(--inchiostro-tenue);
+}
+.legale-intro {
+  font-size: 1.125rem;
+}
+.legale-bozza {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  margin-bottom: var(--spazio-2);
+  padding: var(--spazio-2) var(--spazio-3);
+  border: var(--bordo-scheda) solid var(--accento);
+  border-radius: var(--raggio-scheda);
+  color: var(--accento);
+  font-weight: var(--peso-medio);
+}
+.legale-bozza .icona {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.15rem;
+}
+.legale-blocco {
+  display: grid;
+  gap: var(--spazio-2);
+  margin-top: var(--spazio-2);
+}
+.legale-scheda {
+  display: grid;
+  gap: var(--spazio-1);
+  margin: 0;
+  padding-left: var(--spazio-2);
+  border-left: 1px solid var(--linea);
+}
+.legale-scheda dt {
+  font-size: var(--testo-piccolo);
+  font-weight: var(--peso-medio);
+  color: var(--inchiostro-tenue);
+}
+.legale-scheda dd {
+  margin: 0;
+}
+.legale-scheda dd a,
+.legale-link a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--area-tocco);
+}
+.legale-nota {
+  font-size: var(--testo-piccolo);
+  color: var(--inchiostro-tenue);
+}
+.legale-elenco {
+  display: grid;
+  gap: var(--spazio-1);
+  margin: 0;
+  padding-left: 1.25rem;
+}
+.legale-elenco li::marker {
+  color: var(--accento);
+}
+.legale-cookie-nome {
+  font-family: var(--font-testo);
+  font-weight: var(--peso-medio);
 }

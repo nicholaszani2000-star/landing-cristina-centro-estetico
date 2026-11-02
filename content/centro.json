@@ -74,6 +74,7 @@
   "integrazioni": {
     "ga4": null,
     "pixelMeta": null,
-    "supabase": null
+    "supabase": null,
+    "servizioEmail": null
   }
 }
