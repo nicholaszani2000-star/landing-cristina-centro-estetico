@@ -391,11 +391,12 @@
   border-radius: var(--raggio-scheda);
 }
 .scheda-estetico {
-  border: 1px solid var(--linea); /* sul sabbia: la landing è tutta color sabbia (§5) */
+  background: var(--sabbia); /* fondo unico (§5): sul sabbia, con il bordo --linea */
+  border: var(--bordo-scheda) solid var(--linea);
 }
 .scheda-avanzato {
-  background: var(--sabbia-profonda);
-  border: var(--bordo-pulsante) solid var(--accento);
+  background: var(--sabbia-profonda); /* l'unica scheda in rilievo */
+  border: var(--bordo-scheda) solid var(--accento);
 }
 .scheda-sottotitolo {
   font-size: var(--testo-piccolo);

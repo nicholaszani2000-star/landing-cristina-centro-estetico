@@ -2,9 +2,9 @@
 :root {
   /* Colori. Contrasti sul sabbia: inchiostro 13,4:1 · inchiostro tenue 6,7:1 · accento 5,4:1 (4,7:1 sul sabbia profondo). */
   --sabbia: #F4DBCA;           /* fondo principale, preso dal logo */
-  --sabbia-chiara: #FAEDE4;    /* mai come fondo: la landing è tutta color sabbia (§5) */
-  --sabbia-profonda: #EBCBB5;  /* schede e blocchi in rilievo */
-  --crema: #FFF8F3;            /* campi dei moduli */
+  --sabbia-chiara: #FAEDE4;    /* solo piccoli dettagli (es. voce «aperta» del listino): mai fondo di sezione o di pagina */
+  --sabbia-profonda: #EBCBB5;  /* solo blocchi in rilievo: scheda «Pedicure avanzato», blocco codice sconto, pillola «In evidenza» */
+  --crema: #FFF8F3;            /* solo campi dei moduli */
   --inchiostro: #1F1612;       /* testi e pulsante principale */
   --inchiostro-tenue: #5C4537; /* testi secondari e bordi dei campi */
   --accento: #8C4318;          /* link, occhielli, piccoli dettagli */
@@ -49,6 +49,7 @@
   --raggio-pillola: 999px;
   --raggio-foto: 6px;
   --raggio-scheda: 0.625rem;   /* 10 px: schede del confronto pedicure */
+  --bordo-scheda: 1.5px;
   --pulsante-altezza: 3.25rem; /* 52 px */
   --bordo-pulsante: 1.5px;
   --area-tocco: 2.75rem;       /* 44 px */
@@ -57,6 +58,7 @@
   --arco-larghezza: 48px;
   --arco-altezza: 12px;
   --arco-opacita: 0.6;
+  --filetto: 1px;              /* filetto --linea tra le sezioni, largo quanto il contenuto */
 
   /* Foto: sfumatura nel sabbia (§5) */
   --sfumatura-basso: 72%;            /* da qui in giù la foto sfuma nel sabbia */

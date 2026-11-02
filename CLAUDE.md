@@ -284,7 +284,7 @@ Atmosfera: luce calda di sera, carta sabbia, silenzio. Le foto del centro hanno 
 
 Palette (token CSS in `tokens.css`, contrasti verificati WCAG):
 - `--sabbia: #F4DBCA` — fondo principale, preso dal logo.
-- `--sabbia-chiara: #FAEDE4` — mai come fondo: la landing è tutta color sabbia (vedi sotto).
+- `--sabbia-chiara: #FAEDE4` — solo per piccoli dettagli (per esempio lo stato «aperto» di una voce del listino); mai come fondo di sezione o di pagina.
 - `--sabbia-profonda: #EBCBB5` — schede e blocchi in rilievo.
 - `--crema: #FFF8F3` — campi dei moduli.
 - `--inchiostro: #1F1612` — testi e pulsante principale. Contrasto 13,4:1 sul sabbia.
@@ -295,7 +295,7 @@ Palette (token CSS in `tokens.css`, contrasti verificati WCAG):
 
 Il body ha `background: var(--sabbia)`. Niente modalità scura: la pagina è sempre sabbia, ma imposta `color-scheme: light`.
 
-La landing è tutta color sabbia: header, apertura, ogni sezione, footer e barra contatti hanno fondo `--sabbia`, su tutte e tre le pagine. Niente sezioni alternate su `--sabbia-chiara` né altri colori di fondo. Le sezioni si separano con lo spazio e con il dettaglio firma; `--sabbia-profonda` resta solo per piccoli blocchi in rilievo (etichette, la scheda 2 del pedicure).
+Fondo unico: tutto il sito è color sabbia. Ogni sezione e ogni pagina (codice sconto, listino, privacy, cookie e 404 comprese) ha fondo --sabbia, senza alternanza. Le sezioni si separano con lo spazio e con un filetto sottile --linea largo quanto il contenuto. --sabbia-profonda resta solo per i blocchi in rilievo dentro una sezione (scheda «Pedicure avanzato», blocco del codice sconto, pillola «In evidenza»); --crema solo per i campi dei moduli.
 
 Font (self-hosted, woff2, solo caratteri latini):
 - Titoli: Marcellus 400. Richiama il carattere del logo.

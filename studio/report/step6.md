@@ -102,3 +102,53 @@ Data: 2026-11-02 · Branch: `landing-migliore`
 ## 5. Domande per me
 
 1. I prompt degli Step 5 e 6 chiedono ancora il sabbia chiara (scheda 1, «Chi sono», alternanza dei fondi), mentre CLAUDE.md dice «tutta color sabbia». Confermi che la regola di CLAUDE.md resta valida anche per i prossimi step (codice sconto, listino, pagine legali), o vuoi riaprire l'alternanza aggiornando §5?
+
+## Aggiornamento: fondo unico sabbia e decisioni sul report
+
+Confermato «tutto color sabbia», senza alternanza. La domanda 1 e il punto «Fondi in sabbia chiara» qui sopra sono superati. Dei prompt degli Step 5 e 6 restano ignorati ogni «fondo `--sabbia-chiara`» e il punto 5 dello Step 6 sull'alternanza. Al loro posto c'è il controllo del fondo.
+
+1. `CLAUDE.md` §5
+- La riga di `--sabbia-chiara` ora dice: «solo per piccoli dettagli (per esempio lo stato «aperto» di una voce del listino); mai come fondo di sezione o di pagina.»
+- Dopo la riga del body c'è il paragrafo «Fondo unico: …», alla lettera. Prende il posto del paragrafo «La landing è tutta color sabbia…» aggiunto allo Step 4: era la stessa regola scritta in un altro modo, e due versioni nel brief rischiano di divergere.
+
+2. Codice
+- `src/css/tokens.css`:
+  - i commenti di `--sabbia-chiara`, `--sabbia-profonda` e `--crema` ora seguono §5;
+  - token nuovi: `--bordo-scheda` (1.5px) e `--filetto` (1px).
+- `src/css/base.css`:
+  - ogni `<section>` dichiara il fondo `--sabbia`. Prima era trasparente sopra il body sabbia: a vista non cambia nulla, ma ora la regola è scritta nel CSS;
+  - c'è un filetto `--linea` di 1 px, largo quanto il contenuto (350 px a 390 px, 1120 px su schermi larghi). Sta sul bordo superiore di ogni sezione dopo la prima, e del footer;
+  - le sezioni che arrivano (codice sconto, listino) lo ricevono da sole.
+- `src/css/sezioni.css`: la scheda «Pedicure estetico» ha fondo `--sabbia` e bordo `--bordo-scheda` `--linea`. La scheda «Pedicure avanzato» usa lo stesso token per il bordo accento.
+- Già in regola, non toccati: la pillola «In evidenza» e la scheda «Pedicure avanzato» su sabbia profonda; il crema non è ancora usato, arriva con il modulo dello Step 8.
+
+3. Controlli
+- Controllo nuovo, «fondo unico». Gira a 390, 768 e 1440 px su tutte le pagine generate in `dist/`: oggi `/`, `/viso/`, `/pedicure/` e la 404; dallo Step 7 entrano da sole privacy e cookie. Verifica che:
+  - `<body>` e ogni `<section>` (anche quella nascosta del listino) abbiano fondo sabbia, senza immagini di fondo;
+  - il filetto manchi sulla prima sezione e ci sia su tutte le altre e sul footer: `--linea`, 1 px, largo quanto il contenuto, sul bordo superiore;
+  - la sabbia profonda stia solo sulla pillola e sulla scheda «Pedicure avanzato» (lo Step 8 aggiunge il blocco del codice sconto);
+  - il crema stia solo su `input`, `textarea` e `select`;
+  - la sabbia chiara non stia mai su `main`, `section`, `header`, `footer` o sulla barra, né su un blocco che contiene un titolo o una sezione;
+  - la scheda «Pedicure estetico» sia sul sabbia, con bordo da 1,5 px `solid` `--linea`.
+
+  I colori attesi vengono da §5, non da `tokens.css`: così si vede anche un token cambiato per sbaglio.
+- Il controllo «landing tutta color sabbia» segue la regola nuova. Non vieta più il sabbia chiara nel CSS, perché ora è ammesso per i piccoli dettagli; dove non può stare lo verifica il controllo nuovo. Il resto è invariato.
+- Bordo da 1,5 px: Chromium lo arrotonda a 1 px nello stile calcolato, anche a densità 2. Quindi il controllo legge la larghezza dal CSS: l'ultima regola che vale per la scheda, anche dentro `@media`, con il token risolto. Stile e colore li legge dal browser.
+- Prova a vuoto, in una copia con questi errori:
+  - «Chi sono» su sabbia chiara;
+  - filetto tolto a «Dove siamo»;
+  - filetto del footer allargato a tutta pagina;
+  - sabbia profonda sull'elenco dei passi;
+  - crema sui dati del footer;
+  - scheda 1 con bordo da 1 px solo da 1024 px.
+
+  Tutti segnalati. La prima versione del controllo non vedeva la scheda corretta da una regola successiva, perché leggeva la prima regola e non l'ultima: corretto.
+- Esiti: build OK · html-validate **0 errori** · `node --check` OK · **controlli 65/65**.
+
+4. Anteprima: 24 screenshot rifatti in `studio/screenshot/step6/`. Console: 0 errori, 0 richieste fallite.
+- **390 px**: la foto dell'apertura sfuma, poi il filetto, poi arco, «Viso» e H2. Tra le sezioni ci sono 64 px, il filetto e altri 64 px.
+- **1440 px**: il filetto è largo 1120 px, allineato ai bordi del testo e delle foto. Sopra il footer c'è lo stesso filetto, poi quello che c'era già sopra il copyright.
+- **Schede**: «Pedicure estetico» sul sabbia con il bordo chiaro, «Pedicure avanzato» in rilievo su sabbia profonda con il bordo accento.
+
+5. Domanda per me
+- La regola della scheda «Pedicure estetico» (sabbia, bordo 1,5 px `--linea`) è nel CSS e nel controllo, ma §8 nomina solo la scheda 2 («in rilievo»). Vuoi che la scriva anche in §8?

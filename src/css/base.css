@@ -144,6 +144,28 @@ a:hover {
 .sezione {
   padding-block: var(--sezione-verticale);
 }
+/* Fondo unico (§5): ogni sezione è sabbia, come il body, senza alternanza. Le sezioni si separano
+   con lo spazio e con un filetto --linea largo quanto il contenuto, sul bordo superiore di ogni
+   sezione dopo la prima e del footer. La prima sezione (apertura) non ha filetto. */
+section {
+  background-color: var(--sabbia);
+}
+main > section,
+main ~ footer {
+  position: relative;
+}
+main > section + section::before,
+main ~ footer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  width: min(100% - 2 * var(--margine-laterale), var(--contenuto-max));
+  height: var(--filetto);
+  margin-inline: auto;
+  background-color: var(--linea);
+}
 
 /* Utilità */
 .solo-lettori {

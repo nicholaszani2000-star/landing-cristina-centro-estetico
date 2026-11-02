@@ -200,7 +200,7 @@ const LINK_PAGINE = [["/", "home"], ["/viso/", "viso"], ["/pedicure/", "pedicure
 
 // ---------------------------------------------------------------- controlli
 
-console.log("Controlli automatici · Step 6\n");
+console.log("Controlli automatici · Step 6 (decisioni sul report)\n");
 
 await controllo("build eseguita con codice 0", () => {
   const r = spawnSync(process.execPath, ["build.mjs"], { cwd: RADICE, encoding: "utf8", env: { ...process.env, URL: "" } });
@@ -1105,17 +1105,16 @@ await controllo("sezione viso: nessuna parola vietata per il viso (§8, maiuscol
   verifica(quattro === null, "con più di 3 fasi non va fatto l'elenco");
 });
 
-await controllo("landing tutta color sabbia (§5): nessun fondo sabbia chiara o di altri colori, su tutte le pagine a 390 e 1440 px", async () => {
-  // Nel CSS il sabbia chiara non si usa (solo la definizione del token) e non ci sono sfumature di fondo.
+await controllo("landing tutta color sabbia (§5): nessun fondo di altri colori né sfumato, su tutte le pagine a 390 e 1440 px", async () => {
+  // Nel CSS niente sfumature di fondo. Il sabbia chiara è ammesso solo per piccoli dettagli (§5, Step 6):
+  // dove non può stare lo verifica il controllo «fondo unico» qui sotto.
   const css = ["tokens.css", "base.css", "sezioni.css"].map((f) => [f, leggi(`src/css/${f}`)]);
   for (const [f, testo] of css) {
-    const senzaDefinizione = f === "tokens.css" ? testo.replace(/--sabbia-chiara\s*:[^;]*;/, "") : testo;
-    verifica(!/sabbia-chiara|#faede4/i.test(senzaDefinizione), `src/css/${f} usa il sabbia chiara`);
     verifica(!/background(-image)?\s*:[^;]*gradient/i.test(testo), `src/css/${f}: fondo sfumato`);
   }
   for (const [file] of PAGINE) verifica(!/sezione-chiara/.test(pagina(file)), `${file}: classe sezione-chiara`);
   // Nel browser: ogni fondo è trasparente, sabbia, oppure uno dei piccoli elementi ammessi.
-  const ammessi = { "rgb(244, 219, 202)": "sabbia", "rgb(235, 203, 181)": "sabbia profonda (etichette, schede)", "rgb(31, 22, 18)": "inchiostro (pulsante principale)", "rgb(255, 248, 243)": "crema (campi dei moduli)" };
+  const ammessi = { "rgb(244, 219, 202)": "sabbia", "rgb(250, 237, 228)": "sabbia chiara (piccoli dettagli)", "rgb(235, 203, 181)": "sabbia profonda (etichette, schede)", "rgb(31, 22, 18)": "inchiostro (pulsante principale)", "rgb(255, 248, 243)": "crema (campi dei moduli)" };
   const { browser, base } = await browserCondiviso();
   const problemi = [];
   for (const [larghezza, altezza] of [[390, 844], [1440, 900]]) {
@@ -1141,6 +1140,114 @@ await controllo("landing tutta color sabbia (§5): nessun fondo sabbia chiara o 
     }
     await contesto.close();
   }
+  verifica(!problemi.length, [...new Set(problemi)].slice(0, 8).join(" · "));
+});
+
+// Tutte le pagine generate, con la 404 (dallo Step 7 entrano da sole anche /privacy/ e /cookie/).
+function percorsiDist() {
+  const pagine = elenca(DIST, (p) => p.endsWith("index.html")).map((p) => "/" + rel(p).replace(/^dist\//, "").replace(/index\.html$/, ""));
+  return [...new Set(pagine)].sort().concat(existsSync(join(DIST, "404.html")) ? ["/pagina-che-non-esiste/"] : []);
+}
+const rgb = (hex) => {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgb(${n >> 16}, ${(n >> 8) & 255}, ${n & 255})`;
+};
+// Colori presi da CLAUDE.md §5, non da tokens.css: così anche un token cambiato per sbaglio si vede.
+const PALETTE = { sabbia: rgb("#F4DBCA"), chiara: rgb("#FAEDE4"), profonda: rgb("#EBCBB5"), crema: rgb("#FFF8F3"), linea: rgb("#D9B49C"), accento: rgb("#8C4318") };
+// Gli unici blocchi in rilievo su --sabbia-profonda (§5). Lo Step 8 aggiunge il blocco del codice sconto.
+const RILIEVI = [".etichetta", ".scheda-avanzato"];
+
+await controllo("fondo unico (§5): <body> e ogni <section> su --sabbia in ogni pagina, a 390, 768 e 1440 px; filetto --linea largo quanto il contenuto tra le sezioni e sopra il footer; sabbia profonda, crema e sabbia chiara solo dove ammessi", async () => {
+  const { browser, base } = await browserCondiviso();
+  const percorsi = percorsiDist();
+  const problemi = [];
+  let sezioniViste = 0;
+  let schedeViste = 0;
+  for (const [larghezza, altezza] of [[390, 844], [768, 1024], [1440, 900]]) {
+    const contesto = await browser.newContext({ viewport: { width: larghezza, height: altezza } });
+    for (const percorso of percorsi) {
+      const pg = await contesto.newPage();
+      await pg.goto(base + percorso, { waitUntil: "networkidle" });
+      const r = await pg.evaluate(({ P, RILIEVI }) => {
+        const nome = (el) => el.dataset?.sezione || el.id || `${el.tagName.toLowerCase()}${el.classList[0] ? "." + el.classList[0] : ""}`;
+        const st = (el, pseudo) => getComputedStyle(el, pseudo);
+        const c = document.querySelector("main .contenitore");
+        const contenuto = c.clientWidth - parseFloat(st(c).paddingLeft) - parseFloat(st(c).paddingRight);
+        const visibili = [...document.querySelectorAll("main > section")].filter((s) => s.getClientRects().length);
+        const separati = [...visibili.map((el, i) => [el, i > 0]), ...[...document.querySelectorAll("main ~ footer")].map((el) => [el, true])];
+        // Chromium arrotonda nello stile calcolato il bordo di 1,5 px a 1 px: la larghezza si legge
+        // dal CSS (CSSOM): l'ultima regola che vale per la scheda (anche dentro @media e @supports
+        // attivi) e dichiara il bordo, con il token risolto. Stile e colore dallo stile calcolato.
+        const regole = (lista) => [...lista].flatMap((x) =>
+          x.cssRules && x.conditionText !== undefined
+            ? (x instanceof CSSMediaRule ? matchMedia(x.conditionText).matches : CSS.supports(x.conditionText)) ? regole(x.cssRules) : []
+            : [x],
+        );
+        const tutte = [...document.styleSheets].flatMap((f) => regole(f.cssRules)).filter((x) => x.selectorText && x.style);
+        const bordoDichiarato = (el) => {
+          const valori = tutte
+            .filter((x) => { try { return el.matches(x.selectorText); } catch { return false; } })
+            .map((x) => x.style.getPropertyValue("border-width") || x.style.getPropertyValue("border-top-width") || x.style.getPropertyValue("border").split(/\s+(?![^(]*\))/)[0])
+            .filter(Boolean);
+          return valori.at(-1) ?? "";
+        };
+        return {
+          html: st(document.documentElement).backgroundColor,
+          body: [st(document.body).backgroundColor, st(document.body).backgroundImage],
+          sezioni: [...document.querySelectorAll("section")].map((s) => [nome(s), st(s).backgroundColor, st(s).backgroundImage]),
+          filetti: separati.map(([el, atteso]) => {
+            const b = st(el, "::before");
+            return { nome: nome(el), atteso, c: b.content, w: parseFloat(b.width), h: parseFloat(b.height), colore: b.backgroundColor, pos: b.position, top: b.top };
+          }),
+          contenuto,
+          schede: [...document.querySelectorAll(".scheda-estetico, .scheda-avanzato")].map((s) => {
+            const x = st(s);
+            const lati = ["Top", "Right", "Bottom", "Left"];
+            const tipo = s.classList.contains("scheda-avanzato") ? "avanzato" : "estetico";
+            const dichiarato = bordoDichiarato(s);
+            const larghezza = dichiarato.replace(/var\((--[\w-]+)\)/, (_, n) => st(document.documentElement).getPropertyValue(n).trim());
+            return { tipo, fondo: x.backgroundColor, larghezza, stili: [...new Set(lati.map((l) => x[`border${l}Style`]))], colori: [...new Set(lati.map((l) => x[`border${l}Color`]))] };
+          }),
+          fuoriPosto: [...document.body.querySelectorAll("*")].flatMap((el) => {
+            const f = st(el).backgroundColor;
+            if (f === P.profonda && !el.matches(RILIEVI.join(", "))) return [`${nome(el)} su sabbia profonda`];
+            if (f === P.crema && !el.matches("input, textarea, select")) return [`${nome(el)} su crema`];
+            if (f === P.chiara && (el.matches("main, section, header, footer, article, aside, .barra-contatti") || el.querySelector("section, h1, h2"))) return [`${nome(el)} su sabbia chiara`];
+            return [];
+          }),
+        };
+      }, { P: PALETTE, RILIEVI });
+      await pg.close();
+      const dove = `${percorso} ${larghezza}`;
+      if (![PALETTE.sabbia, "rgba(0, 0, 0, 0)"].includes(r.html)) problemi.push(`${dove}: <html> ${r.html}`);
+      if (r.body[0] !== PALETTE.sabbia || r.body[1] !== "none") problemi.push(`${dove}: <body> ${r.body.join(" ")}`);
+      for (const [n, colore, immagine] of r.sezioni) {
+        sezioniViste++;
+        if (colore !== PALETTE.sabbia || immagine !== "none") problemi.push(`${dove}: <section> ${n} ${colore}${immagine !== "none" ? " " + immagine.slice(0, 30) : ""}`);
+      }
+      for (const f of r.filetti) {
+        if (!f.atteso) {
+          if (f.c !== "none" && f.c !== "normal") problemi.push(`${dove}: ${f.nome} (prima sezione) con filetto`);
+          continue;
+        }
+        if (f.c === "none" || f.c === "normal") { problemi.push(`${dove}: ${f.nome} senza filetto`); continue; }
+        if (f.colore !== PALETTE.linea) problemi.push(`${dove}: filetto di ${f.nome} ${f.colore}`);
+        if (!(f.h > 0 && f.h <= 1)) problemi.push(`${dove}: filetto di ${f.nome} alto ${f.h} px`);
+        if (Math.abs(f.w - r.contenuto) > 0.5) problemi.push(`${dove}: filetto di ${f.nome} largo ${f.w} px invece di ${r.contenuto}`);
+        if (f.pos !== "absolute" || f.top !== "0px") problemi.push(`${dove}: filetto di ${f.nome} non sul bordo superiore`);
+      }
+      for (const s of r.schede) {
+        schedeViste++;
+        if (s.tipo === "estetico") {
+          if (s.fondo !== PALETTE.sabbia) problemi.push(`${dove}: scheda «Pedicure estetico» su ${s.fondo}`);
+          if (s.larghezza !== "1.5px" || s.stili.join() !== "solid" || s.colori.join() !== PALETTE.linea) problemi.push(`${dove}: scheda «Pedicure estetico» bordo «${s.larghezza} ${s.stili.join("/")} ${s.colori.join("/")}» invece di 1.5px solid --linea`);
+        } else if (s.fondo !== PALETTE.profonda) problemi.push(`${dove}: scheda «Pedicure avanzato» su ${s.fondo}`);
+      }
+      problemi.push(...r.fuoriPosto.map((x) => `${dove}: ${x}`));
+    }
+    await contesto.close();
+  }
+  verifica(sezioniViste > 0 && schedeViste > 0, "nessuna sezione o scheda trovata");
   verifica(!problemi.length, [...new Set(problemi)].slice(0, 8).join(" · "));
 });
 
