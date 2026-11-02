@@ -75,7 +75,7 @@
   "integrazioni": {
     "ga4Id": null,
     "metaPixelId": null,
-    "supabase": null,
+    "supabase": "bkcpnkrnhjirmbwnrozp",
     "servizioEmail": {
       "nome": "Brevo",
       "sede": "Francia",

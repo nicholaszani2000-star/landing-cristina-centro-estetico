@@ -191,7 +191,8 @@ Le voci viso della sezione viso (§6) sono 5: Pulizia viso base, Trattamento vis
 
 - GA4: non indicato (GA4 resta spento)
 - Pixel Meta: non indicato (il pixel resta spento)
-- Progetto Supabase: non indicato (il codice resta in modalità prova)
+- Progetto Supabase: migliore-estetica (bkcpnkrnhjirmbwnrozp), regione eu-central-1 (Francoforte), con supabase/iscritti.sql applicato. SUPABASE_URL è su Netlify; finché la chiave SUPABASE_SECRET_KEY non è su Netlify il codice resta in modalità prova.
+- Netlify: progetto esteticamigliore (https://esteticamigliore.netlify.app), branch di produzione landing-migliore.
 - Servizio email: Brevo (Francia). La chiave BREVO_API_KEY va solo su Netlify, con ambito Functions.
 - Chiavi segrete (Supabase, API Conversioni Meta, servizio email): MAI in questo file, MAI nel repository, MAI nella chat. Vanno solo nelle variabili d'ambiente di Netlify, con ambito «Functions».
 
