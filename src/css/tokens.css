@@ -48,6 +48,7 @@
   /* Raggi e misure */
   --raggio-pillola: 999px;
   --raggio-foto: 6px;
+  --raggio-scheda: 0.625rem;   /* 10 px: schede del confronto pedicure */
   --pulsante-altezza: 3.25rem; /* 52 px */
   --bordo-pulsante: 1.5px;
   --area-tocco: 2.75rem;       /* 44 px */

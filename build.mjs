@@ -37,7 +37,7 @@ const MANIFESTO = "src/img/immagini.json";
 // --logo-piede-altezza (56 px) per le proporzioni del logo 624×508.
 const SIZES_LOGO_TESTATA = "(min-width: 1024px) 99px, 79px";
 const SIZES_LOGO_PIEDE = "69px";
-// Foto delle sezioni (03 viso, poi 04 e 05): a tutta larghezza fino a 767 px, cornice di 520 px
+// Foto delle sezioni (03 viso, 05 pedicure, poi 04): a tutta larghezza fino a 767 px, cornice di 520 px
 // tra 768 e 1023 px, colonna di 5/12 (~440 px) da 1024 px.
 const SIZES_FOTO_SEZIONE = "(min-width: 1024px) 440px, (min-width: 768px) 520px, 100vw";
 // Foto 01 dell'apertura: a tutta larghezza fino a 767 px, cornice di 520 px tra 768 e 1023 px,
@@ -164,6 +164,36 @@ export function sezioneViso({ listino, centro, dettagli }) {
   });
   const cabina = [viso.macchinari, viso.prodotti].filter((v) => typeof v === "string" && v.trim()).join(", ") || null;
   return { voci, cabina, avvisi };
+}
+
+// ---------------------------------------------------------------- sezione pedicure
+
+// «50–55»: niente a capo dentro un intervallo di numeri (word joiner invisibile attorno al trattino).
+export const intervalliUniti = (testo) => testo.replace(/(\d)\s*([–-])\s*(\d)/g, "$1\u2060$2\u2060$3");
+const maiuscola = (testo) => testo.charAt(0).toLocaleUpperCase("it-IT") + testo.slice(1);
+
+/** «pediluvio; taglio e limatura delle unghie; …» → ["Pediluvio", "Taglio e limatura delle unghie", …]. */
+export function vociInclude(testo) {
+  if (typeof testo !== "string" || !testo.trim()) return null;
+  return testo.split(";").map((v) => v.trim()).filter(Boolean).map(maiuscola);
+}
+
+/** Le due schede del confronto: titoli e durate da testi.json, voci «include» da centro.json. */
+export function sezionePedicure({ centro, t }) {
+  const dati = centro.trattamenti.pedicure;
+  const scheda = (chiave, testiScheda, classe) => ({
+    classe,
+    titolo: testiScheda.titolo,
+    sottotitolo: testiScheda.sottotitolo,
+    voci: vociInclude(dati[chiave]?.include),
+    durata: testiScheda.durata && intervalliUniti(testiScheda.durata), // null se la durata non è indicata
+  });
+  return {
+    schede: [
+      scheda("estetico", t.pedicure.scheda1, "scheda-estetico"),
+      scheda("avanzato", t.pedicure.scheda2, "scheda-avanzato"),
+    ],
+  };
 }
 
 // ---------------------------------------------------------------- prezzi
@@ -625,6 +655,7 @@ async function main() {
       logoPiede: immagine(manifesto, "logo", t.footer.logoAlt, SIZES_LOGO_PIEDE),
       fotoApertura: immagine(manifesto, "cristina-bancone", t.apertura.altFoto, SIZES_FOTO_APERTURA, { priorita: true }),
       fotoViso: immagine(manifesto, "cabina-viso", t.viso.altFoto, SIZES_FOTO_SEZIONE),
+      fotoPedicure: immagine(manifesto, "postazione-pedicure", t.pedicure.altFoto, SIZES_FOTO_SEZIONE),
     },
     contatti: {
       telefono: centro.telefono.replace(/ /g, NBSP), // spazi non separabili: il numero non va a capo
@@ -633,12 +664,14 @@ async function main() {
     },
     banner: { attivo: Boolean(centro.integrazioni.ga4 || centro.integrazioni.pixelMeta) },
     viso: { voci: viso.voci },
+    pedicure: sezionePedicure({ centro, t }),
     link: {
       home: "/",
       tel: `tel:${centro.telefonoE164}`,
       email: `mailto:${centro.email}`,
       whatsappGenerale: waLink(centro.whatsappNumero, testi.whatsapp.generale),
       whatsappViso: waLink(centro.whatsappNumero, testi.whatsapp.viso),
+      whatsappPedicure: waLink(centro.whatsappNumero, testi.whatsapp.pedicure),
       listino: "#listino",
       maps: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(centro.indirizzo.completo)}`,
       privacy: "/privacy/",

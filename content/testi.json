@@ -1,5 +1,5 @@
 {
-  "_nota": "Tutti i testi del sito. I segnaposto tra graffe, per esempio {telefono} o {orari.giorni}, si riempiono in build con i dati di content/centro.json; se il dato è null la frase non compare. [data] nel risultato del codice sconto lo riempie il JavaScript. {cabina} è calcolato in build da macchinari e prodotti di centro.json (null se mancano entrambi). In viso.dettagli: «nome della voce del listino»: descrizione; null se i dettagli non sono indicati.",
+  "_nota": "Tutti i testi del sito. I segnaposto tra graffe, per esempio {telefono} o {orari.giorni}, si riempiono in build con i dati di content/centro.json; se il dato è null la frase non compare. [data] nel risultato del codice sconto lo riempie il JavaScript. {cabina} è calcolato in build da macchinari e prodotti di centro.json (null se mancano entrambi). In viso.dettagli: «nome della voce del listino»: descrizione; null se i dettagli non sono indicati. Le voci «include» del pedicure (centro.json) sono separate da punto e virgola: la build fa una voce per elemento, con la prima lettera maiuscola.",
   "comuni": {
     "header": {
       "logoAlt": "{nome}",
@@ -36,7 +36,7 @@
     "pedicure": {
       "occhiello": "Piedi",
       "h2": "Pedicure avanzato",
-      "testo": "Non la solita pedicure. Il pedicure estetico si prende cura dell'aspetto di unghie e piedi. Il pedicure avanzato va più a fondo, con più attenzione alle zone dove la pelle si ispessisce.",
+      "testo": "Non la solita pedicure. Il pedicure estetico si prende cura dell'aspetto di unghie e piedi. Il pedicure avanzato aggiunge un lavoro approfondito con micromotore e frese professionali sulle unghie e sulle zone dove la pelle si ispessisce, per una pelle più liscia e morbida e unghie in ordine.",
       "scheda1": {
         "titolo": "Pedicure estetico",
         "sottotitolo": "La pedicure classica",
@@ -47,7 +47,7 @@
         "sottotitolo": "Un lavoro più approfondito",
         "durata": "Durata: {trattamenti.pedicure.avanzato.durata}"
       },
-      "strumenti": "Strumenti: {trattamenti.pedicure.strumenti}.",
+      "strumentiIgiene": "Strumenti e igiene: {trattamenti.pedicure.strumentiIgiene}.",
       "rigaLimite": "Unghie incarnite, verruche, diabete o dolore ai piedi? In questi casi rivolgiti a un podologo o al tuo medico.",
       "linkPrezzi": "Vedi i prezzi ↓",
       "pulsante": "Prenota il pedicure avanzato",

@@ -108,10 +108,10 @@ Laminazione sopracciglia: i peli vengono fissati nella forma scelta, per sopracc
 - Macchinari (marca e modello): non indicati (non nominare macchinari)
 - Linee di prodotti usate: Natinuel, linea cosmetica professionale per centri estetici
 
-Pedicure:
-- Il pedicure estetico è la pedicure classica. Include: taglio e forma delle unghie, cura delle cuticole, levigatura della pelle dei talloni, crema finale. Durata: non indicata (non scrivere la durata).
-- Il pedicure avanzato va più a fondo. Include: tutto il pedicure estetico, un lavoro approfondito sulle zone dove la pelle si ispessisce, levigatura con strumenti professionali, idratazione finale. Durata: non indicata (non scrivere la durata).
-- Strumenti: non indicati (non nominare strumenti)
+Pedicure (le voci di «Include» sono separate da punto e virgola):
+- Il pedicure estetico è la pedicure classica. Include: pediluvio; scostamento delle cuticole; taglio e limatura delle unghie; levigatura dei talloni; smalto (base, due mani di colore e top coat) o semipermanente, se li scegli; crema finale. Durata: 30 minuti senza smalto, 40 con smalto, 50 con semipermanente.
+- Il pedicure avanzato aggiunge il lavoro con micromotore e frese. Include: pediluvio; scostamento delle cuticole; taglio e limatura delle unghie; lavoro con micromotore e frese sulle unghie e sulle zone dove la pelle si ispessisce; levigatura dei talloni; smalto o semipermanente, se li scegli. Durata: 45–50 minuti senza smalto, 50–55 con smalto, 60 con semipermanente.
+- Strumenti e igiene: micromotore professionale con frese specifiche per le unghie e per la pelle; strumenti puliti con gli ultrasuoni, sterilizzati a secco e conservati in buste sigillate
 
 Regole condizionali:
 - Dettagli, macchinari, prodotti, strumenti e durate compaiono solo se indicati qui. Se mancano, la sezione usa solo i nomi del listino e il copy neutro di §8, senza descrizioni inventate.
@@ -431,13 +431,14 @@ Laminazione sopracciglia: i peli vengono fissati nella forma scelta, per sopracc
 
 Pedicure avanzato
 - occhiello: «Piedi» · H2: «Pedicure avanzato»
-- testo: «Non la solita pedicure. Il pedicure estetico si prende cura dell'aspetto di unghie e piedi. Il pedicure avanzato va più a fondo, con più attenzione alle zone dove la pelle si ispessisce.»
-- scheda 1, titolo «Pedicure estetico», sottotitolo «La pedicure classica», include: taglio e forma delle unghie, cura delle cuticole, levigatura della pelle dei talloni, crema finale; durata se indicata.
-- scheda 2, titolo «Pedicure avanzato», sottotitolo «Un lavoro più approfondito», include: tutto il pedicure estetico, un lavoro approfondito sulle zone dove la pelle si ispessisce, levigatura con strumenti professionali, idratazione finale; durata se indicata. Scheda 2 in rilievo (`--sabbia-profonda`).
-- strumenti, solo se indicati: «Strumenti: non indicati (non nominare strumenti).»
+- testo: «Non la solita pedicure. Il pedicure estetico si prende cura dell'aspetto di unghie e piedi. Il pedicure avanzato aggiunge un lavoro approfondito con micromotore e frese professionali sulle unghie e sulle zone dove la pelle si ispessisce, per una pelle più liscia e morbida e unghie in ordine.»
+- scheda 1, titolo «Pedicure estetico», sottotitolo «La pedicure classica», include: le voci del pedicure estetico di §2.2; sotto, «Durata: …» con il testo indicato, se c'è.
+- scheda 2, titolo «Pedicure avanzato», sottotitolo «Un lavoro più approfondito», include: le voci del pedicure avanzato di §2.2; sotto, «Durata: …» con il testo indicato, se c'è. Scheda 2 in rilievo (`--sabbia-profonda`).
+- strumenti e igiene, solo se indicati, sotto le schede: «Strumenti e igiene: …».
 - riga sul limite (sempre presente, testo piccolo `--inchiostro-tenue`): «Unghie incarnite, verruche, diabete o dolore ai piedi? In questi casi rivolgiti a un podologo o al tuo medico.»
 - link: «Vedi i prezzi ↓» · pulsante: «Prenota il pedicure avanzato»
 - alt foto 05: «Postazione per manicure e pedicure del centro Migliore – Estetica Avanzata»
+- Dalle note di Cristina non si riportano: calli, unghie ispessite o incarnite, ragadi, «base curativa», il marchio del micromotore. Si descrive l'aspetto e il metodo (§10).
 
 Chi sono
 - occhiello: «Chi sono» · H2: «Migliore è il mio cognome. Ed è anche una promessa.»

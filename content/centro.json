@@ -54,24 +54,14 @@
     },
     "pedicure": {
       "estetico": {
-        "include": [
-          "taglio e forma delle unghie",
-          "cura delle cuticole",
-          "levigatura della pelle dei talloni",
-          "crema finale"
-        ],
-        "durata": null
+        "include": "pediluvio; scostamento delle cuticole; taglio e limatura delle unghie; levigatura dei talloni; smalto (base, due mani di colore e top coat) o semipermanente, se li scegli; crema finale",
+        "durata": "30 minuti senza smalto, 40 con smalto, 50 con semipermanente"
       },
       "avanzato": {
-        "include": [
-          "tutto il pedicure estetico",
-          "un lavoro approfondito sulle zone dove la pelle si ispessisce",
-          "levigatura con strumenti professionali",
-          "idratazione finale"
-        ],
-        "durata": null
+        "include": "pediluvio; scostamento delle cuticole; taglio e limatura delle unghie; lavoro con micromotore e frese sulle unghie e sulle zone dove la pelle si ispessisce; levigatura dei talloni; smalto o semipermanente, se li scegli",
+        "durata": "45–50 minuti senza smalto, 50–55 con smalto, 60 con semipermanente"
       },
-      "strumenti": null
+      "strumentiIgiene": "micromotore professionale con frese specifiche per le unghie e per la pelle; strumenti puliti con gli ultrasuoni, sterilizzati a secco e conservati in buste sigillate"
     }
   },
   "codiceSconto": {

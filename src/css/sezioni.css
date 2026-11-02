@@ -1,4 +1,4 @@
-/* sezioni.css — una parte per sezione (CLAUDE.md §6). Per ora: header, apertura, viso, barra contatti mobile, footer, 404. */
+/* sezioni.css — una parte per sezione (CLAUDE.md §6). Per ora: header, apertura, viso, pedicure, barra contatti mobile, footer, 404. */
 
 /* 1. Header: logo a sinistra, «Chiama» a destra. Non fisso. */
 .testata {
@@ -253,7 +253,8 @@
   font-size: var(--testo-piccolo);
   color: var(--inchiostro-tenue);
 }
-.viso-azioni {
+.viso-azioni,
+.pedicure-azioni {
   display: grid;
   gap: var(--spazio-2);
   justify-items: start;
@@ -265,7 +266,8 @@
   min-height: var(--area-tocco);
   font-weight: var(--peso-medio);
 }
-.viso-azioni .pulsanti {
+.viso-azioni .pulsanti,
+.pedicure-azioni .pulsanti {
   width: 100%;
 }
 @media (min-width: 768px) {
@@ -328,7 +330,8 @@
     -webkit-mask-image: linear-gradient(to left, transparent, #000 var(--sfumatura-lato));
     mask-image: linear-gradient(to left, transparent, #000 var(--sfumatura-lato));
   }
-  .viso-azioni .pulsanti {
+  .viso-azioni .pulsanti,
+  .pedicure-azioni .pulsanti {
     width: auto;
   }
 }
@@ -338,6 +341,182 @@
   }
   @media (max-width: 767.98px) {
     .viso-foto {
+      margin-inline: 0;
+    }
+  }
+}
+
+/* 4. Pedicure avanzato (terza su /pedicure/): testo, foto 05, confronto in due schede, strumenti e igiene,
+   riga sul limite, link ai prezzi, pulsante WhatsApp. Fino a 1023 px (§5, ordine su mobile): introduzione,
+   foto che sfuma in basso, schede (affiancate da 768 px), il resto. Da 1024 px colonne 7/5: testo e schede
+   a sinistra, foto a destra in cornice 4:5 che sfuma a sinistra. Tutto sul sabbia (§5). */
+.pedicure-griglia {
+  display: grid;
+  gap: var(--spazio-4);
+}
+.pedicure-intro,
+.pedicure-dettagli {
+  display: grid;
+  gap: var(--spazio-3);
+  align-content: start;
+}
+.pedicure-intro {
+  gap: var(--spazio-2);
+}
+.pedicure-intro h2 {
+  margin-bottom: var(--spazio-1);
+}
+.pedicure-foto {
+  margin-inline: calc(-1 * var(--margine-laterale));
+}
+.pedicure-foto picture {
+  display: block;
+}
+.pedicure-foto img {
+  width: 100%;
+  height: auto;
+  -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+  mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+}
+.schede {
+  display: grid;
+  gap: var(--spazio-2);
+}
+.scheda {
+  display: grid;
+  gap: var(--spazio-1);
+  align-content: start;
+  padding: var(--spazio-3);
+  border-radius: var(--raggio-scheda);
+}
+.scheda-estetico {
+  border: 1px solid var(--linea); /* sul sabbia: la landing è tutta color sabbia (§5) */
+}
+.scheda-avanzato {
+  background: var(--sabbia-profonda);
+  border: var(--bordo-pulsante) solid var(--accento);
+}
+.scheda-sottotitolo {
+  font-size: var(--testo-piccolo);
+  font-weight: var(--peso-medio);
+  color: var(--inchiostro-tenue);
+}
+.scheda-voci {
+  display: grid;
+  gap: 0.5rem;
+  margin: var(--spazio-1) 0 0;
+  padding: 0;
+  list-style-type: "\200B"; /* niente pallino: la spunta è un SVG; Safari continua ad annunciare la lista */
+}
+.scheda-voci li {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  gap: 0.6rem;
+  align-items: start;
+  line-height: 1.5;
+}
+.scheda-voci .icona {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.1rem;
+  color: var(--accento);
+}
+.scheda-durata {
+  margin-top: var(--spazio-1);
+  padding-top: var(--spazio-1);
+  border-top: 1px solid var(--linea);
+  font-size: var(--testo-piccolo);
+  color: var(--inchiostro-tenue);
+}
+.pedicure-igiene,
+.pedicure-limite {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  gap: 0.6rem;
+  align-items: start;
+}
+.pedicure-igiene .icona,
+.pedicure-limite .icona {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.15rem;
+}
+.pedicure-igiene {
+  color: var(--inchiostro);
+}
+.pedicure-igiene .icona {
+  color: var(--accento);
+}
+.pedicure-limite {
+  font-size: var(--testo-piccolo);
+  color: var(--inchiostro-tenue);
+}
+.pedicure-limite .icona {
+  color: var(--inchiostro-tenue);
+}
+@media (min-width: 768px) {
+  .schede {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .pedicure-foto {
+    aspect-ratio: 4 / 5;
+  }
+  .pedicure-foto picture {
+    height: 100%;
+  }
+  .pedicure-foto img {
+    height: 100%;
+    object-fit: cover;
+    object-position: 55% 60%; /* poltrona, poggiapiedi e carrello */
+  }
+}
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .pedicure-foto {
+    width: 100%;
+    max-width: var(--cornice-tablet);
+    margin-inline: auto;
+    -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+    mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+  }
+  .pedicure-foto img {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+@media (min-width: 1024px) {
+  .pedicure-griglia {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    grid-template-areas:
+      "intro foto"
+      "dettagli foto";
+    grid-template-rows: auto 1fr;
+    align-items: start;
+    column-gap: var(--spazio-8);
+    row-gap: var(--spazio-4);
+  }
+  .pedicure-intro {
+    grid-area: intro;
+  }
+  .pedicure-dettagli {
+    grid-area: dettagli;
+  }
+  .pedicure-foto {
+    grid-area: foto;
+    position: sticky;
+    top: var(--spazio-4);
+    margin: 0;
+  }
+  .pedicure-foto img {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--sfumatura-lato));
+    mask-image: linear-gradient(to right, transparent, #000 var(--sfumatura-lato));
+  }
+}
+@supports not ((mask-image: none) or (-webkit-mask-image: none)) {
+  .pedicure-foto img {
+    border-radius: var(--raggio-foto);
+  }
+  @media (max-width: 767.98px) {
+    .pedicure-foto {
       margin-inline: 0;
     }
   }

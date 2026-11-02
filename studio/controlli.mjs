@@ -200,7 +200,7 @@ const LINK_PAGINE = [["/", "home"], ["/viso/", "viso"], ["/pedicure/", "pedicure
 
 // ---------------------------------------------------------------- controlli
 
-console.log("Controlli automatici · Step 4\n");
+console.log("Controlli automatici · Step 5\n");
 
 await controllo("build eseguita con codice 0", () => {
   const r = spawnSync(process.execPath, ["build.mjs"], { cwd: RADICE, encoding: "utf8", env: { ...process.env, URL: "" } });
@@ -459,7 +459,7 @@ await controllo("dati facoltativi: null se non indicati, mai la stringa «non in
   const nulli = [
     "legale.rea", "legale.sedeLegale", "presentazione", "dominio", "social.instagram", "social.facebook",
     "social.schedaGoogle", "trattamenti.viso.macchinari", "trattamenti.pedicure.estetico.durata",
-    "trattamenti.pedicure.avanzato.durata", "trattamenti.pedicure.strumenti", "integrazioni.ga4",
+    "trattamenti.pedicure.avanzato.durata", "trattamenti.pedicure.strumentiIgiene", "integrazioni.ga4",
     "integrazioni.pixelMeta", "integrazioni.supabase",
   ];
   for (const k of nulli) {
@@ -494,8 +494,10 @@ await controllo("link tel:+393520601109 e https://wa.me/393520601109?text= su og
     const html = pagina(file);
     const tel = [...html.matchAll(/href="(tel:[^"]*)"/g)].map((m) => m[1]);
     verifica(tel.length >= 2 && tel.every((t) => t === `tel:${centro.telefonoE164}`), `${file}: link tel errati ${tel.join(" ")}`);
+    // Le sezioni viso e pedicure hanno il loro testo WhatsApp (controllato a parte); il resto usa quello della pagina.
     const sezioneViso = html.match(/<section[^>]*data-sezione="viso"[\s\S]*?<\/section>/)?.[0] ?? "";
-    const fuoriViso = html.replace(sezioneViso, "");
+    const sezionePedicure = html.match(/<section[^>]*data-sezione="pedicure"[\s\S]*?<\/section>/)?.[0] ?? "";
+    const fuoriViso = html.replace(sezioneViso, "").replace(sezionePedicure, "");
     const wa = [...fuoriViso.matchAll(/href="(https:\/\/wa\.me\/[^"]*)"/g)].map((m) => new URL(decodifica(m[1])));
     const atteso = testi.whatsapp[id ? testi.pagine[id].whatsapp : "generale"];
     verifica(wa.length >= 1, `${file}: nessun link WhatsApp`);
@@ -1169,6 +1171,148 @@ await controllo("ordine su mobile (§5): a 390 e 768 px, in ogni sezione con fot
     await contesto.close();
   }
   verifica(sezioniViste > 0, "nessuna sezione con foto trovata");
+  verifica(!problemi.length, problemi.join(" · "));
+});
+
+// ---------------------------------------------------------------- Step 5: sezione pedicure avanzato
+
+const sezionePedicureDi = (html) => html.match(/<section[^>]*data-sezione="pedicure"[\s\S]*?<\/section>/)?.[0] ?? null;
+const RIGA_LIMITE = testi.comuni.pedicure.rigaLimite;
+const togliInvisibili = (s) => s.replace(/⁠/g, "");
+/** Le schede del confronto nell'HTML: classe, titolo, sottotitolo, voci, durata. */
+function schedeDi(sezione) {
+  return [...sezione.matchAll(/<div class="scheda (scheda-\w+)[^"]*">([\s\S]*?)<\/div>/g)].map((m) => ({
+    classe: m[1],
+    titolo: testoVisibile(m[2].match(/<h3[^>]*>([\s\S]*?)<\/h3>/)?.[1] ?? ""),
+    sottotitolo: testoVisibile(m[2].match(/<p class="scheda-sottotitolo">([\s\S]*?)<\/p>/)?.[1] ?? ""),
+    voci: [...(m[2].match(/<ul class="scheda-voci">([\s\S]*?)<\/ul>/)?.[1] ?? "").matchAll(/<li>([\s\S]*?)<\/li>/g)].map((v) => ({
+      testo: testoVisibile(v[1]),
+      spunta: /<svg\b/.test(v[1]),
+    })),
+    durata: togliInvisibili(testoVisibile(m[2].match(/<p class="scheda-durata">([\s\S]*?)<\/p>/)?.[1] ?? "")) || null,
+  }));
+}
+
+await controllo("sezione pedicure in tutte e tre le pagine: terza su /pedicure/, quarta su / e /viso/, sul sabbia", () => {
+  for (const [file, id] of PAGINE.filter(([, id]) => id)) {
+    const html = pagina(file);
+    const sezione = sezionePedicureDi(html);
+    verifica(sezione, `${file}: sezione pedicure mancante`);
+    const posApertura = html.indexOf('class="apertura"');
+    const posViso = html.indexOf('data-sezione="viso"');
+    const posPedicure = html.indexOf('data-sezione="pedicure"');
+    const pedicurePrima = testi.pagine[id].ordine[0] === "pedicure";
+    verifica(posApertura < posPedicure, `${file}: la sezione pedicure viene prima dell'apertura`);
+    verifica(pedicurePrima ? posPedicure < posViso : posViso < posPedicure, `${file}: sezione pedicure ${pedicurePrima ? "non terza" : "non quarta"}`);
+    verifica(/<section class="sezione pedicure"/.test(sezione), `${file}: la sezione pedicure ha classi di fondo in più (la landing è tutta sabbia)`);
+  }
+});
+
+await controllo("linguaggio della sezione pedicure: nessun termine sanitario (fuori dalla riga sul limite), nessuna nota esclusa di Cristina", () => {
+  const vietate = [
+    "podologico", "podologica", "podoestetic*", "curativ*", "terapeutic*", "medical*", "calli", "callo", "duron*",
+    "verruc*", "unghie incarnite", "unghia incarnita", "micos*", "elimin*", "risolv*", "garantit*",
+    // dalle note di Cristina che non si riportano (§8)
+    "ragad*", "unghie ispessite", "unghia ispessita", "base curativa",
+  ];
+  for (const [file] of PAGINE.filter(([, id]) => id)) {
+    const sezione = sezionePedicureDi(pagina(file));
+    const testo = normalizzaSpazi([testoVisibile(sezione), testiNascosti(sezione)].join(" \n "));
+    verifica(testo.includes(RIGA_LIMITE), `${file}: manca la riga sul limite`);
+    const senzaLimite = testo.split(RIGA_LIMITE).join(" ");
+    const trovate = vietate.filter((v) => regexVietata(v).test(senzaLimite));
+    verifica(!trovate.length, `${file}: ${trovate.join(", ")}`);
+  }
+});
+
+await controllo("«podologo» e «medico» compaiono una sola volta per pagina, nella riga sul limite (e mai sulla 404)", () => {
+  for (const [file, id] of PAGINE) {
+    const html = pagina(file);
+    const testo = normalizzaSpazi([testoVisibile(html), testiNascosti(html), ...jsonLdDi(html)].join(" \n "));
+    const podologo = testo.match(/(?<!\p{L})podolog\p{L}*/giu) ?? [];
+    const medico = testo.match(/(?<!\p{L})medic\p{L}*/giu) ?? [];
+    const attese = id ? 1 : 0;
+    verifica(podologo.length === attese, `${file}: «podolog…» ${podologo.length} volte`);
+    verifica(medico.length === attese, `${file}: «medic…» ${medico.length} volte`);
+    if (id) {
+      const limite = testoVisibile(html.match(/<p class="pedicure-limite[^"]*">([\s\S]*?)<\/p>/)?.[1] ?? "");
+      verifica(limite === RIGA_LIMITE, `${file}: riga sul limite «${limite}»`);
+    }
+  }
+});
+
+await controllo("sezione pedicure: nessun «€», pulsante WhatsApp con il testo pedicure, link #listino, foto 05 con l'alt di §8", () => {
+  for (const [file] of PAGINE.filter(([, id]) => id)) {
+    const sezione = sezionePedicureDi(pagina(file));
+    verifica(!/€|&euro;|\bEUR\b/.test(sezione), `${file}: un prezzo nella sezione pedicure`);
+    const wa = [...sezione.matchAll(/href="(https:\/\/wa\.me\/[^"]*)"/g)].map((m) => new URL(decodifica(m[1])));
+    verifica(wa.length === 1, `${file}: ${wa.length} link WhatsApp nella sezione pedicure`);
+    verifica(wa[0].searchParams.get("text") === testi.whatsapp.pedicure, `${file}: testo WhatsApp «${wa[0].searchParams.get("text")}»`);
+    verifica(sezione.includes(`${testi.comuni.pedicure.pulsante}</span>`) && /class="pulsante pulsante-principale"/.test(sezione), `${file}: pulsante «${testi.comuni.pedicure.pulsante}»`);
+    verifica(sezione.includes(`href="#listino">${testi.comuni.pedicure.linkPrezzi}</a>`), `${file}: link «Vedi i prezzi ↓» verso #listino`);
+    verifica(sezione.includes('alt="Postazione per manicure e pedicure del centro Migliore – Estetica Avanzata"'), `${file}: alt della foto 05`);
+    verifica(/src="\/img\/postazione-pedicure-\d+\.webp"/.test(sezione) && /loading="lazy"/.test(sezione), `${file}: foto 05 mancante o non lazy`);
+  }
+});
+
+await controllo("schede: «Pedicure estetico» poi «Pedicure avanzato», voci e durate dai dati (una per punto e virgola, iniziale maiuscola, con spunta)", () => {
+  const dati = centro.trattamenti.pedicure;
+  const attese = [
+    { classe: "scheda-estetico", titolo: "Pedicure estetico", sottotitolo: "La pedicure classica", chiave: "estetico" },
+    { classe: "scheda-avanzato", titolo: "Pedicure avanzato", sottotitolo: "Un lavoro più approfondito", chiave: "avanzato" },
+  ];
+  for (const [file] of PAGINE.filter(([, id]) => id)) {
+    const schede = schedeDi(sezionePedicureDi(pagina(file)));
+    verifica(schede.map((s) => s.classe).join() === "scheda-estetico,scheda-avanzato", `${file}: ordine delle schede ${schede.map((s) => s.classe).join(", ")}`);
+    schede.forEach((scheda, i) => {
+      const a = attese[i];
+      verifica(scheda.titolo === a.titolo && scheda.sottotitolo === a.sottotitolo, `${file}: titolo o sottotitolo della scheda ${i + 1}`);
+      const fonte = (dati[a.chiave].include ?? "").split(";").map((v) => v.trim()).filter(Boolean);
+      verifica(scheda.voci.length === fonte.length, `${file}: ${a.titolo}: ${scheda.voci.length} voci invece di ${fonte.length}`);
+      scheda.voci.forEach((v, j) => {
+        verifica(v.testo.toLowerCase() === fonte[j].toLowerCase(), `${file}: ${a.titolo}: voce «${v.testo}» invece di «${fonte[j]}»`);
+        verifica(v.testo[0] === v.testo[0].toLocaleUpperCase("it-IT"), `${file}: ${a.titolo}: «${v.testo}» senza maiuscola`);
+        verifica(v.spunta, `${file}: ${a.titolo}: «${v.testo}» senza spunta`);
+      });
+      const durata = dati[a.chiave].durata;
+      verifica(durata ? scheda.durata === `Durata: ${durata}` : scheda.durata === null, `${file}: ${a.titolo}: durata «${scheda.durata}»`);
+    });
+    const igiene = testoVisibile(sezionePedicureDi(pagina(file)).match(/<p class="pedicure-igiene[^"]*">([\s\S]*?)<\/p>/)?.[1] ?? "");
+    verifica(dati.strumentiIgiene ? igiene === `Strumenti e igiene: ${dati.strumentiIgiene}.` : igiene === "", `${file}: riga strumenti e igiene «${igiene}»`);
+  }
+  verifica(build.vociInclude("pediluvio; ; crema finale ;") .join("|") === "Pediluvio|Crema finale", "vociInclude non divide sul punto e virgola");
+  verifica(build.vociInclude(null) === null, "vociInclude con dati assenti");
+  // Senza durate né strumenti: niente righe «Durata» né «Strumenti e igiene»
+  const vuoto = structuredClone(centro);
+  vuoto.trattamenti.pedicure.estetico.durata = null;
+  vuoto.trattamenti.pedicure.avanzato.durata = null;
+  vuoto.trattamenti.pedicure.strumentiIgiene = null;
+  const tVuoto = { pedicure: { ...testi.comuni.pedicure, scheda1: { ...testi.comuni.pedicure.scheda1, durata: null }, scheda2: { ...testi.comuni.pedicure.scheda2, durata: null }, strumentiIgiene: null } };
+  const html = new build.Motore().rendi("{{> pedicure}}", {
+    t: tVuoto, pedicure: build.sezionePedicure({ centro: vuoto, t: tVuoto }), immagini: { fotoPedicure: "" },
+    icone: { spunta: "", scudo: "", info: "", fumetto: "" }, link: { listino: "#listino", whatsappPedicure: "https://wa.me/1?text=x" },
+  }, "prova");
+  verifica(!/scheda-durata|pedicure-igiene/.test(html), "con durate e strumenti non indicati il template mostra comunque le righe");
+  verifica(html.includes("pedicure-limite"), "la riga sul limite deve restare sempre");
+});
+
+await controllo("foto 05: object-position 55% 60% da 768 px, sfumatura a sinistra da 1024 px", async () => {
+  const { browser, base } = await browserCondiviso();
+  const problemi = [];
+  for (const [larghezza, altezza, maschera] of [[768, 1024, null], [1440, 900, "to right"]]) {
+    const contesto = await browser.newContext({ viewport: { width: larghezza, height: altezza } });
+    const pagina = await contesto.newPage();
+    await pagina.goto(base + "/pedicure/", { waitUntil: "networkidle" });
+    const st = await pagina.evaluate(() => {
+      const img = document.querySelector(".pedicure-foto img");
+      const s = getComputedStyle(img);
+      return { posizione: s.objectPosition, maschera: s.maskImage || s.webkitMaskImage, larghezza: img.getBoundingClientRect().width };
+    });
+    await contesto.close();
+    if (st.posizione !== "55% 60%") problemi.push(`${larghezza} px: object-position ${st.posizione}`);
+    if (maschera && !st.maschera.includes(maschera)) problemi.push(`${larghezza} px: sfumatura ${st.maschera}`);
+    if (larghezza === 768 && st.larghezza > 520.5) problemi.push(`768 px: foto larga ${Math.round(st.larghezza)} px`);
+  }
   verifica(!problemi.length, problemi.join(" · "));
 });
 
