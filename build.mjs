@@ -260,13 +260,26 @@ export function sezioneListino({ listino, t }) {
 
 // ---------------------------------------------------------------- pagine legali
 
-const DATA_IT = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Rome" });
-const DATA_ISO = new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: "Europe/Rome" });
+const MESI = ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"];
+
+/** «2 novembre 2026» → «2026-11-02» (per <time datetime>). Una data non valida ferma la build. */
+export function dataIso(testo, dove = "content/testi.json › legale.aggiornamento") {
+  const m = String(testo ?? "").trim().match(/^(\d{1,2}) (\p{L}+) (\d{4})$/u);
+  const mese = m ? MESI.indexOf(m[2].toLowerCase()) + 1 : 0;
+  const giorno = m ? Number(m[1]) : 0;
+  const data = m && mese ? new Date(Date.UTC(Number(m[3]), mese - 1, giorno)) : null;
+  if (!data || data.getUTCMonth() !== mese - 1 || data.getUTCDate() !== giorno) {
+    errore(dove, `data non valida «${testo}»: scrivila come «2 novembre 2026»`);
+  }
+  return `${m[3]}-${String(mese).padStart(2, "0")}-${String(giorno).padStart(2, "0")}`;
+}
 
 /** Dati delle pagine privacy e cookie. Le voci di testi.json con «richiede» compaiono solo se quell'integrazione
- *  di centro.json è indicata («tracciamenti» = GA4 o pixel Meta). Il riquadro «Bozza» compare sempre tranne
- *  quando Netlify costruisce la produzione (CONTEXT=production). La data è quella della build, ora italiana. */
-export function datiLegali({ centro, t, oggi = new Date(), contestoNetlify = process.env.CONTEXT }) {
+ *  di centro.json è indicata («tracciamenti» = GA4 o pixel Meta); «inAttivazione» dell'integrazione aggiunge
+ *  «in attivazione». Il riquadro «Bozza» compare sempre tranne quando Netlify costruisce la produzione
+ *  (CONTEXT=production). La data di ultimo aggiornamento è fissa (testi.json › legale.aggiornamento, §10):
+ *  non dipende dal giorno della build. */
+export function datiLegali({ centro, t, aggiornamento, contestoNetlify = process.env.CONTEXT }) {
   const integrazioni = centro.integrazioni ?? {};
   const tracciamenti = Boolean(integrazioni.ga4 || integrazioni.pixelMeta);
   const attiva = (chiave, dove) => {
@@ -276,11 +289,13 @@ export function datiLegali({ centro, t, oggi = new Date(), contestoNetlify = pro
     return Boolean(integrazioni[chiave]);
   };
   const filtra = (lista, dove) =>
-    lista.filter((voce) => attiva(voce.richiede, dove)).map(({ richiede, ...resto }) => resto);
+    lista
+      .filter((voce) => attiva(voce.richiede, dove))
+      .map(({ richiede, ...resto }) => ({ ...resto, inAttivazione: Boolean(richiede && integrazioni[richiede]?.inAttivazione) }));
   return {
     bozza: contestoNetlify !== "production",
-    data: DATA_IT.format(oggi),
-    dataIso: DATA_ISO.format(oggi),
+    data: aggiornamento,
+    dataIso: dataIso(aggiornamento),
     sede: centro.legale.sedeLegale ?? centro.indirizzo.completo,
     tracciamenti,
     trattamenti: filtra(t.privacy.trattamenti.voci, "content/testi.json › privacy.trattamenti"),
@@ -707,7 +722,7 @@ async function main() {
     errore(MANIFESTO, `listino stampato a ${LARGHEZZA_STAMPATO} px in WebP mancante`);
   }
   const categorieListino = sezioneListino({ listino, t });
-  const legali = datiLegali({ centro, t });
+  const legali = datiLegali({ centro, t, aggiornamento: testi.legale?.aggiornamento });
   if (!og?.file || !existsSync(join(SRC, "img", og.file))) errore(MANIFESTO, "immagine di condivisione mancante");
   const condivisione = {
     ogImage: base ? `${base}/img/${og.file}` : `/img/${og.file}`,
@@ -752,6 +767,7 @@ async function main() {
       whatsappPedicure: waLink(centro.whatsappNumero, testi.whatsapp.pedicure),
       listino: "#listino",
       listinoStampato: `/img/listino-stampato-${LARGHEZZA_STAMPATO}.webp`,
+      garante: t.privacy.diritti.garanteUrl,
       maps: linkMappa(centro),
       privacy: "/privacy/",
       cookie: "/cookie/",

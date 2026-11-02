@@ -123,7 +123,7 @@ const VIETATE = [
   "il migliore", "la migliore", "i migliori", "le migliori", "garantit*", "definitiv*", "miracolos*",
   "più richiest*", "posti limitati", "visibile dalla prima seduta",
 ];
-const DOMINI_LINK_AMMESSI = ["wa.me", "www.google.com"];
+const DOMINI_LINK_AMMESSI = ["wa.me", "www.google.com", "www.garanteprivacy.it"]; // il Garante dallo Step 7 (privacy)
 
 // ---------------------------------------------------------------- strumenti
 
@@ -348,7 +348,8 @@ await controllo("nessuna risorsa da domini esterni (src, fogli di stile, script,
       const host = new URL(href.startsWith("//") ? "https:" + href : href).host;
       const social = Object.values(centro.social).filter(Boolean).map((u) => new URL(u).host);
       const maps = host === "www.google.com" && href.startsWith("https://www.google.com/maps/");
-      if (!(host === "wa.me" || maps || social.includes(host))) esterni.push(`${rel(file)}: link a ${href}`);
+      const garante = host === "www.garanteprivacy.it" && rel(file) === "dist/privacy/index.html";
+      if (!(host === "wa.me" || maps || garante || social.includes(host))) esterni.push(`${rel(file)}: link a ${href}`);
     }
   }
   for (const file of elenca(DIST, (p) => p.endsWith(".css"))) {
@@ -357,7 +358,7 @@ await controllo("nessuna risorsa da domini esterni (src, fogli di stile, script,
     for (const m of css.matchAll(/url\(\s*['"]?((?:https?:)?\/\/[^'")]+)/gi)) esterni.push(`${rel(file)}: ${m[1]}`);
   }
   verifica(!esterni.length, esterni.join(", "));
-  verifica(DOMINI_LINK_AMMESSI.length === 2, "elenco domini ammessi alterato");
+  verifica(DOMINI_LINK_AMMESSI.length === 3, "elenco domini ammessi alterato");
 });
 
 await controllo("ogni file JS passa node --check", () => {
@@ -1709,9 +1710,37 @@ await controllo("/privacy/ e /cookie/: esistono, un solo H1, header e footer del
     verifica(!/<script type="application\/ld\+json">/.test(html), `${file}: JSON-LD presente`);
     const altra = id === "privacy" ? "/cookie/" : "/privacy/";
     verifica(new RegExp(`<p class="legale-link"><a href="${altra}">`).test(html), `${file}: manca il link a ${altra}`);
-    const oggi = new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: "Europe/Rome" }).format(new Date());
-    verifica(html.includes(`<time datetime="${oggi}">`), `${file}: data di ultimo aggiornamento diversa dalla build (${oggi})`);
     void percorso;
+  }
+});
+
+await controllo("data di ultimo aggiornamento fissa (testi.json › legale.aggiornamento, §10): la stessa su privacy e cookie, anche con l'orologio della build spostato al 2030", () => {
+  const data = testi.legale?.aggiornamento;
+  verifica(data === "2 novembre 2026", `legale.aggiornamento «${data}»`);
+  const riga = `<p class="legale-data">Ultimo aggiornamento: <time datetime="2026-11-02">${data}</time></p>`;
+  for (const [file] of PAGINE_LEGALI) verifica(pagina(file).includes(riga), `${file}: data diversa da «${data}»`);
+  verifica(build.dataIso("2 novembre 2026") === "2026-11-02" && build.dataIso("31 dicembre 2027") === "2027-12-31", "dataIso non converte");
+  for (const errata of ["31 febbraio 2026", "novembre 2026", "2/11/2026", "2 brumaio 2026", null]) {
+    let fermato = false;
+    try {
+      build.dataIso(errata);
+    } catch {
+      fermato = true;
+    }
+    verifica(fermato, `data non valida accettata: «${errata}»`);
+  }
+  // Build con l'orologio finto al 15 gennaio 2030: la data delle pagine legali non cambia.
+  const tmp = mkdtempSync(join(tmpdir(), "migliore-data-"));
+  try {
+    const orologio = "data:text/javascript," + encodeURIComponent(
+      "const D=Date;const T=D.UTC(2030,0,15,12);globalThis.Date=class extends D{constructor(...a){super(...(a.length?a:[T]))}static now(){return T}};",
+    );
+    const r = spawnSync(process.execPath, ["--import", orologio, "build.mjs", "--dist", tmp], { cwd: RADICE, encoding: "utf8", env: { ...process.env, URL: "", CONTEXT: "" } });
+    verifica(r.status === 0, `build con l'orologio al 2030 fallita: ${r.stderr || r.stdout}`);
+    verifica(readFileSync(join(tmp, "index.html"), "utf8").includes('data-anno="2030"'), "l'orologio finto non è stato usato dalla build");
+    for (const [file] of PAGINE_LEGALI) verifica(readFileSync(join(tmp, file), "utf8").includes(riga), `${file}: con l'orologio al 2030 la data cambia`);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
   }
 });
 
@@ -1731,29 +1760,38 @@ await controllo("informativa privacy: titolare con i dati di §2.1, trattamenti 
   verifica(/art\. 6, par\. 1, lett\. b/.test(testo) && /art\. 6, par\. 1, lett\. a/.test(testo), "basi giuridiche (misure precontrattuali e consenso)");
   verifica(testo.includes("non oltre 24 mesi dall'ultima interazione"), "conservazione delle iscrizioni: 24 mesi");
   verifica(testo.includes("Oggi il sito non usa strumenti di statistica né di marketing"), "manca la frase sui tracciamenti spenti");
-  verifica(/Netlify, Inc\./.test(testo) && /Supabase, Inc\./.test(testo), "fornitori Netlify e Supabase");
+  verifica(/Netlify, Inc\. \(Stati Uniti\)/.test(testo) && /Supabase, Inc\. \(Stati Uniti\)/.test(testo), "fornitori Netlify e Supabase");
+  verifica(testo.includes("Brevo (Francia), per l'invio del codice sconto e delle promo, in attivazione."), "manca «Brevo (Francia), per l'invio del codice sconto e delle promo, in attivazione»");
   verifica(!/Google Ireland|Meta Platforms/.test(testo), "Google o Meta citati come fornitori senza integrazione");
   verifica(/EU-US Data Privacy Framework/.test(testo) && /clausole contrattuali standard/.test(testo), "garanzie per gli Stati Uniti");
   for (const diritto of ["accesso", "rettifica", "cancellazione", "limitazione", "opposizione", "portabilità", "revocare il consenso", "Garante per la protezione dei dati personali"]) {
     verifica(testo.includes(diritto), `diritti: manca «${diritto}»`);
   }
   verifica(new RegExp(`<a href="mailto:${centro.email}">`).test(html), "diritti: manca il link email");
+  verifica(html.includes('<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener">Garante per la protezione dei dati personali</a>'), "manca il link al Garante (https://www.garanteprivacy.it, nuova scheda)");
 });
 
 await controllo("pagine legali con GA4, pixel Meta e servizio email indicati (build in una copia): trattamenti c), fornitori Google, Meta e email, elenco dei cookie e «Preferenze cookie»; datiLegali() filtra per integrazione", () => {
   // Funzione: voci filtrate per integrazione, «richiede» sconosciuto = errore, bozza spenta solo in produzione.
   const t = { privacy: { trattamenti: { voci: testi.comuni.privacy.trattamenti.voci }, fornitori: { voci: testi.comuni.privacy.fornitori.voci } }, cookie: { elenco: testi.comuni.cookie.elenco } };
-  const conTutto = { ...centro, integrazioni: { ...centro.integrazioni, ga4: "G-PROVA", pixelMeta: "123", servizioEmail: "Posta di prova" } };
-  const pieno = build.datiLegali({ centro: conTutto, t, contestoNetlify: "deploy-preview" });
-  const vuoto = build.datiLegali({ centro, t, contestoNetlify: "production" });
+  const conTutto = { ...centro, integrazioni: { ...centro.integrazioni, ga4: "G-PROVA", pixelMeta: "123", servizioEmail: { nome: "Posta di prova", sede: "Paese di prova", inAttivazione: false } } };
+  const senzaEmail = { ...centro, integrazioni: { ...centro.integrazioni, servizioEmail: null } };
+  const aggiornamento = testi.legale.aggiornamento;
+  const pieno = build.datiLegali({ centro: conTutto, t, aggiornamento, contestoNetlify: "deploy-preview" });
+  const vuoto = build.datiLegali({ centro, t, aggiornamento, contestoNetlify: "production" });
+  const nessuno = build.datiLegali({ centro: senzaEmail, t, aggiornamento });
   verifica(pieno.trattamenti.length === 4 && vuoto.trattamenti.length === 2, `trattamenti ${pieno.trattamenti.length}/${vuoto.trattamenti.length}`);
-  verifica(pieno.fornitori.length === 5 && vuoto.fornitori.length === 2, `fornitori ${pieno.fornitori.length}/${vuoto.fornitori.length}`);
+  verifica(pieno.fornitori.length === 5 && vuoto.fornitori.length === 3 && nessuno.fornitori.length === 2, `fornitori ${pieno.fornitori.length}/${vuoto.fornitori.length}/${nessuno.fornitori.length}`);
+  // Qui i testi sono quelli grezzi di testi.json: il servizio email si riconosce dal ruolo, non dal nome (segnaposto).
+  const email = vuoto.fornitori.filter((f) => f.inAttivazione);
+  verifica(email.length === 1 && email[0].ruolo.startsWith("per l'invio del codice sconto"), "servizio email senza «in attivazione»");
+  verifica(pieno.fornitori.every((f) => !f.inAttivazione), "«in attivazione» con inAttivazione false");
   verifica(pieno.cookie.length === 5 && vuoto.cookie.length === 0, `cookie ${pieno.cookie.length}/${vuoto.cookie.length}`);
   verifica(pieno.bozza === true && vuoto.bozza === false, "bozza: deve sparire solo con CONTEXT=production");
   verifica(pieno.trattamenti.every((v) => !("richiede" in v)), "la chiave «richiede» arriva al template");
   let fermato = false;
   try {
-    build.datiLegali({ centro, t: { ...t, cookie: { elenco: [{ nome: "x", richiede: "inesistente" }] } } });
+    build.datiLegali({ centro, t: { ...t, cookie: { elenco: [{ nome: "x", richiede: "inesistente" }] } }, aggiornamento });
   } catch {
     fermato = true;
   }
@@ -1767,9 +1805,10 @@ await controllo("pagine legali con GA4, pixel Meta e servizio email indicati (bu
     verifica(r.status === 0, `build con integrazioni fallita: ${r.stderr || r.stdout}`);
     const privacy = normalizzaSpazi(testoVisibile(readFileSync(join(tmp, "dist", "privacy", "index.html"), "utf8")));
     const cookie = readFileSync(join(tmp, "dist", "cookie", "index.html"), "utf8");
-    for (const atteso of ["Statistiche (Google Analytics 4)", "Marketing (pixel Meta e API Conversioni)", "Google Ireland Limited", "Meta Platforms Ireland Limited", "Posta di prova"]) {
+    for (const atteso of ["Statistiche (Google Analytics 4)", "Marketing (pixel Meta e API Conversioni)", "Google Ireland Limited (Irlanda)", "Meta Platforms Ireland Limited (Irlanda)", "Posta di prova (Paese di prova), per l'invio del codice sconto e delle promo."]) {
       verifica(privacy.includes(atteso), `privacy con integrazioni: manca «${atteso}»`);
     }
+    verifica(!privacy.includes("in attivazione"), "privacy con il servizio email attivo: c'è ancora «in attivazione»");
     verifica(!privacy.includes("Oggi il sito non usa strumenti di statistica"), "privacy con integrazioni: c'è ancora la frase sui tracciamenti spenti");
     const nomi = [...cookie.matchAll(/<h3 class="legale-cookie-nome">([^<]*)<\/h3>/g)].map((m) => decodifica(m[1]));
     verifica(nomi.join() === "Preferenze cookie,_ga,_ga_<ID>,_fbp,_fbc", `cookie con integrazioni: ${nomi.join(", ")}`);

@@ -30,7 +30,7 @@
       <h2>{{t.privacy.fornitori.h2}}</h2>
       <p>{{t.privacy.fornitori.testo}}</p>
       <ul class="legale-elenco">
-        {{#ogni legali.fornitori}}<li><strong>{{nome}}</strong>: {{ruolo}}{{#se sede}} {{sede}}{{/se}}</li>
+        {{#ogni legali.fornitori}}<li><strong>{{nome}}</strong>{{#se sede}} ({{sede}}){{/se}}, {{ruolo}}{{#se inAttivazione}}, {{t.privacy.fornitori.inAttivazione}}{{/se}}.</li>
         {{/ogni}}
       </ul>
       <p>{{t.privacy.fornitori.trasferimento}}</p>
@@ -43,7 +43,7 @@
         {{/ogni}}
       </ul>
       <p>{{t.privacy.diritti.scrivi}} <a href="{{link.email}}">{{contatti.email}}</a>. {{t.privacy.diritti.risposta}}</p>
-      <p>{{t.privacy.diritti.reclamo}}</p>
+      <p>{{t.privacy.diritti.reclamo}} <a href="{{link.garante}}" target="_blank" rel="noopener">{{t.privacy.diritti.garante}}</a>.</p>
 
       <p class="legale-link"><a href="{{link.cookie}}">{{t.privacy.linkCookie}}</a></p>
     </div>

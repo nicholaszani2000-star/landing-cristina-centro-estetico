@@ -1,5 +1,5 @@
 {
-  "_nota": "Tutti i testi del sito. I segnaposto tra graffe, per esempio {telefono} o {orari.giorni}, si riempiono in build con i dati di content/centro.json; se il dato è null la frase non compare. [data] nel risultato del codice sconto lo riempie il JavaScript. {cabina} è calcolato in build da macchinari e prodotti di centro.json (null se mancano entrambi). In viso.dettagli: «nome della voce del listino»: descrizione; null se i dettagli non sono indicati. Le voci «include» del pedicure (centro.json) sono separate da punto e virgola: la build fa una voce per elemento, con la prima lettera maiuscola. Nelle pagine legali (privacy, cookie) una voce con «richiede» compare solo se quell'integrazione di centro.json è indicata («tracciamenti» = GA4 o pixel Meta).",
+  "_nota": "Tutti i testi del sito. I segnaposto tra graffe, per esempio {telefono} o {orari.giorni}, si riempiono in build con i dati di content/centro.json; se il dato è null la frase non compare. [data] nel risultato del codice sconto lo riempie il JavaScript. {cabina} è calcolato in build da macchinari e prodotti di centro.json (null se mancano entrambi). In viso.dettagli: «nome della voce del listino»: descrizione; null se i dettagli non sono indicati. Le voci «include» del pedicure (centro.json) sono separate da punto e virgola: la build fa una voce per elemento, con la prima lettera maiuscola. Nelle pagine legali (privacy, cookie) una voce con «richiede» compare solo se quell'integrazione di centro.json è indicata («tracciamenti» = GA4 o pixel Meta). legale.aggiornamento è la data di ultimo aggiornamento di privacy e cookie: fissa, si cambia a mano solo quando cambiano i testi legali (CLAUDE.md §10).",
   "comuni": {
     "header": {
       "logoAlt": "{nome}",
@@ -134,7 +134,7 @@
     },
     "legali": {
       "bozza": "Bozza da far verificare a un professionista prima di pubblicare gli annunci.",
-      "aggiornamento": "Ultimo aggiornamento:",
+      "ultimoAggiornamento": "Ultimo aggiornamento:",
       "etichette": {
         "dati": "Dati",
         "finalita": "Finalità",
@@ -208,37 +208,38 @@
         "voci": [
           {
             "nome": "Netlify, Inc.",
-            "ruolo": "ospita il sito e le funzioni che generano il codice sconto; come ogni server, registra per sicurezza alcuni dati tecnici delle visite, come l'indirizzo IP.",
-            "sede": "Sede: Stati Uniti.",
+            "sede": "Stati Uniti",
+            "ruolo": "ospita il sito e le funzioni che generano il codice sconto; come ogni server, registra per sicurezza alcuni dati tecnici delle visite, come l'indirizzo IP",
             "richiede": null
           },
           {
             "nome": "Supabase, Inc.",
-            "ruolo": "custodisce le iscrizioni al codice sconto in un database che si trova nell'Unione europea.",
-            "sede": "Sede: Stati Uniti.",
+            "sede": "Stati Uniti",
+            "ruolo": "custodisce le iscrizioni al codice sconto in un database che si trova nell'Unione europea",
             "richiede": null
           },
           {
+            "nome": "{integrazioni.servizioEmail.nome}",
+            "sede": "{integrazioni.servizioEmail.sede}",
+            "ruolo": "per l'invio del codice sconto e delle promo",
+            "richiede": "servizioEmail"
+          },
+          {
             "nome": "Google Ireland Limited",
-            "ruolo": "fornisce Google Analytics 4.",
-            "sede": "Sede: Irlanda, con possibili trasferimenti a Google LLC negli Stati Uniti.",
+            "sede": "Irlanda",
+            "ruolo": "fornisce Google Analytics 4, con possibili trasferimenti a Google LLC negli Stati Uniti",
             "richiede": "ga4"
           },
           {
             "nome": "Meta Platforms Ireland Limited",
-            "ruolo": "fornisce il pixel Meta e l'API Conversioni.",
-            "sede": "Sede: Irlanda, con possibili trasferimenti a Meta Platforms, Inc. negli Stati Uniti.",
+            "sede": "Irlanda",
+            "ruolo": "fornisce il pixel Meta e l'API Conversioni, con possibili trasferimenti a Meta Platforms, Inc. negli Stati Uniti",
             "richiede": "pixelMeta"
-          },
-          {
-            "nome": "{integrazioni.servizioEmail}",
-            "ruolo": "invia le email con le promozioni.",
-            "sede": null,
-            "richiede": "servizioEmail"
           }
         ],
         "trasferimento": "Alcuni fornitori hanno sede negli Stati Uniti. In questi casi il trasferimento dei dati avviene con le garanzie previste dal GDPR: l'adesione del fornitore all'EU-US Data Privacy Framework oppure le clausole contrattuali standard approvate dalla Commissione europea.",
-        "altro": "Non vendiamo i tuoi dati e non li diffondiamo. Li comunichiamo alle autorità solo quando la legge lo richiede."
+        "altro": "Non vendiamo i tuoi dati e non li diffondiamo. Li comunichiamo alle autorità solo quando la legge lo richiede.",
+        "inAttivazione": "in attivazione"
       },
       "diritti": {
         "h2": "I tuoi diritti",
@@ -254,7 +255,9 @@
         ],
         "scrivi": "Per esercitare i tuoi diritti scrivi a",
         "risposta": "Ti rispondiamo entro un mese.",
-        "reclamo": "Se ritieni che i tuoi dati siano trattati in modo non conforme al GDPR, puoi presentare reclamo al Garante per la protezione dei dati personali (www.garanteprivacy.it)."
+        "reclamo": "Se ritieni che i tuoi dati siano trattati in modo non conforme al GDPR, puoi presentare reclamo al",
+        "garante": "Garante per la protezione dei dati personali",
+        "garanteUrl": "https://www.garanteprivacy.it"
       },
       "linkCookie": "Leggi la cookie policy"
     },
@@ -384,5 +387,8 @@
     "generale": "Ciao Cristina, vorrei prenotare un appuntamento.",
     "viso": "Ciao Cristina, vorrei informazioni sui trattamenti viso.",
     "pedicure": "Ciao Cristina, vorrei prenotare un pedicure avanzato."
+  },
+  "legale": {
+    "aggiornamento": "2 novembre 2026"
   }
 }

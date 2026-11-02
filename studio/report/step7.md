@@ -142,3 +142,46 @@ Ripieghi a posto. **Errori di console e richieste fallite: 0.**
 1. Data di ultimo aggiornamento delle pagine legali: va bene la data della build, o preferisci la data dell'ultima modifica ai testi legali?
 2. Vuoi il Garante come link cliccabile? Aggiungerei www.garanteprivacy.it ai domini ammessi.
 3. Quale servizio userai per le email promozionali (per esempio Brevo o Mailchimp)? Va nella privacy come fornitore.
+
+## Aggiornamento: decisioni sul report
+
+Le tre domande qui sopra hanno risposta. Superati i punti «Data di ultimo aggiornamento», «Garante» e «Servizio email».
+
+1. **Data di ultimo aggiornamento fissa**
+- `content/testi.json`: campo nuovo `legale.aggiornamento`, che vale «2 novembre 2026», usato da privacy e cookie. L'etichetta «Ultimo aggiornamento:» passa da `legali.aggiornamento` a `legali.ultimoAggiornamento`, così le due chiavi non si confondono.
+- `build.mjs`:
+  - `dataIso()` converte la data per `<time datetime="2026-11-02">`; una data scritta male («31 febbraio 2026», «2/11/2026») ferma la build;
+  - la build non usa più l'orologio per le pagine legali.
+- `CLAUDE.md` §10, riga dell'informativa: aggiunta la frase indicata.
+
+2. **Garante**
+- Nella privacy c'è il link «Garante per la protezione dei dati personali», verso https://www.garanteprivacy.it, in una nuova scheda (`target="_blank" rel="noopener"`). L'indirizzo sta in `testi.json` (`privacy.diritti.garanteUrl`).
+- Controllo dei link esterni: `www.garanteprivacy.it` è tra i domini ammessi, solo nella pagina privacy.
+
+3. **Servizio email: Brevo**
+- `content/centro.json`: `integrazioni.servizioEmail` = `{ "nome": "Brevo", "sede": "Francia", "inAttivazione": true }`.
+- Informativa, tra i fornitori: «**Brevo** (Francia), per l'invio del codice sconto e delle promo, in attivazione.»
+  - «in attivazione» dipende da `inAttivazione`: allo Step 9, quando l'invio funziona, basta metterlo a `false`.
+  - Per uniformità anche gli altri fornitori hanno ora la forma «Nome (Sede), che cosa fa»: «Netlify, Inc. (Stati Uniti), …», «Supabase, Inc. (Stati Uniti), …». Google e Meta (Irlanda) restano nascosti finché non sono indicati.
+- `CLAUDE.md` §2.5: aggiunta la riga su Brevo e `BREVO_API_KEY` (il nome della variabile, nessuna chiave).
+
+4. **Controlli**: build OK · html-validate **0 errori** · `node --check` OK · **controlli 76/76**.
+- Nuovo: «data di ultimo aggiornamento fissa».
+  - Privacy e cookie mostrano la stessa riga «Ultimo aggiornamento: 2 novembre 2026», con `datetime="2026-11-02"`.
+  - `dataIso()` converte e rifiuta le date scritte male.
+  - Una build con l'orologio spostato al 15 gennaio 2030 lascia invariata la data delle pagine legali. Il controllo verifica anche che l'orologio finto sia stato davvero usato: nel footer l'anno diventa 2030.
+- Aggiornati:
+  - contenuto della privacy: riga di Brevo esatta e link al Garante con nuova scheda;
+  - integrazioni: servizio email come oggetto, «in attivazione» solo con `inAttivazione: true`, fornitori 2/3/5 (senza email / oggi / con tutto);
+  - link esterni: tre domini ammessi;
+  - `/privacy/` e `/cookie/`: tolto il confronto con la data della build.
+- Prova a vuoto, in una copia con questi errori:
+  - data presa di nuovo dall'orologio;
+  - `inAttivazione: false`;
+  - link al Garante senza nuova scheda.
+
+  Tutti segnalati.
+
+5. **Anteprima**: 30 screenshot rifatti in `studio/screenshot/step7/`. Console: 0 errori, 0 richieste fallite.
+
+6. **Nota sul codice sconto**: la riga di Brevo dice «per l'invio del codice sconto». Oggi §2.4 e il trattamento b) dicono che il codice si mostra a schermo, e le email servono alle promo. Se allo Step 8 il codice parte anche via email, aggiorno §2.4 e il trattamento b).

@@ -192,6 +192,7 @@ Le voci viso della sezione viso (§6) sono 5: Pulizia viso base, Trattamento vis
 - GA4: non indicato (GA4 resta spento)
 - Pixel Meta: non indicato (il pixel resta spento)
 - Progetto Supabase: non indicato (il codice resta in modalità prova)
+- Servizio email: Brevo (Francia). La chiave BREVO_API_KEY va solo su Netlify, con ambito Functions.
 - Chiavi segrete (Supabase, API Conversioni Meta, servizio email): MAI in questo file, MAI nel repository, MAI nella chat. Vanno solo nelle variabili d'ambiente di Netlify, con ambito «Functions».
 
 ### §2.6 Immagini (pacchetto «migliore-immagini.zip»)
@@ -513,7 +514,7 @@ Obiettivi, misurati con Lighthouse in modalità mobile sulla build di produzione
 - Cookie: finché GA4 e Meta non sono configurati il sito non usa cookie, quindi nessun banner. Con GA4 o Meta: banner con «Rifiuta» e «Accetta» di uguale evidenza, «Personalizza», chiusura con X = rifiuto, nessun tracciamento prima del consenso, scelta ricordata per 6 mesi, link «Preferenze cookie» nel footer.
 - Mappe: niente Google Maps incorporato, solo il link.
 - Foto: vere, del centro e della titolare, senza ritocchi.
-- Informativa privacy e cookie policy: bozze generate allo Step 7, da far verificare a un professionista prima del lancio degli annunci. Titolare del trattamento: Migliore Cristina.
+- Informativa privacy e cookie policy: bozze generate allo Step 7, da far verificare a un professionista prima del lancio degli annunci. Titolare del trattamento: Migliore Cristina. La data di ultimo aggiornamento è fissa (testi.json, legale.aggiornamento) e si cambia solo quando cambiano i testi legali.
 
 ## §11 Gli step
 

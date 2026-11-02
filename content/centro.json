@@ -75,6 +75,10 @@
     "ga4": null,
     "pixelMeta": null,
     "supabase": null,
-    "servizioEmail": null
+    "servizioEmail": {
+      "nome": "Brevo",
+      "sede": "Francia",
+      "inAttivazione": true
+    }
   }
 }
