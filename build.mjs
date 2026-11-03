@@ -50,7 +50,8 @@ const SIZES_FOTO_APERTURA = "(min-width: 1024px) 480px, (min-width: 768px) 520px
 const LARGHEZZA_STAMPATO = 1536;
 // Tracciamenti (Step 8): ID finti per TEST_TRACCIAMENTI=1, solo per i controlli; mai in produzione.
 const ID_PROVA = { ga4Id: "G-TEST000000", metaPixelId: "000000000000000" };
-const FORMATO_ID = { ga4Id: /^G-[A-Z0-9]{6,12}$/, metaPixelId: /^\d{15,16}$/ };
+// googleVerifica: il codice di Google Search Console, senza «google-site-verification=» davanti (meta tag nel <head>).
+const FORMATO_ID = { ga4Id: /^G-[A-Z0-9]{6,12}$/, metaPixelId: /^\d{15,16}$/, googleVerifica: /^[A-Za-z0-9_-]{20,100}$/ };
 // Modulo del codice sconto: la Netlify Function netlify/functions/codice-sconto.mjs (config.path).
 const AZIONE_CODICE = "/api/codice-sconto";
 // Sitemap: le pagine della landing prima, le pagine legali con priorità bassa; la 404 è esclusa.

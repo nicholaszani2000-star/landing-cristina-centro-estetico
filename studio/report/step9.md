@@ -306,6 +306,13 @@ La titolare ha trascinato su Netlify lo zip del repository: deploy `6ae9cabd`, �
 - Domain management → HTTPS → «Verify DNS configuration» e poi «Provision certificate».
 - Se segnala `www.esteticamigliore.it`, va aggiunto su Register.it il record `www` CNAME → `esteticamigliore.netlify.app`. In alternativa si toglie `www` dagli alias finché il record non c'è.
 
+### Google Search Console (3 novembre)
+
+La titolare ha mandato il codice di verifica `google-site-verification=FU-2BJUStycqt-GUM5fvAc4VhCiTQ9VUtw1ZBU3mfXI`. È un codice pubblico, non una chiave: chi lo vede non può farci nulla.
+- **Nel sito**: il codice va in `content/centro.json › integrazioni.googleVerifica`, senza il prefisso. La build stampa in ogni pagina `<meta name="google-site-verification" content="…">`; un formato sbagliato ferma la build. Il meta serve per la proprietà «Prefisso URL».
+- **Nel DNS**: per la proprietà «Dominio», l'unica verifica è il record TXT su Register.it (`@`, TXT, `google-site-verification=FU-2…`). Lo aggiunge la titolare.
+- **Da fare dopo la verifica**: inviare la sitemap `https://www.esteticamigliore.it/sitemap.xml`, quando `www` risponde.
+
 ## 7. Dati mancanti o dubbi
 
 - **Branch di produzione**: CLAUDE.md §2.5 dice `landing-migliore`, il prompt dello Step 9 dice il branch principale (`main`).

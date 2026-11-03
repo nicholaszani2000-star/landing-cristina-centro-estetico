@@ -2688,6 +2688,23 @@ await controllo("390, 768, 1024 e 1440 px su tutte le pagine (Step 9): nessuno s
   verifica(!problemi.length, problemi.slice(0, 8).join(" · "));
 });
 
+await controllo("Google Search Console: <meta name=\"google-site-verification\"> con il codice di centro.json in ogni pagina, una volta sola; senza codice nessun meta; un codice con «google-site-verification=» davanti o con caratteri strani ferma la build", () => {
+  const codice = centro.integrazioni.googleVerifica;
+  for (const file of elenca(DIST, (p) => p.endsWith(".html"))) {
+    const meta = [...readFileSync(file, "utf8").matchAll(/<meta name="google-site-verification" content="([^"]*)">/g)].map((m) => m[1]);
+    verifica(codice ? meta.length === 1 && meta[0] === codice : meta.length === 0, `${rel(file)}: meta di verifica «${meta.join(", ")}»`);
+  }
+  for (const sbagliato of [`google-site-verification=${codice ?? "x".repeat(43)}`, "codice con spazi e accenti è", "corto"]) {
+    let fermato = false;
+    try {
+      build.datiTracciamenti({ ...centro, integrazioni: { ...centro.integrazioni, googleVerifica: sbagliato } }, {});
+    } catch {
+      fermato = true;
+    }
+    verifica(fermato, `codice «${sbagliato}» accettato`);
+  }
+});
+
 await controllo("foto verticali anche a 800 px (Lighthouse «uses-responsive-images»): a 390 px con densità 2 e a 412 px con densità 1,75 il browser sceglie la 800, non la 941", async () => {
   for (const nome of ["cristina-bancone", "cabina-viso", "cabina-lettino", "postazione-pedicure"]) {
     verifica(manifesto.immagini[nome].larghezze.join() === "480,720,800,941", `${nome}: larghezze ${manifesto.immagini[nome].larghezze.join("/")}`);
