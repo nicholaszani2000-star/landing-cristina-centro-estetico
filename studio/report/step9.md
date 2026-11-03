@@ -322,6 +322,14 @@ La titolare ha mandato il codice di verifica `google-site-verification=FU-2BJUSt
   - HTTPS attivo; indirizzo principale su Netlify `https://esteticamigliore.it`, senza www. Con la build fatta da Netlify, canonical, og:url e sitemap usano quell'indirizzo, perché viene dalla variabile `URL` (§4).
 - **Primo tentativo con la proprietà «Dominio»**: non è andato a buon fine. Google ha trovato solo il TXT SPF della posta (`v=spf1 include:spf.webapps.net ~all`), quindi su Register.it il record di Google non c'era ancora.
 
+### Indirizzo principale senza www (3 novembre)
+
+Con il «sì» della titolare, l'indirizzo principale diventa `https://esteticamigliore.it`, senza www.
+- È già il principale su Netlify, ha l'HTTPS attivo ed è la proprietà verificata su Search Console.
+- Aggiornati CLAUDE.md §2.1, §2.5 e §4, `centro.json › indirizzoPrincipale`, il commento di `build.mjs` e l'indirizzo atteso dai controlli.
+- Il sito online non cambia: la build di Netlify usa già quell'indirizzo, dalla variabile `URL`.
+- `www.esteticamigliore.it` resta da collegare come alias (CNAME su Register.it), che porta all'indirizzo principale.
+
 ## 7. Dati mancanti o dubbi
 
 - **Branch di produzione**: CLAUDE.md §2.5 dice `landing-migliore`, il prompt dello Step 9 dice il branch principale (`main`).

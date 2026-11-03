@@ -85,7 +85,7 @@ Regola generale: se un dato manca non inventarlo. Usa un testo neutro, oppure om
 - Email: esteticamigliore@gmail.com
 - Giorni: dal lunedì al sabato · Orario: dalle 08:00 alle 17:00 · solo su appuntamento
 - Presentazione di Cristina: non indicata (usa il testo predefinito di §8)
-- Dominio: esteticamigliore.it, registrato su Register.it, DNS esterno puntato a Netlify. Indirizzo principale del sito: https://www.esteticamigliore.it (con DNS esterno Netlify consiglia il www come principale; esteticamigliore.it senza www porta lì da solo).
+- Dominio: esteticamigliore.it, registrato su Register.it, DNS esterno puntato a Netlify. Indirizzo principale del sito: https://esteticamigliore.it, senza www (deciso il 3 novembre 2026: è l'indirizzo principale su Netlify, con HTTPS attivo, ed è quello verificato su Google Search Console). www.esteticamigliore.it, quando ha il suo record CNAME verso Netlify, porta lì da solo.
 - Instagram: non indicato (nessun link) · Facebook: non indicato (nessun link) · Scheda Google: non indicata (il pulsante Maps usa la ricerca dell'indirizzo)
 
 Regole condizionali:
@@ -192,7 +192,8 @@ Le voci viso della sezione viso (§6) sono 5: Pulizia viso base, Trattamento vis
 - GA4: non indicato (GA4 resta spento)
 - Pixel Meta: non indicato (il pixel resta spento)
 - Progetto Supabase: migliore-estetica (bkcpnkrnhjirmbwnrozp), regione eu-central-1 (Francoforte), con supabase/iscritti.sql applicato. SUPABASE_URL è su Netlify; finché la chiave SUPABASE_SECRET_KEY non è su Netlify il codice resta in modalità prova.
-- Netlify: progetto esteticamigliore (https://esteticamigliore.netlify.app), branch di produzione landing-migliore.
+- Netlify: progetto esteticamigliore (https://esteticamigliore.netlify.app), branch di produzione landing-migliore. Dominio https://esteticamigliore.it con HTTPS attivo; finché GitHub non è collegato si pubblica trascinando lo zip del repository (studio/pacchetto-netlify.mjs).
+- Google Search Console: proprietà «Prefisso URL» https://esteticamigliore.it, verificata con il file HTML (content/centro.json › integrazioni.googleFileVerifica).
 - Servizio email: Brevo (Francia). La chiave BREVO_API_KEY va solo su Netlify, con ambito Functions.
 - Chiavi segrete (Supabase, API Conversioni Meta, servizio email): MAI in questo file, MAI nel repository, MAI nella chat. Vanno solo nelle variabili d'ambiente di Netlify, con ambito «Functions».
 
@@ -262,7 +263,7 @@ Requisiti verificati sulla documentazione ufficiale, con le loro insidie:
 - Gli header di `netlify.toml` valgono solo per i file statici, non per le risposte delle Functions: quelle impostano i propri header nel codice.
 - Pretty URLs è attivo di default: non creare redirect per aggiungere o togliere la barra finale, causano cicli.
 - I Deploy Preview non vengono indicizzati da Google (`X-Robots-Tag: noindex` automatico).
-- La variabile `URL` è disponibile durante la build con l'indirizzo principale del sito: usala per URL assoluti (canonical, og:url, sitemap); se manca, usa l'indirizzo principale di §2.1 (https://www.esteticamigliore.it); se anche il dominio non è indicato, ometti gli URL assoluti e segnalalo.
+- La variabile `URL` è disponibile durante la build con l'indirizzo principale del sito: usala per URL assoluti (canonical, og:url, sitemap); se manca, usa l'indirizzo principale di §2.1 (https://esteticamigliore.it); se anche il dominio non è indicato, ometti gli URL assoluti e segnalalo.
 - `.netlify/` va in `.gitignore`.
 - Supabase: RLS sempre attivo sulle tabelle in `public`. Creando la tabella in SQL bisogna attivarlo e dare i permessi esplicitamente. Qui: nessun permesso ad `anon` e `authenticated`, permessi solo a `service_role`. La chiave segreta o `service_role` scavalca RLS e non va mai nel browser.
 

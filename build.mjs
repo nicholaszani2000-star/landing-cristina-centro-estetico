@@ -5,7 +5,7 @@
 //       node build.mjs --dist <dir>  → un'altra cartella (usato dai controlli)
 // Variabile d'ambiente URL (la imposta Netlify): indirizzo principale del sito,
 // serve per canonical, og:url, og:image, JSON-LD e sitemap. Se manca si usa
-// l'indirizzo principale di content/centro.json (https://www.esteticamigliore.it).
+// l'indirizzo principale di content/centro.json (https://esteticamigliore.it).
 //
 // Motore di template, modalità severa:
 //   {{chiave.annidata}}      testo con escape HTML (null o mancante = errore)

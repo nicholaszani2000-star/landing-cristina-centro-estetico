@@ -58,7 +58,7 @@ const ATTESI_404 = {
 };
 const URL_PROVA = "https://esempio.netlify.app";
 // Indirizzo principale del sito, da CLAUDE.md §2.1 (scritto a mano qui, di proposito)
-const INDIRIZZO_PRINCIPALE = "https://www.esteticamigliore.it";
+const INDIRIZZO_PRINCIPALE = "https://esteticamigliore.it";
 // Listino atteso, voce per voce da CLAUDE.md §2.3 (scritto a mano qui, di proposito)
 const LISTINO_ATTESO = {
   "mani-piedi|Manicure e pedicure": [
