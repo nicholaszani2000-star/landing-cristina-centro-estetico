@@ -525,14 +525,33 @@ const GIORNI = ["lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sa
 const GIORNI_SCHEMA = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const senzaAccenti = (s) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 
-/** «dal lunedì al sabato» → ["Monday", …, "Saturday"]; null se non si ricava senza ambiguità. */
+/** «dal martedì al venerdì» → ["Tuesday", …, "Friday"]; «il sabato» o «sabato» → ["Saturday"];
+ *  null se non si ricava senza ambiguità. */
 export function ricavaGiorni(testo) {
-  const m = senzaAccenti(String(testo ?? "")).trim().match(/^dal\s+(\S+)\s+al\s+(\S+)$/);
+  const pulito = senzaAccenti(String(testo ?? "")).trim();
+  const indice = (g) => GIORNI.map(senzaAccenti).indexOf(g);
+  const uno = pulito.match(/^(?:il\s+)?(\S+)$/);
+  if (uno) return indice(uno[1]) < 0 ? null : [GIORNI_SCHEMA[indice(uno[1])]];
+  const m = pulito.match(/^dal\s+(\S+)\s+al\s+(\S+)$/);
   if (!m) return null;
-  const inizio = GIORNI.map(senzaAccenti).indexOf(m[1]);
-  const fine = GIORNI.map(senzaAccenti).indexOf(m[2]);
+  const inizio = indice(m[1]);
+  const fine = indice(m[2]);
   if (inizio < 0 || fine < 0 || fine < inizio) return null;
   return GIORNI_SCHEMA.slice(inizio, fine + 1);
+}
+
+/** Fasce di centro.json › orari → i testi del sito: {orari.testo} «dal martedì al venerdì, dalle 09:00 alle 18:00;
+ *  il sabato, dalle 08:00 alle 14:00» e {orari.riga}, lo stesso con « · » per la riga info dell'apertura. */
+export function testiOrari(orari) {
+  const dove = "content/centro.json › orari.fasce";
+  if (!Array.isArray(orari?.fasce) || !orari.fasce.length) errore(dove, "servono le fasce degli orari: [{ giorni, apertura, chiusura }]");
+  const pezzi = orari.fasce.map((f, i) => {
+    if (typeof f.giorni !== "string" || !f.giorni.trim()) errore(dove, `fascia ${i + 1}: «giorni» mancante`);
+    for (const k of ["apertura", "chiusura"]) if (!/^\d{2}:\d{2}$/.test(f[k] ?? "")) errore(dove, `fascia ${i + 1}: «${k}» deve essere HH:MM, non «${f[k]}»`);
+    if (f.apertura >= f.chiusura) errore(dove, `fascia ${i + 1}: apertura ${f.apertura} non prima della chiusura ${f.chiusura}`);
+    return `${f.giorni}, dalle ${f.apertura} alle ${f.chiusura}`;
+  });
+  return { testo: pezzi.join("; "), riga: pezzi.join(" · ") };
 }
 
 /** Link «Apri in Google Maps»: la scheda Google se è indicata, altrimenti la ricerca dell'indirizzo. */
@@ -564,13 +583,13 @@ function jsonLd(centro, base, immagineAssoluta, avvisi) {
   const social = ["instagram", "facebook"].map((k) => centro.social?.[k]).filter(Boolean);
   if (social.length) dati.sameAs = social;
   if (!immagineAssoluta) avvisi.push("JSON-LD senza image: serve un URL assoluto");
-  const giorni = ricavaGiorni(centro.orari.giorni);
-  if (giorni) {
-    dati.openingHoursSpecification = [
-      { "@type": "OpeningHoursSpecification", dayOfWeek: giorni, opens: centro.orari.apertura, closes: centro.orari.chiusura },
-    ];
+  // Una specifica per fascia; se una fascia non si ricava senza ambiguità, si omettono tutte (§2.1).
+  const fasce = centro.orari.fasce.map((f) => ({ f, giorni: ricavaGiorni(f.giorni) }));
+  const ambigua = fasce.find((x) => !x.giorni);
+  if (!ambigua) {
+    dati.openingHoursSpecification = fasce.map(({ f, giorni }) => ({ "@type": "OpeningHoursSpecification", dayOfWeek: giorni, opens: f.apertura, closes: f.chiusura }));
   } else {
-    avvisi.push(`openingHoursSpecification omesso: giorni non ricavabili da «${centro.orari.giorni}»`);
+    avvisi.push(`openingHoursSpecification omesso: giorni non ricavabili da «${ambigua.f.giorni}»`);
   }
   dati.priceRange = FASCIA_PREZZO;
   return JSON.stringify(dati).replace(/</g, "\\u003c");
@@ -782,11 +801,11 @@ async function main() {
   const anno = new Date().getFullYear();
   // {cabina}: macchinari e prodotti indicati in centro.json (null se mancano entrambi: la riga non compare)
   const cabina = sezioneViso({ listino, centro, dettagli: null }).cabina;
-  const datiTesti = { ...centro, anno, cabina };
+  const datiTesti = { ...centro, orari: { ...centro.orari, ...testiOrari(centro.orari) }, anno, cabina };
   const t = numeroUnito(componiTutto(testi.comuni, datiTesti, "content/testi.json › comuni"), centro.telefono);
   const viso = sezioneViso({ listino, centro, dettagli: t.viso.dettagli });
   avvisi.push(...viso.avvisi);
-  // La riga info va a capo solo tra un segmento e l'altro («Su appuntamento · dal lunedì al sabato · …»).
+  // La riga info va a capo solo tra un segmento e l'altro («Su appuntamento · dal martedì al venerdì, … · il sabato, …»).
   t.apertura.rigaInfoSegmenti = t.apertura.rigaInfo.split(" · ");
   const base = urlBase(centro, avvisi);
   if (!existsSync(join(RADICE, MANIFESTO))) errore(MANIFESTO, "manca: esegui node studio/esporta-immagini.mjs");

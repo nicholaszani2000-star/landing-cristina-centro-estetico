@@ -1,5 +1,5 @@
 {
-  "_nota": "Tutti i testi del sito. I segnaposto tra graffe, per esempio {telefono} o {orari.giorni}, si riempiono in build con i dati di content/centro.json; se il dato è null la frase non compare. [data] nel risultato del codice sconto lo riempie il JavaScript. {cabina} è calcolato in build da macchinari e prodotti di centro.json (null se mancano entrambi). In viso.dettagli: «nome della voce del listino»: descrizione; null se i dettagli non sono indicati. Le voci «include» del pedicure (centro.json) sono separate da punto e virgola: la build fa una voce per elemento, con la prima lettera maiuscola. Nelle pagine legali (privacy, cookie) una voce con «richiede» compare solo se quell'integrazione di centro.json è indicata («tracciamenti» = GA4 o pixel Meta). legale.aggiornamento è la data di ultimo aggiornamento di privacy e cookie: fissa, si cambia a mano solo quando cambiano i testi legali (CLAUDE.md §10). legale.verificata resta false (riquadro «Bozza» in cima a privacy e cookie, anche in produzione) finché la titolare non scrive «privacy verificata». codiceSconto.risultatoEmail compare solo se la funzione risponde emailInviata: true (Step 8; resta false finché lo Step 9 non collega Brevo). codiceSconto.email: testi dell'email con il codice (Brevo, Step 9); [data] la riempie la funzione.",
+  "_nota": "Tutti i testi del sito. I segnaposto tra graffe, per esempio {telefono} o {orari.testo}, si riempiono in build con i dati di content/centro.json ({orari.testo} e {orari.riga} li calcola la build dalle fasce di centro.json › orari: «dal martedì al venerdì, dalle 09:00 alle 18:00; il sabato, …», separate da «; » o da « · »); se il dato è null la frase non compare. [data] nel risultato del codice sconto lo riempie il JavaScript. {cabina} è calcolato in build da macchinari e prodotti di centro.json (null se mancano entrambi). In viso.dettagli: «nome della voce del listino»: descrizione; null se i dettagli non sono indicati. Le voci «include» del pedicure (centro.json) sono separate da punto e virgola: la build fa una voce per elemento, con la prima lettera maiuscola. Nelle pagine legali (privacy, cookie) una voce con «richiede» compare solo se quell'integrazione di centro.json è indicata («tracciamenti» = GA4 o pixel Meta). legale.aggiornamento è la data di ultimo aggiornamento di privacy e cookie: fissa, si cambia a mano solo quando cambiano i testi legali (CLAUDE.md §10). legale.verificata resta false (riquadro «Bozza» in cima a privacy e cookie, anche in produzione) finché la titolare non scrive «privacy verificata». codiceSconto.risultatoEmail compare solo se la funzione risponde emailInviata: true (Step 8; resta false finché lo Step 9 non collega Brevo). codiceSconto.email: testi dell'email con il codice (Brevo, Step 9); [data] la riempie la funzione.",
   "comuni": {
     "header": {
       "logoAlt": "{nome}",
@@ -11,7 +11,7 @@
     "apertura": {
       "pulsanteChiama": "Chiama",
       "pulsanteWhatsapp": "Scrivi su WhatsApp",
-      "rigaInfo": "Su appuntamento · {orari.giorni} · dalle {orari.apertura} alle {orari.chiusura}",
+      "rigaInfo": "Su appuntamento · {orari.riga}",
       "payoff": "“{payoff}”",
       "altFoto": "{titolare.completo} al bancone del centro {nome}"
     },
@@ -66,7 +66,7 @@
       "h2": "Come prenotare",
       "passi": [
         "Chiama o scrivi su WhatsApp al {telefono}.",
-        "Scegli il giorno e l’ora: {orari.giorni}, dalle {orari.apertura} alle {orari.chiusura}.",
+        "Scegli il giorno e l’ora: {orari.testo}.",
         "Vieni in {indirizzo.via} a {indirizzo.comune}: il tuo appuntamento è pronto."
       ],
       "pulsanteChiama": "Chiama",
@@ -108,7 +108,7 @@
       "occhiello": "Dove siamo",
       "h2": "Ti aspettiamo a Caronno Varesino",
       "indirizzo": "{indirizzo.completo}",
-      "orari": "{orari.giorni}, dalle {orari.apertura} alle {orari.chiusura}. Solo su appuntamento.",
+      "orari": "{orari.testo}. Solo su appuntamento.",
       "pulsanteMaps": "Apri in Google Maps",
       "altFoto": "L’ingresso del centro {nome} in {indirizzo.via}"
     },

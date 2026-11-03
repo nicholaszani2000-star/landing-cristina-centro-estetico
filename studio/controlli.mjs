@@ -534,7 +534,7 @@ await controllo("link tel:+393520601109 e https://wa.me/393520601109?text= su og
   }
 });
 
-await controllo("JSON-LD BeautySalon sulle tre pagine (orari ricavati da «dal lunedì al sabato»)", () => {
+await controllo("JSON-LD BeautySalon sulle tre pagine (orari ricavati dalle fasce: «dal martedì al venerdì» e «il sabato»)", () => {
   for (const [file, id] of PAGINE) {
     const blocchi = jsonLdDi(pagina(file));
     if (!id) {
@@ -546,13 +546,15 @@ await controllo("JSON-LD BeautySalon sulle tre pagine (orari ricavati da «dal l
     verifica(d["@type"] === "BeautySalon" && d.name === centro.nome, `${file}: tipo o nome errati`);
     verifica(d.telephone === centro.telefonoE164 && d.email === centro.email, `${file}: contatti errati`);
     verifica(d.address?.streetAddress === centro.indirizzo.via && d.address?.postalCode === centro.indirizzo.cap, `${file}: indirizzo errato`);
-    const o = d.openingHoursSpecification?.[0];
-    verifica(o?.dayOfWeek?.join() === "Monday,Tuesday,Wednesday,Thursday,Friday,Saturday", `${file}: giorni ${o?.dayOfWeek}`);
-    verifica(o.opens === centro.orari.apertura && o.closes === centro.orari.chiusura, `${file}: orari errati`);
+    // Orari attesi da CLAUDE.md §2.1 (scritti a mano qui, di proposito): martedì–venerdì 09–18, sabato 08–14.
+    const o = (d.openingHoursSpecification ?? []).map((x) => `${x.dayOfWeek.join(",")} ${x.opens}-${x.closes}`).join(" | ");
+    verifica(o === "Tuesday,Wednesday,Thursday,Friday 09:00-18:00 | Saturday 08:00-14:00", `${file}: orari ${o}`);
     verifica(d.priceRange === "€€", `${file}: priceRange`);
   }
   verifica(build.ricavaGiorni("dal lunedì al venerdì")?.length === 5, "ricavaGiorni: lunedì-venerdì");
   verifica(build.ricavaGiorni("lunedì, mercoledì e sabato") === null, "ricavaGiorni: un testo ambiguo deve dare null");
+  verifica(build.ricavaGiorni("il sabato")?.join() === "Saturday" && build.ricavaGiorni("sabato")?.join() === "Saturday", "ricavaGiorni: un giorno solo");
+  verifica(build.ricavaGiorni("dal venerdì al martedì") === null, "ricavaGiorni: un intervallo al contrario deve dare null");
 });
 
 await controllo("meta per pagina: description di §7 (60–160 caratteri), og:title, og:description, og:type, og:locale, theme-color", () => {
@@ -1516,7 +1518,7 @@ await controllo("chi sono: testo predefinito di §8 (presentazione non indicata)
 await controllo("come prenotare: tre passi di §8 in un <ol>, «Chiama» e «Scrivi su WhatsApp» con il testo della pagina", () => {
   const attesi = [
     "Chiama o scrivi su WhatsApp al 352 060 1109.",
-    "Scegli il giorno e l'ora: dal lunedì al sabato, dalle 08:00 alle 17:00.",
+    "Scegli il giorno e l'ora: dal martedì al venerdì, dalle 09:00 alle 18:00; il sabato, dalle 08:00 alle 14:00.",
     "Vieni in Via Roma 2/A a Caronno Varesino: il tuo appuntamento è pronto.",
   ].map(tipografico);
   for (const [file, id] of PAGINE.filter(([, id]) => id)) {
@@ -1555,9 +1557,9 @@ await controllo("nessun <iframe> nel sito (niente mappe incorporate)", () => {
   verifica(!con.length, con.map(rel).join(", "));
 });
 
-await controllo("orari scritti in modo identico (stessa fonte) in apertura, «Come prenotare» e «Dove siamo»", () => {
-  const giorni = centro.orari.giorni;
-  const ore = `dalle ${centro.orari.apertura} alle ${centro.orari.chiusura}`;
+await controllo("orari scritti in modo identico (stessa fonte: le fasce di centro.json) in apertura, «Come prenotare» e «Dove siamo»; fasce validate in build", () => {
+  const fasce = centro.orari.fasce.map((f) => `${f.giorni}, dalle ${f.apertura} alle ${f.chiusura}`);
+  verifica(fasce.join("; ") === "dal martedì al venerdì, dalle 09:00 alle 18:00; il sabato, dalle 08:00 alle 14:00", `fasce di centro.json diverse da §2.1: ${fasce.join("; ")}`);
   for (const [file] of PAGINE.filter(([, id]) => id)) {
     const html = pagina(file);
     const blocchi = {
@@ -1566,12 +1568,22 @@ await controllo("orari scritti in modo identico (stessa fonte) in apertura, «Co
       "dove siamo": testoVisibile(html.match(/<p class="dove-riga dove-orari">([\s\S]*?)<\/p>/)?.[1] ?? ""),
     };
     for (const [nome, testo] of Object.entries(blocchi)) {
-      verifica(testo.includes(giorni) && testo.includes(ore), `${file}: orari diversi in «${nome}»: «${testo.slice(0, 80)}»`);
+      for (const f of fasce) verifica(testo.includes(f), `${file}: in «${nome}» manca «${f}»: «${testo.slice(0, 100)}»`);
     }
   }
   // stessa fonte: nei testi le ore e i giorni sono segnaposto di centro.json, mai scritti a mano
   const grezzi = [testi.comuni.apertura.rigaInfo, testi.comuni.comePrenotare.passi[1], testi.comuni.doveSiamo.orari];
-  for (const g of grezzi) verifica(g.includes("{orari.giorni}") && g.includes("{orari.apertura}") && g.includes("{orari.chiusura}") && !/\d{2}:\d{2}/.test(g), `testo scritto a mano: «${g}»`);
+  for (const g of grezzi) verifica(/\{orari\.(testo|riga)\}/.test(g) && !/\d{2}:\d{2}|lunedì|martedì|sabato/.test(g), `testo scritto a mano: «${g}»`);
+  // fasce sbagliate fermano la build
+  for (const sbagliate of [[], [{ giorni: "il sabato", apertura: "8:00", chiusura: "14:00" }], [{ giorni: "il sabato", apertura: "14:00", chiusura: "08:00" }]]) {
+    let fermato = false;
+    try {
+      build.testiOrari({ fasce: sbagliate });
+    } catch {
+      fermato = true;
+    }
+    verifica(fermato, `fasce accettate: ${JSON.stringify(sbagliate)}`);
+  }
 });
 
 await controllo("foto 04 e 02: object-position 40% 55% (chi sono) da 768 px; foto 02 intera, sfumata a sinistra da 1024 px", async () => {

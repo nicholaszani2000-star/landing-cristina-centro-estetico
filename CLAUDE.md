@@ -83,7 +83,7 @@ Regola generale: se un dato manca non inventarlo. Usa un testo neutro, oppure om
 - Indirizzo del centro: Via Roma 2/A, 21040 Caronno Varesino (VA)
 - Telefono (anche WhatsApp): 352 060 1109 · formato internazionale +393520601109 · numero per wa.me 393520601109
 - Email: esteticamigliore@gmail.com
-- Giorni: dal lunedì al sabato · Orario: dalle 08:00 alle 17:00 · solo su appuntamento
+- Orari (aggiornati dalla titolare il 3 novembre 2026): dal martedì al venerdì, dalle 09:00 alle 18:00; il sabato, dalle 08:00 alle 14:00; lunedì e domenica chiuso · solo su appuntamento
 - Presentazione di Cristina: non indicata (usa il testo predefinito di §8)
 - Dominio: esteticamigliore.it, registrato su Register.it, DNS esterno puntato a Netlify. Indirizzo principale del sito: https://esteticamigliore.it, senza www (deciso il 3 novembre 2026: è l'indirizzo principale su Netlify, con HTTPS attivo, ed è quello verificato su Google Search Console). www.esteticamigliore.it, quando ha il suo record CNAME verso Netlify, porta lì da solo.
 - Instagram: non indicato (nessun link) · Facebook: non indicato (nessun link) · Scheda Google: non indicata (il pulsante Maps usa la ricerca dell'indirizzo)
@@ -92,7 +92,7 @@ Regole condizionali:
 - Se il REA non è indicato, la riga REA nel footer non compare.
 - Se la sede legale non è indicata, nel footer compare solo l'indirizzo del centro.
 - Un social senza link non compare: niente icone vuote.
-- Gli orari si scrivono come «dal lunedì al sabato, dalle 08:00 alle 17:00, su appuntamento». Nei dati strutturati (`openingHoursSpecification`) ricava i giorni da «dal lunedì al sabato»; se non riesci a ricavarli senza ambiguità, ometti `openingHoursSpecification` e segnalalo.
+- Gli orari sono a fasce: in `centro.json › orari.fasce` una voce per fascia (giorni, apertura, chiusura). Si scrivono come «dal martedì al venerdì, dalle 09:00 alle 18:00; il sabato, dalle 08:00 alle 14:00», su appuntamento. Nei dati strutturati (`openingHoursSpecification`) una specifica per fascia, con i giorni ricavati da «dal martedì al venerdì» e «il sabato»; se una fascia non si ricava senza ambiguità, ometti `openingHoursSpecification` e segnalalo.
 - Il codice fiscale e il domicilio personale della titolare non compaiono mai nel sito.
 
 ### §2.2 Trattamenti in evidenza
@@ -342,7 +342,7 @@ Movimento:
 Ordine delle sezioni (stesso template per le tre pagine; cambiano solo i testi dell'apertura e l'ordine delle sezioni 3 e 4):
 
 1. Header — logo (altezza 64 px su mobile, 80 px da 1024 px: sotto queste misure la scritta MIGLIORE diventa illeggibile) a sinistra; a destra il link «Chiama» (da 768 px mostra anche il numero). Scopo: riconoscibilità e contatto immediato. Non fisso.
-2. Apertura — occhiello, H1, sottotitolo, due pulsanti («Chiama» principale, «Scrivi su WhatsApp» secondario), riga info «Su appuntamento · dal lunedì al sabato · dalle 08:00 alle 17:00», payoff piccolo in Marcellus, foto 01. Mobile: testo poi foto (sfuma in basso). Desktop: testo a sinistra, foto a destra (sfuma a sinistra). Scopo: in 3 secondi chi arriva capisce cosa, dove e come prenotare.
+2. Apertura — occhiello, H1, sottotitolo, due pulsanti («Chiama» principale, «Scrivi su WhatsApp» secondario), riga info «Su appuntamento · dal martedì al venerdì, dalle 09:00 alle 18:00 · il sabato, dalle 08:00 alle 14:00», payoff piccolo in Marcellus, foto 01. Mobile: testo poi foto (sfuma in basso). Desktop: testo a sinistra, foto a destra (sfuma a sinistra). Scopo: in 3 secondi chi arriva capisce cosa, dove e come prenotare.
 3. Viso (sulle pagine `/` e `/viso/`; quarta su `/pedicure/`) — foto 03, testo, voci viso dal listino senza prezzi, link «Vedi i prezzi ↓» al listino, pulsante WhatsApp con messaggio viso. Scopo: conferma dell'annuncio viso.
 4. Pedicure avanzato (terza su `/pedicure/`) — foto 05, testo, confronto «Pedicure estetico / Pedicure avanzato» in due schede, riga sul limite (§8), link «Vedi i prezzi ↓», pulsante WhatsApp con messaggio pedicure. Scopo: spiegare perché non è la solita pedicure.
 5. Chi sono — foto 04, titolo, presentazione di Cristina, payoff. Scopo: fiducia.
@@ -413,7 +413,7 @@ Apertura `/pedicure/`
 
 Comuni all'apertura
 - pulsanti: «Chiama» · «Scrivi su WhatsApp»
-- riga info: «Su appuntamento · dal lunedì al sabato · dalle 08:00 alle 17:00»
+- riga info: «Su appuntamento · dal martedì al venerdì, dalle 09:00 alle 18:00 · il sabato, dalle 08:00 alle 14:00»
 - payoff: «“Diventa la versione più bella di te”»
 - alt foto 01: «Cristina Migliore al bancone del centro Migliore – Estetica Avanzata»
 - alt dell'immagine di condivisione (og:image): «Logo di Migliore – Estetica Avanzata e Cristina Migliore al bancone del centro»
@@ -452,7 +452,7 @@ Chi sono
 Come prenotare
 - occhiello: «Prenotare è semplice» · H2: «Come prenotare»
 - 1 «Chiama o scrivi su WhatsApp al 352 060 1109.»
-- 2 «Scegli il giorno e l'ora: dal lunedì al sabato, dalle 08:00 alle 17:00.»
+- 2 «Scegli il giorno e l'ora: dal martedì al venerdì, dalle 09:00 alle 18:00; il sabato, dalle 08:00 alle 14:00.»
 - 3 «Vieni in Via Roma 2/A a Caronno Varesino: il tuo appuntamento è pronto.»
 
 Codice sconto
@@ -468,7 +468,7 @@ Codice sconto
 Dove siamo e orari
 - occhiello: «Dove siamo» · H2: «Ti aspettiamo a Caronno Varesino»
 - indirizzo: «Via Roma 2/A, 21040 Caronno Varesino (VA)»
-- orari: «dal lunedì al sabato, dalle 08:00 alle 17:00. Solo su appuntamento.»
+- orari: «dal martedì al venerdì, dalle 09:00 alle 18:00; il sabato, dalle 08:00 alle 14:00. Solo su appuntamento.»
 - pulsante: «Apri in Google Maps» → `https://www.google.com/maps/search/?api=1&query=` + indirizzo completo codificato
 - alt foto 02: «L'ingresso del centro Migliore – Estetica Avanzata in Via Roma 2/A»
 

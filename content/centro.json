@@ -27,9 +27,10 @@
   "whatsappNumero": "393520601109",
   "email": "esteticamigliore@gmail.com",
   "orari": {
-    "giorni": "dal lunedì al sabato",
-    "apertura": "08:00",
-    "chiusura": "17:00",
+    "fasce": [
+      { "giorni": "dal martedì al venerdì", "apertura": "09:00", "chiusura": "18:00" },
+      { "giorni": "il sabato", "apertura": "08:00", "chiusura": "14:00" }
+    ],
     "soloSuAppuntamento": true
   },
   "presentazione": null,
