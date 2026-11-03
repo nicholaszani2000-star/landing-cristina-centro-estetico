@@ -5,7 +5,10 @@ Date: 2026-11-02 (integrazioni preparate) e 2026-11-03 (parti A, B e C fase 1) �
 Stato:
 - **A. Controllo qualità**: fatto.
 - **B. Pull request**: fatta, verso `main`.
-- **C. Messa online**: ferma alla fase 1. Il progetto Netlify esiste, ma il repository va collegato dall'interfaccia (§6). Poi si verifica l'anteprima reale e si aspetta il tuo «ok, pubblica».
+- **C. Messa online**: ferma alla fase 1.
+  - Il progetto Netlify esiste, ma il repository va collegato dall'interfaccia (§6).
+  - Le prove sul telefono sono pronte (§6).
+  - Si aspetta il tuo «ok, pubblica».
 - **D ed E**: dopo il tuo «ok, pubblica».
 
 ## 0. Documentazione consultata
@@ -213,7 +216,10 @@ Nessun problema.
 
 ## 4. B. Pull request
 
-Commit «Step 9A: controllo qualità» e pull request da `landing-migliore` verso `main` (§7, link nel messaggio in chat). `main` contiene solo lo Step 0, quindi la pull request raccoglie gli Step 1–9.
+Commit «Step 9A: controllo qualità» e pull request **https://github.com/nicholaszani2000-star/landing-cristina-centro-estetico/pull/1**, da `landing-migliore` verso `main`.
+- `main` contiene solo lo Step 0, quindi la pull request raccoglie gli Step 1–9.
+- Nella descrizione ci sono l'elenco degli step, la tabella Lighthouse e i controlli.
+- Non c'è un template per le pull request nel repository.
 
 ## 5. Stato dei servizi
 
@@ -224,22 +230,58 @@ Commit «Step 9A: controllo qualità» e pull request da `landing-migliore` vers
   - Advisor: solo «RLS senza policy», che è voluto.
 
   Il prompt dello step dice «Progetto Supabase: non indicato», ma CLAUDE.md §2.5 lo indica, e vale CLAUDE.md. Finché `SUPABASE_SECRET_KEY` non è su Netlify, la funzione resta in modalità prova.
-- **Netlify** (esteticamigliore, piano Free): progetto creato, `SUPABASE_URL` impostata. Nessun repository collegato e nessun deploy.
+- **Netlify** (esteticamigliore, piano Free): progetto creato, con `SUPABASE_URL` impostata. Nessun repository collegato e nessun deploy (letto il 3 novembre dal server MCP).
+  - Sul progetto risulta già aggiunto il dominio `esteticamigliore.it`, ed è il principale.
+  - Per §2.1 il principale deve essere `www.esteticamigliore.it`: lo sistemiamo nella fase 2. Il DNS su Register.it non l'ho toccato.
 - **GA4, Meta Pixel, Brevo**: codice pronto, spenti finché mancano i dati.
 - **DNS**: non toccato.
 
-## 6. C. Messa online, fase 1: cosa serve da te
+## 6. C. Messa online, fase 1: anteprima reale
 
-1. **Collega il repository al progetto che esiste già** (non crearne un altro: ha già il nome e `SUPABASE_URL`):
-   - app.netlify.com → progetto **esteticamigliore** → Project configuration → Build & deploy → Continuous deployment → **Link repository**;
-   - GitHub → `nicholaszani2000-star/landing-cristina-centro-estetico`;
-   - **Branch to deploy: `main`**;
-   - lascia vuoti Build command e Publish directory (li legge da `netlify.toml`) e conferma.
-2. **Deploy Previews**: Project configuration → Build & deploy → Continuous deployment → Branches and deploy contexts → Deploy Previews: «Any pull request against your production branch / branch deploy branches».
-3. Netlify crea da solo il Deploy Preview della pull request aperta: `deploy-preview-<N>--esteticamigliore.netlify.app`.
-4. Scrivimi «collegato»: verifico il Deploy Preview (tre pagine, codice in modalità prova, 404, header con `curl -I`) e ti mando le prove da fare sul telefono.
+Il server MCP di Netlify non ha un'operazione per collegare un repository. La documentazione ufficiale (skill «netlify-deploy») prevede `netlify init` o `netlify link` dalla CLI, oppure l'interfaccia. La CLI qui non può collegarsi, perché la rete della sessione blocca Netlify. Quindi il collegamento lo fai tu, sul progetto che esiste già (ha già il nome e `SUPABASE_URL`):
+
+1. app.netlify.com → progetto **esteticamigliore** → Project configuration → Build & deploy (nelle versioni nuove «Developer settings») → Continuous deployment → **Link repository**.
+2. GitHub → `nicholaszani2000-star/landing-cristina-centro-estetico`.
+3. **Branch to deploy: `main`**. Lascia vuoti Build command e Publish directory: li legge da `netlify.toml`. Conferma.
+4. Stessa pagina → Branches and deploy contexts → Configure → Deploy Previews: «Any pull request against your production branch / branch deploy branches».
+
+Per la documentazione Netlify, i Deploy Preview si creano solo per le pull request verso il branch di produzione (o verso un branch con i branch deploy attivi). Per questo il branch di produzione deve essere `main` (§7).
+
+Dopo il collegamento:
+- il Deploy Preview della pull request n. 1 sarà https://deploy-preview-1--esteticamigliore.netlify.app;
+- `main` (solo lo Step 0) andrà in produzione su esteticamigliore.netlify.app: è una pagina vuota, ed è normale;
+- il sito vero arriva in produzione solo con il merge, dopo il tuo «ok, pubblica».
+
+**Verifica da qui.** La rete di questa sessione blocca `esteticamigliore.netlify.app`, `deploy-preview-1--esteticamigliore.netlify.app` ed `esteticamigliore.it` (403 dal proxy). Per farmi fare le verifiche del punto C.2 (tre pagine, codice in modalità prova, 404, header con `curl -I`), aggiungi questi domini a **Network access › Allowed domains** nelle impostazioni dell'ambiente:
+- `*.netlify.app`
+- `esteticamigliore.it`
+- `www.esteticamigliore.it`
+
+Il menu dell'ambiente è nella barra del titolo della sessione → Edit. I passi sono su https://code.claude.com/docs/en/cloud-environments#network-access.
 
 `.netlify/` è già in `.gitignore`.
+
+### Prove da fare sul telefono, sul Deploy Preview
+
+1. **Chiamata**: su `/`, `/viso/` e `/pedicure/` tocca «Chiama» nell'apertura, nell'header e nella barra in basso (compare scorrendo). Si apre il telefono con 352 060 1109.
+2. **WhatsApp, testo giusto per ogni pagina**:
+   - su `/` «Scrivi su WhatsApp» scrive «Ciao Cristina, vorrei prenotare un appuntamento.»;
+   - su `/viso/` scrive «Ciao Cristina, vorrei informazioni sui trattamenti viso.»;
+   - su `/pedicure/` scrive «Ciao Cristina, vorrei prenotare un pedicure avanzato.»;
+   - in ogni pagina, «Prenota il tuo trattamento viso» usa il testo viso e «Prenota il pedicure avanzato» il testo pedicure.
+3. **Maps**: «Apri in Google Maps» apre Maps su Via Roma 2/A, 21040 Caronno Varesino.
+4. **Codice sconto**:
+   - senza email o senza la casella compaiono gli errori accanto ai campi;
+   - con email e casella compare un codice «MIG-…» valido 30 giorni, con «Copia il codice».
+   - In modalità prova il codice non viene salvato.
+5. **Listino**:
+   - «Vedi i prezzi ↓» porta al listino;
+   - su `/viso/` è aperta «Trattamenti corpo e viso», su `/pedicure/` «Manicure e pedicure», su `/` nessuna;
+   - le categorie si aprono e si chiudono;
+   - «Vedi il listino stampato» apre la foto del listino.
+6. **Privacy e cookie**: dal footer si aprono le due pagine, con il riquadro «Bozza» in cima, si leggono bene e si passa dall'una all'altra. Prova anche un indirizzo inventato, per esempio `/prova/`: deve comparire «Questa pagina non esiste.»
+
+Poi scrivimi **«ok, pubblica»**. Fino ad allora mi fermo qui.
 
 ## 7. Dati mancanti o dubbi
 
@@ -252,5 +294,5 @@ Commit «Step 9A: controllo qualità» e pull request da `landing-migliore` vers
 
 ## 8. Domande per te
 
-1. Confermi `main` come branch di produzione su Netlify, con `landing-migliore` come branch di lavoro che passa da una pull request?
-2. Quando hai collegato il repository, scrivimi «collegato»: verifico il Deploy Preview e ti mando le 6 prove da fare sul telefono.
+1. Confermi `main` come branch di produzione su Netlify, con `landing-migliore` come branch di lavoro che passa da una pull request? Se sì, aggiorno CLAUDE.md §2.5.
+2. Hai aggiunto tu `esteticamigliore.it` al progetto Netlify? Nella fase 2 lo metto come alias e uso `www.esteticamigliore.it` come principale, come da §2.1.
