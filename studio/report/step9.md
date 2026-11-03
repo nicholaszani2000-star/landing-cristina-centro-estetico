@@ -283,6 +283,29 @@ Il menu dell'ambiente è nella barra del titolo della sessione → Edit. I passi
 
 Poi scrivimi **«ok, pubblica»**. Fino ad allora mi fermo qui.
 
+### Primo deploy (3 novembre, caricamento a mano)
+
+La titolare ha trascinato su Netlify lo zip del repository: deploy `6ae9cabd`, «Build from drop deployment».
+- Netlify ha costruito il sito da `netlify.toml`, ha installato la funzione `codice-sconto` (rate limit compreso) e ha applicato 5 regole di header.
+- La funzione è in modalità prova: manca `SUPABASE_SECRET_KEY`.
+- Il dominio `esteticamigliore.it` però risponde in **http**: il certificato HTTPS non è ancora attivo.
+
+**Problema.** Sul telefono la pagina compariva senza stile: niente CSS, logo rotto, font Times. La causa era `upgrade-insecure-requests` nella CSP: con la pagina in http, il browser chiedeva CSS, immagini e font in https, che sul dominio non risponde ancora.
+
+**Riprodotto.** Ho caricato la pagina in Chromium come `http://esteticamigliore.it`, con il dominio mappato sul server locale:
+- con la CSP vecchia: 10 richieste fallite, fondo trasparente, logo largo 0 px, H1 in Times New Roman;
+- con la CSP nuova: tutto carica.
+
+**Corretto.**
+- Tolto `upgrade-insecure-requests` da `netlify.toml`, e quindi anche da `_headers`.
+- Il controllo sulla CSP ora verifica che non ci sia.
+- Gli indirizzi del sito sono tutti relativi, quindi non serve.
+- Quando il certificato è attivo, è Netlify a portare da http a https.
+
+**Da fare sul pannello di Netlify.**
+- Domain management → HTTPS → «Verify DNS configuration» e poi «Provision certificate».
+- Se segnala `www.esteticamigliore.it`, va aggiunto su Register.it il record `www` CNAME → `esteticamigliore.netlify.app`. In alternativa si toglie `www` dagli alias finché il record non c'è.
+
 ## 7. Dati mancanti o dubbi
 
 - **Branch di produzione**: CLAUDE.md §2.5 dice `landing-migliore`, il prompt dello Step 9 dice il branch principale (`main`).

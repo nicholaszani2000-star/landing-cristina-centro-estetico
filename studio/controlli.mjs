@@ -2405,9 +2405,12 @@ async function violazioniCsp(contesto, url, azione) {
 await controllo("Content-Security-Policy in netlify.toml: direttive di base, impronta sha256 uguale all'unico script inline, nessuno stile o gestore inline; Google e Meta ammessi solo dove servono", () => {
   const csp = cspNetlify();
   verifica(csp, "Content-Security-Policy mancante nel blocco «/*» di netlify.toml");
-  for (const d of ["default-src 'self'", "style-src 'self'", "font-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'", "upgrade-insecure-requests"]) {
+  for (const d of ["default-src 'self'", "style-src 'self'", "font-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'"]) {
     verifica(csp.includes(d), `CSP senza «${d}»`);
   }
+  // Con il dominio ancora in http (certificato non attivo) upgrade-insecure-requests manda CSS, immagini e font in
+  // https e la pagina resta senza stile: è successo al primo deploy. Il passaggio a https lo fa Netlify.
+  verifica(!csp.includes("upgrade-insecure-requests"), "CSP con upgrade-insecure-requests: in http la pagina resta senza CSS, immagini e font");
   verifica(!/unsafe-inline|unsafe-eval|\*\s|'\*'|\shttp:/.test(csp), "CSP con unsafe-inline, unsafe-eval, jolly o http:");
   const script = csp.match(/script-src ([^;]*)/)?.[1] ?? "";
   verifica(/https:\/\/\*\.googletagmanager\.com/.test(script) && /https:\/\/connect\.facebook\.net/.test(script), `script-src: ${script}`);

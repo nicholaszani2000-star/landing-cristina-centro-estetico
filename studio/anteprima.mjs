@@ -88,7 +88,7 @@ function fileDi(percorso, cartella = DIST) {
 }
 
 /** Header di netlify.toml per «/*» (sicurezza e Content-Security-Policy), da applicare ai file statici come fa
- *  Netlify. upgrade-insecure-requests si toglie solo qui: l'anteprima è in http, il sito vero in https. */
+ *  Netlify. Se la CSP avesse upgrade-insecure-requests, qui si toglierebbe (l'anteprima è in http); oggi non c'è. */
 export function intestazioniNetlify() {
   return regoleNetlify().find((r) => r.per === "/*")?.valori ?? {};
 }

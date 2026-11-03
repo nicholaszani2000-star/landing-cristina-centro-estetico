@@ -27,7 +27,7 @@ const REPOSITORY = join(USCITA, "landing-migliore-repository.zip");
 const elenca = (cartella) =>
   readdirSync(cartella, { withFileTypes: true }).flatMap((v) => (v.isDirectory() ? elenca(join(cartella, v.name)) : [join(cartella, v.name)]));
 
-/** _headers nel formato di Netlify, dagli stessi blocchi di netlify.toml (CSP intera, con upgrade-insecure-requests). */
+/** _headers nel formato di Netlify, dagli stessi blocchi di netlify.toml (CSP intera). */
 export function fileHeaders() {
   const regole = regoleNetlify({ perAnteprima: false });
   if (!regole.length) throw new Error("netlify.toml senza blocchi [[headers]]");
