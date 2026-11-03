@@ -67,7 +67,7 @@
         { "nome": "Trattamento viso Antiage", "da": 80, "a": 120 },
         { "nome": "Trattamento Antiage contorno occhi e labbra", "prezzo": 40 },
         { "nome": "Laminazione ciglia", "prezzo": 50 },
-        { "nome": "Laminazione sopracciglia", "prezzo": 30 }
+        { "nome": "Laminazione sopracciglia", "prezzo": 50 }
       ]
     }
   ]

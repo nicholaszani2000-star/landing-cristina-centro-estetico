@@ -109,7 +109,7 @@ const LISTINO_ATTESO = {
     ["Trattamento viso Antiage", "da 80 a 120 €"],
     ["Trattamento Antiage contorno occhi e labbra", "40 €"],
     ["Laminazione ciglia", "50 €"],
-    ["Laminazione sopracciglia", "30 €"],
+    ["Laminazione sopracciglia", "50 €"],
   ],
 };
 // Parole vietate di §8 (radici: «*» = qualsiasi desinenza)

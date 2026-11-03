@@ -175,7 +175,7 @@ Trattamenti corpo e viso (id `corpo-viso`)
 - Trattamento viso Antiage — da 80 a 120 €
 - Trattamento Antiage contorno occhi e labbra — 40 €
 - Laminazione ciglia — 50 €
-- Laminazione sopracciglia — 30 €
+- Laminazione sopracciglia — 50 € (prezzo aggiornato dalla titolare il 3 novembre 2026; il listino stampato in foto 06 riporta ancora 30 €)
 
 Le voci viso della sezione viso (§6) sono 5: Pulizia viso base, Trattamento viso Antiage, Trattamento Antiage contorno occhi e labbra, Laminazione ciglia, Laminazione sopracciglia. Nella sezione la voce «Trattamento viso Antiage» va per prima, con l'etichetta «In evidenza»; le altre seguono nell'ordine di questo elenco. Nel listino (sezione 9) l'ordine resta quello del cartaceo.
 
