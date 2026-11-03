@@ -6,3 +6,4 @@ dist/
 studio/node_modules/
 studio/screenshot/
 .DS_Store
+studio/pacchetto/

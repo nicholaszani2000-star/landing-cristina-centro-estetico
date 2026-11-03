@@ -93,8 +93,9 @@ export function intestazioniNetlify() {
   return regoleNetlify().find((r) => r.per === "/*")?.valori ?? {};
 }
 
-/** Tutti i blocchi [[headers]] di netlify.toml: { per: "/fonts/*", valori: { … } }. */
-export function regoleNetlify() {
+/** Tutti i blocchi [[headers]] di netlify.toml: { per: "/fonts/*", valori: { … } }. Con perAnteprima (default) la
+ *  CSP perde upgrade-insecure-requests, perché l'anteprima è in http; il pacchetto per Netlify la vuole intera. */
+export function regoleNetlify({ perAnteprima = true } = {}) {
   const toml = readFileSync(join(RADICE, "netlify.toml"), "utf8");
   return toml
     .split("[[headers]]")
@@ -105,7 +106,7 @@ export function regoleNetlify() {
       return {
         per,
         valori: Object.fromEntries(
-          valori.map(([, k, v]) => [k, k === "Content-Security-Policy" ? v.replace(/;?\s*upgrade-insecure-requests/, "") : v]),
+          valori.map(([, k, v]) => [k, k === "Content-Security-Policy" && perAnteprima ? v.replace(/;?\s*upgrade-insecure-requests/, "") : v]),
         ),
       };
     })
