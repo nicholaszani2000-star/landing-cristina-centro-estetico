@@ -51,7 +51,13 @@ const LARGHEZZA_STAMPATO = 1536;
 // Tracciamenti (Step 8): ID finti per TEST_TRACCIAMENTI=1, solo per i controlli; mai in produzione.
 const ID_PROVA = { ga4Id: "G-TEST000000", metaPixelId: "000000000000000" };
 // googleVerifica: il codice di Google Search Console, senza «google-site-verification=» davanti (meta tag nel <head>).
-const FORMATO_ID = { ga4Id: /^G-[A-Z0-9]{6,12}$/, metaPixelId: /^\d{15,16}$/, googleVerifica: /^[A-Za-z0-9_-]{20,100}$/ };
+// googleFileVerifica: il nome del file di verifica di Search Console (metodo «File HTML»), messo nella radice del sito.
+const FORMATO_ID = {
+  ga4Id: /^G-[A-Z0-9]{6,12}$/,
+  metaPixelId: /^\d{15,16}$/,
+  googleVerifica: /^[A-Za-z0-9_-]{20,100}$/,
+  googleFileVerifica: /^google[0-9a-f]{16}\.html$/,
+};
 // Modulo del codice sconto: la Netlify Function netlify/functions/codice-sconto.mjs (config.path).
 const AZIONE_CODICE = "/api/codice-sconto";
 // Sitemap: le pagine della landing prima, le pagine legali con priorità bassa; la 404 è esclusa.
@@ -914,6 +920,10 @@ async function main() {
   }
 
   await writeFile(join(dist, "robots.txt"), `User-agent: *\nAllow: /\n${base ? `\nSitemap: ${base}/sitemap.xml\n` : ""}`);
+  // Google Search Console, metodo «File HTML»: il file deve contenere esattamente questa riga, come quello che
+  // Google fa scaricare. Non è una pagina del sito: html-validate lo salta (.htmlvalidateignore).
+  const fileGoogle = centro.integrazioni?.googleFileVerifica;
+  if (fileGoogle) await writeFile(join(dist, fileGoogle), `google-site-verification: ${fileGoogle}`);
   if (base) {
     const url = [...generate.map((p) => [p, PRIORITA_LANDING]), ...pagineLegali.map((p) => [p, PRIORITA_LEGALI])]
       .map(([p, priorita]) => `  <url><loc>${escapeHtml(base + p)}</loc><priority>${priorita}</priority></url>`)

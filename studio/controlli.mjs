@@ -148,6 +148,7 @@ function elenca(cartella, filtro = () => true) {
   if (!existsSync(cartella)) return [];
   return readdirSync(cartella, { withFileTypes: true }).flatMap((v) => {
     if (v.name === "node_modules" || v.name.startsWith(".")) return [];
+    if (/^google[0-9a-f]{16}\.html$/.test(v.name)) return []; // file di verifica di Search Console: non è una pagina (controllo apposta)
     const p = join(cartella, v.name);
     return v.isDirectory() ? elenca(p, filtro) : filtro(p) ? [p] : [];
   });
@@ -2702,6 +2703,28 @@ await controllo("Google Search Console: <meta name=\"google-site-verification\">
       fermato = true;
     }
     verifica(fermato, `codice «${sbagliato}» accettato`);
+  }
+});
+
+await controllo("Google Search Console, metodo «File HTML»: il file di centro.json è nella radice di dist/ con esattamente «google-site-verification: <nome>», risponde 200 dall'anteprima, non è nella sitemap; html-validate lo salta; un nome sbagliato ferma la build", async () => {
+  const nome = centro.integrazioni.googleFileVerifica;
+  verifica(nome, "integrazioni.googleFileVerifica mancante in centro.json");
+  const file = join(DIST, nome);
+  verifica(existsSync(file), `dist/${nome} mancante`);
+  verifica(readFileSync(file, "utf8") === `google-site-verification: ${nome}`, `dist/${nome}: contenuto «${readFileSync(file, "utf8")}»`);
+  const { base } = await browserCondiviso();
+  const r = await fetch(`${base}/${nome}`);
+  verifica(r.status === 200 && (await r.text()) === `google-site-verification: ${nome}`, `/${nome}: ${r.status}`);
+  if (existsSync(join(DIST, "sitemap.xml"))) verifica(!readFileSync(join(DIST, "sitemap.xml"), "utf8").includes(nome), "il file di verifica è nella sitemap");
+  verifica(readFileSync(join(RADICE, ".htmlvalidateignore"), "utf8").includes("/dist/google*.html"), ".htmlvalidateignore senza /dist/google*.html");
+  for (const sbagliato of ["google1308769860b5c5bc", "google-1308.html", "pagina.html"]) {
+    let fermato = false;
+    try {
+      build.datiTracciamenti({ ...centro, integrazioni: { ...centro.integrazioni, googleFileVerifica: sbagliato } }, {});
+    } catch {
+      fermato = true;
+    }
+    verifica(fermato, `nome «${sbagliato}» accettato`);
   }
 });
 

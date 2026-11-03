@@ -312,6 +312,12 @@ La titolare ha mandato il codice di verifica `google-site-verification=FU-2BJUSt
 - **Nel sito**: il codice va in `content/centro.json › integrazioni.googleVerifica`, senza il prefisso. La build stampa in ogni pagina `<meta name="google-site-verification" content="…">`; un formato sbagliato ferma la build. Il meta serve per la proprietà «Prefisso URL».
 - **Nel DNS**: per la proprietà «Dominio», l'unica verifica è il record TXT su Register.it (`@`, TXT, `google-site-verification=FU-2…`). Lo aggiunge la titolare.
 - **Da fare dopo la verifica**: inviare la sitemap `https://www.esteticamigliore.it/sitemap.xml`, quando `www` risponde.
+- **Metodo «File HTML»** (proprietà «Prefisso URL»): la titolare ha mandato il file `google1308769860b5c5bc.html`.
+  - Il nome sta in `centro.json › integrazioni.googleFileVerifica`.
+  - La build scrive `dist/google1308769860b5c5bc.html` con esattamente `google-site-verification: google1308769860b5c5bc.html`. Il file è fuori dalla sitemap.
+  - `.htmlvalidateignore` lo esclude da html-validate, perché non è una pagina.
+  - Un controllo apposito verifica contenuto, risposta 200 e formato del nome.
+- **Primo tentativo con la proprietà «Dominio»**: non è andato a buon fine. Google ha trovato solo il TXT SPF della posta (`v=spf1 include:spf.webapps.net ~all`), quindi su Register.it il record di Google non c'era ancora.
 
 ## 7. Dati mancanti o dubbi
 
