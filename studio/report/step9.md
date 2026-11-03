@@ -317,6 +317,9 @@ La titolare ha mandato il codice di verifica `google-site-verification=FU-2BJUSt
   - La build scrive `dist/google1308769860b5c5bc.html` con esattamente `google-site-verification: google1308769860b5c5bc.html`. Il file è fuori dalla sitemap.
   - `.htmlvalidateignore` lo esclude da html-validate, perché non è una pagina.
   - Un controllo apposito verifica contenuto, risposta 200 e formato del nome.
+- **Verifica riuscita** con il metodo «File HTML», proprietà «Prefisso URL» `https://esteticamigliore.it`.
+  - Deploy `6ae9d675` del 3 novembre alle 12:41: «Build from drop deployment», con `google1308769860b5c5bc.html`, la funzione `codice-sconto` e 5 regole di header.
+  - HTTPS attivo; indirizzo principale su Netlify `https://esteticamigliore.it`, senza www. Con la build fatta da Netlify, canonical, og:url e sitemap usano quell'indirizzo, perché viene dalla variabile `URL` (§4).
 - **Primo tentativo con la proprietà «Dominio»**: non è andato a buon fine. Google ha trovato solo il TXT SPF della posta (`v=spf1 include:spf.webapps.net ~all`), quindi su Register.it il record di Google non c'era ancora.
 
 ## 7. Dati mancanti o dubbi
