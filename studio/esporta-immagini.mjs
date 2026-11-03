@@ -21,11 +21,11 @@ const ORIGINALI = join(STUDIO, "originali");
 const IMG = join(RADICE, "src", "img");
 
 const FOTO = [
-  { file: "foto/01-cristina-bancone.png", nome: "cristina-bancone", larghezze: [480, 720, 941] },
+  { file: "foto/01-cristina-bancone.png", nome: "cristina-bancone", larghezze: [480, 720, 800, 941] },
   { file: "foto/02-ingresso.png", nome: "ingresso", larghezze: [480, 800, 1200] },
-  { file: "foto/03-cabina-viso.png", nome: "cabina-viso", larghezze: [480, 720, 941] },
-  { file: "foto/04-cabina-lettino.png", nome: "cabina-lettino", larghezze: [480, 720, 941] },
-  { file: "foto/05-postazione-pedicure.png", nome: "postazione-pedicure", larghezze: [480, 720, 941] },
+  { file: "foto/03-cabina-viso.png", nome: "cabina-viso", larghezze: [480, 720, 800, 941] },
+  { file: "foto/04-cabina-lettino.png", nome: "cabina-lettino", larghezze: [480, 720, 800, 941] },
+  { file: "foto/05-postazione-pedicure.png", nome: "postazione-pedicure", larghezze: [480, 720, 800, 941] },
   { file: "foto/06-listino-stampato.png", nome: "listino-stampato", larghezze: [800, 1536] },
 ];
 // Logo (CLAUDE.md §9): solo 240 e 320 px, AVIF con trasparenza e WebP, ogni file ≤ 40 KB.

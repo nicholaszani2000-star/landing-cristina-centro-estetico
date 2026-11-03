@@ -1,5 +1,5 @@
 {
-  "_nota": "Tutti i testi del sito. I segnaposto tra graffe, per esempio {telefono} o {orari.giorni}, si riempiono in build con i dati di content/centro.json; se il dato è null la frase non compare. [data] nel risultato del codice sconto lo riempie il JavaScript. {cabina} è calcolato in build da macchinari e prodotti di centro.json (null se mancano entrambi). In viso.dettagli: «nome della voce del listino»: descrizione; null se i dettagli non sono indicati. Le voci «include» del pedicure (centro.json) sono separate da punto e virgola: la build fa una voce per elemento, con la prima lettera maiuscola. Nelle pagine legali (privacy, cookie) una voce con «richiede» compare solo se quell'integrazione di centro.json è indicata («tracciamenti» = GA4 o pixel Meta). legale.aggiornamento è la data di ultimo aggiornamento di privacy e cookie: fissa, si cambia a mano solo quando cambiano i testi legali (CLAUDE.md §10). codiceSconto.risultatoEmail compare solo se la funzione risponde emailInviata: true (Step 8; resta false finché lo Step 9 non collega Brevo). codiceSconto.email: testi dell'email con il codice (Brevo, Step 9); [data] la riempie la funzione.",
+  "_nota": "Tutti i testi del sito. I segnaposto tra graffe, per esempio {telefono} o {orari.giorni}, si riempiono in build con i dati di content/centro.json; se il dato è null la frase non compare. [data] nel risultato del codice sconto lo riempie il JavaScript. {cabina} è calcolato in build da macchinari e prodotti di centro.json (null se mancano entrambi). In viso.dettagli: «nome della voce del listino»: descrizione; null se i dettagli non sono indicati. Le voci «include» del pedicure (centro.json) sono separate da punto e virgola: la build fa una voce per elemento, con la prima lettera maiuscola. Nelle pagine legali (privacy, cookie) una voce con «richiede» compare solo se quell'integrazione di centro.json è indicata («tracciamenti» = GA4 o pixel Meta). legale.aggiornamento è la data di ultimo aggiornamento di privacy e cookie: fissa, si cambia a mano solo quando cambiano i testi legali (CLAUDE.md §10). legale.verificata resta false (riquadro «Bozza» in cima a privacy e cookie, anche in produzione) finché la titolare non scrive «privacy verificata». codiceSconto.risultatoEmail compare solo se la funzione risponde emailInviata: true (Step 8; resta false finché lo Step 9 non collega Brevo). codiceSconto.email: testi dell'email con il codice (Brevo, Step 9); [data] la riempie la funzione.",
   "comuni": {
     "header": {
       "logoAlt": "{nome}",
@@ -24,11 +24,11 @@
       "dettagli": {
         "Pulizia viso base": "detersione delicata, pulizia accurata delle impurità, maschera e crema finale scelte per il tuo tipo di pelle. Per una pelle più pulita, fresca e luminosa.",
         "Trattamento viso Antiage": "un trattamento professionale Natinuel, senza aghi, scelto in base alla tua pelle per renderla più luminosa, compatta e idratata, con linee sottili meno visibili e un colorito più uniforme. Uno dei trattamenti è Revinol, in tre fasi: esfoliazione delicata, maschera peel-off e siero finale, con retinolo, vitamina C, vitamina E e acido ialuronico. Fatto con costanza, aiuta la pelle a mantenere più a lungo un aspetto fresco e compatto.",
-        "Trattamento Antiage contorno occhi e labbra": "un trattamento mirato sulle zone più delicate del viso, per idratare e attenuare l'aspetto delle linee sottili intorno a occhi e labbra.",
+        "Trattamento Antiage contorno occhi e labbra": "un trattamento mirato sulle zone più delicate del viso, per idratare e attenuare l’aspetto delle linee sottili intorno a occhi e labbra.",
         "Laminazione ciglia": "ciglia più definite e incurvate, senza extension.",
         "Laminazione sopracciglia": "i peli vengono fissati nella forma scelta, per sopracciglia più ordinate e piene alla vista."
       },
-      "inCabina": "In cabina usiamo: {cabina}",
+      "inCabina": "In cabina usiamo: {cabina}.",
       "linkPrezzi": "Vedi i prezzi ↓",
       "pulsante": "Prenota il tuo trattamento viso",
       "altFoto": "Cabina per i trattamenti viso del centro {nome}"
@@ -36,7 +36,7 @@
     "pedicure": {
       "occhiello": "Piedi",
       "h2": "Pedicure avanzato",
-      "testo": "Non la solita pedicure. Il pedicure estetico si prende cura dell'aspetto di unghie e piedi. Il pedicure avanzato aggiunge un lavoro approfondito con micromotore e frese professionali sulle unghie e sulle zone dove la pelle si ispessisce, per una pelle più liscia e morbida e unghie in ordine.",
+      "testo": "Non la solita pedicure. Il pedicure estetico si prende cura dell’aspetto di unghie e piedi. Il pedicure avanzato aggiunge un lavoro approfondito con micromotore e frese professionali sulle unghie e sulle zone dove la pelle si ispessisce, per una pelle più liscia e morbida e unghie in ordine.",
       "scheda1": {
         "titolo": "Pedicure estetico",
         "sottotitolo": "La pedicure classica",
@@ -66,7 +66,7 @@
       "h2": "Come prenotare",
       "passi": [
         "Chiama o scrivi su WhatsApp al {telefono}.",
-        "Scegli il giorno e l'ora: {orari.giorni}, dalle {orari.apertura} alle {orari.chiusura}.",
+        "Scegli il giorno e l’ora: {orari.giorni}, dalle {orari.apertura} alle {orari.chiusura}.",
         "Vieni in {indirizzo.via} a {indirizzo.comune}: il tuo appuntamento è pronto."
       ],
       "pulsanteChiama": "Chiama",
@@ -78,21 +78,21 @@
       "testo": "Lascia la tua email: ricevi subito un codice sconto del {codiceSconto.percentuale}% e, {codiceSconto.frequenzaPromo}, le promo del centro.",
       "campoEtichetta": "La tua email",
       "campoSegnaposto": "nome@esempio.it",
-      "consenso": "Voglio ricevere via email le promozioni di {nome} su trattamenti viso e corpo, mani e piedi, epilazione e massaggi, {codiceSconto.frequenzaPromo}. Posso cancellarmi quando voglio. Ho letto l'informativa privacy.",
+      "consenso": "Voglio ricevere via email le promozioni di {nome} su trattamenti viso e corpo, mani e piedi, epilazione e massaggi, {codiceSconto.frequenzaPromo}. Posso cancellarmi quando voglio. Ho letto l’informativa privacy.",
       "consensoTestoLink": "informativa privacy",
       "condizioni": "Il codice vale {codiceSconto.validitaGiorni} giorni, {codiceSconto.condizioni}. Mostralo a Cristina quando arrivi.",
       "pulsante": "Ricevi il codice",
       "trappola": "Lascia vuoto",
       "risultatoTitolo": "Ecco il tuo codice",
       "risultatoValidita": "Valido fino al [data]. Fai uno screenshot o mostralo dal telefono quando arrivi.",
-      "risultatoEmail": "Te l'abbiamo mandato anche via email.",
+      "risultatoEmail": "Te l’abbiamo mandato anche via email.",
       "copia": "Copia il codice",
       "copiato": "Codice copiato",
       "tornaAlSito": "Torna al sito",
       "paginaErroreTitolo": "Il codice non è stato generato",
       "tornaAlModulo": "Torna al modulo",
       "errori": {
-        "email": "Controlla l'indirizzo email.",
+        "email": "Controlla l’indirizzo email.",
         "consenso": "Per ricevere il codice serve il consenso.",
         "generico": "Qualcosa non ha funzionato. Riprova tra poco o scrivici su WhatsApp."
       },
@@ -110,7 +110,7 @@
       "indirizzo": "{indirizzo.completo}",
       "orari": "{orari.giorni}, dalle {orari.apertura} alle {orari.chiusura}. Solo su appuntamento.",
       "pulsanteMaps": "Apri in Google Maps",
-      "altFoto": "L'ingresso del centro {nome} in {indirizzo.via}"
+      "altFoto": "L’ingresso del centro {nome} in {indirizzo.via}"
     },
     "listino": {
       "occhiello": "Prezzi",
@@ -175,7 +175,7 @@
       "title": "Informativa privacy · {nome}",
       "description": "Come {nome} tratta i dati personali: richieste di appuntamento, codice sconto e promozioni via email, fornitori e diritti.",
       "h1": "Informativa privacy",
-      "intro": "Questa informativa spiega come trattiamo i dati personali di chi visita il sito, chiede un appuntamento o lascia l'email per ricevere il codice sconto (art. 13 del Regolamento UE 2016/679, «GDPR»).",
+      "intro": "Questa informativa spiega come trattiamo i dati personali di chi visita il sito, chiede un appuntamento o lascia l’email per ricevere il codice sconto (art. 13 del Regolamento UE 2016/679, «GDPR»).",
       "titolare": {
         "h2": "Titolare del trattamento",
         "etichette": {
@@ -192,19 +192,19 @@
           {
             "titolo": "Richieste di appuntamento per telefono e WhatsApp",
             "dati": "I dati che ci comunichi tu quando chiami o scrivi su WhatsApp, per esempio nome, numero di telefono e trattamento che ti interessa.",
-            "finalita": "Rispondere alla tua richiesta e gestire l'appuntamento.",
+            "finalita": "Rispondere alla tua richiesta e gestire l’appuntamento.",
             "base": "Misure precontrattuali adottate su tua richiesta (art. 6, par. 1, lett. b del GDPR).",
-            "conservazione": "Per il tempo necessario a gestire l'appuntamento.",
+            "conservazione": "Per il tempo necessario a gestire l’appuntamento.",
             "nota": "Se scrivi su WhatsApp, il messaggio passa dal servizio di WhatsApp Ireland Limited, che ha la sua informativa privacy.",
             "richiede": null
           },
           {
             "titolo": "Codice sconto e promozioni via email",
-            "dati": "Il tuo indirizzo email, data e ora dell'iscrizione, il testo del consenso che hai accettato con la sua versione, la pagina del sito da cui ti iscrivi e il codice sconto che ti viene assegnato.",
-            "finalita": "Generare il codice sconto del {codiceSconto.percentuale}% e mostrartelo; mandartelo anche via email, quando l'invio è attivo; inviarti via email le promozioni del centro, {codiceSconto.frequenzaPromo}.",
+            "dati": "Il tuo indirizzo email, data e ora dell’iscrizione, il testo del consenso che hai accettato con la sua versione, la pagina del sito da cui ti iscrivi e il codice sconto che ti viene assegnato.",
+            "finalita": "Generare il codice sconto del {codiceSconto.percentuale}% e mostrartelo; mandartelo anche via email, quando l’invio è attivo; inviarti via email le promozioni del centro, {codiceSconto.frequenzaPromo}.",
             "base": "Il tuo consenso (art. 6, par. 1, lett. a del GDPR). Puoi revocarlo quando vuoi: la revoca vale da quel momento in poi.",
-            "conservazione": "Fino alla revoca del consenso e comunque non oltre 24 mesi dall'ultima interazione.",
-            "nota": "Lasciare l'email è facoltativo: senza consenso non ricevi il codice, ma puoi prenotare come sempre. Le promozioni sono uguali per tutti: nessuna profilazione.",
+            "conservazione": "Fino alla revoca del consenso e comunque non oltre 24 mesi dall’ultima interazione.",
+            "nota": "Lasciare l’email è facoltativo: senza consenso non ricevi il codice, ma puoi prenotare come sempre. Le promozioni sono uguali per tutti: nessuna profilazione.",
             "richiede": null
           },
           {
@@ -218,9 +218,9 @@
           },
           {
             "titolo": "Marketing (pixel Meta e API Conversioni)",
-            "dati": "Dati di navigazione e azioni compiute sul sito, per esempio il tocco su «Chiama» o su «Scrivi su WhatsApp», con gli identificativi online salvati nei cookie. Con l'API Conversioni gli stessi eventi arrivano a Meta anche dal server del sito.",
+            "dati": "Dati di navigazione e azioni compiute sul sito, per esempio il tocco su «Chiama» o su «Scrivi su WhatsApp», con gli identificativi online salvati nei cookie. Con l’API Conversioni gli stessi eventi arrivano a Meta anche dal server del sito.",
             "finalita": "Misurare i risultati degli annunci su Facebook e Instagram.",
-            "base": "Il tuo consenso, dato nel banner dei cookie (art. 6, par. 1, lett. a del GDPR). Senza consenso né il pixel né l'API Conversioni ricevono i tuoi dati.",
+            "base": "Il tuo consenso, dato nel banner dei cookie (art. 6, par. 1, lett. a del GDPR). Senza consenso né il pixel né l’API Conversioni ricevono i tuoi dati.",
             "conservazione": "I cookie durano quanto indicato nella cookie policy; per i dati ricevuti valgono i tempi di conservazione di Meta.",
             "nota": null,
             "richiede": "metaPixelId"
@@ -238,19 +238,19 @@
           {
             "nome": "Netlify, Inc.",
             "sede": "Stati Uniti",
-            "ruolo": "ospita il sito e le funzioni che generano il codice sconto; come ogni server, registra per sicurezza alcuni dati tecnici delle visite, come l'indirizzo IP",
+            "ruolo": "ospita il sito e le funzioni che generano il codice sconto; come ogni server, registra per sicurezza alcuni dati tecnici delle visite, come l’indirizzo IP",
             "richiede": null
           },
           {
             "nome": "Supabase, Inc.",
             "sede": "Stati Uniti",
-            "ruolo": "custodisce le iscrizioni al codice sconto in un database che si trova nell'Unione europea",
+            "ruolo": "custodisce le iscrizioni al codice sconto in un database che si trova nell’Unione europea",
             "richiede": null
           },
           {
             "nome": "{integrazioni.servizioEmail.nome}",
             "sede": "{integrazioni.servizioEmail.sede}",
-            "ruolo": "per l'invio del codice sconto e delle promo",
+            "ruolo": "per l’invio del codice sconto e delle promo",
             "richiede": "servizioEmail"
           },
           {
@@ -262,11 +262,11 @@
           {
             "nome": "Meta Platforms Ireland Limited",
             "sede": "Irlanda",
-            "ruolo": "fornisce il pixel Meta e l'API Conversioni, con possibili trasferimenti a Meta Platforms, Inc. negli Stati Uniti",
+            "ruolo": "fornisce il pixel Meta e l’API Conversioni, con possibili trasferimenti a Meta Platforms, Inc. negli Stati Uniti",
             "richiede": "metaPixelId"
           }
         ],
-        "trasferimento": "Alcuni fornitori hanno sede negli Stati Uniti. In questi casi il trasferimento dei dati avviene con le garanzie previste dal GDPR: l'adesione del fornitore all'EU-US Data Privacy Framework oppure le clausole contrattuali standard approvate dalla Commissione europea.",
+        "trasferimento": "Alcuni fornitori hanno sede negli Stati Uniti. In questi casi il trasferimento dei dati avviene con le garanzie previste dal GDPR: l’adesione del fornitore all’EU-US Data Privacy Framework oppure le clausole contrattuali standard approvate dalla Commissione europea.",
         "altro": "Non vendiamo i tuoi dati e non li diffondiamo. Li comunichiamo alle autorità solo quando la legge lo richiede.",
         "inAttivazione": "in attivazione"
       },
@@ -354,7 +354,7 @@
           "categoria": "Marketing",
           "fornitore": "Meta",
           "durata": "3 mesi",
-          "finalita": "Conserva il riferimento all'annuncio Meta da cui arrivi, se arrivi da un annuncio.",
+          "finalita": "Conserva il riferimento all’annuncio Meta da cui arrivi, se arrivi da un annuncio.",
           "richiede": "metaPixelId"
         }
       ],
@@ -365,7 +365,7 @@
           "Puoi anche cancellare i cookie dalle impostazioni del browser."
         ]
       },
-      "linkPrivacy": "Leggi l'informativa privacy"
+      "linkPrivacy": "Leggi l’informativa privacy"
     }
   },
   "pagine": {
@@ -418,6 +418,7 @@
     "pedicure": "Ciao Cristina, vorrei prenotare un pedicure avanzato."
   },
   "legale": {
-    "aggiornamento": "2 novembre 2026"
+    "aggiornamento": "2 novembre 2026",
+    "verificata": false
   }
 }

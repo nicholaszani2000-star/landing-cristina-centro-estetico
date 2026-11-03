@@ -180,6 +180,9 @@ function testiNascosti(html) {
 const jsonLdDi = (html) => [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => m[1]);
 const pagina = (file) => readFileSync(join(DIST, file), "utf8");
 const normalizzaSpazi = (s) => s.replace(/\u00A0/g, " ");
+/** Il sito usa l’apostrofo tipografico (Step 9, rilettura); il brief lo scrive dritto: i testi attesi presi dal
+ *  brief passano di qui prima del confronto. */
+const tipografico = (s) => s.replace(/'/g, "’");
 const regexVietata = (voce) => {
   const radice = voce.endsWith("*");
   const corpo = (radice ? voce.slice(0, -1) : voce).replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "\\s+");
@@ -1088,7 +1091,7 @@ await controllo("dati non indicati: senza dettagli, macchinari e prodotti nessun
   const indicati = [centro.trattamenti.viso.macchinari, centro.trattamenti.viso.prodotti].filter(Boolean).join(", ");
   for (const [file] of PAGINE.filter(([, id]) => id)) {
     const riga = sezioneVisoDi(pagina(file)).match(/<p class="viso-cabina[^"]*">([\s\S]*?)<\/p>/)?.[1];
-    verifica(indicati ? decodifica(riga ?? "") === `In cabina usiamo: ${indicati}` : riga === undefined, `${file}: riga «In cabina usiamo» «${riga}»`);
+    verifica(indicati ? decodifica(riga ?? "") === `In cabina usiamo: ${indicati}.` : riga === undefined, `${file}: riga «In cabina usiamo» «${riga}»`);
   }
 });
 
@@ -1102,7 +1105,13 @@ await controllo("dettagli viso: ogni voce con una riga mostra la sua descrizione
         continue;
       }
       verifica(v.descrizioni.length > 0, `${file}: «${v.nome}» senza descrizione`);
-      for (const pezzo of [...v.descrizioni, ...v.fasi]) verifica(normalizzaSpazi(fonte).includes(normalizzaSpazi(pezzo)), `${file}: «${pezzo.slice(0, 50)}…» non viene dal dettaglio di «${v.nome}»`);
+      // In pagina la descrizione è un paragrafo a sé e comincia con la maiuscola; nel dettaglio segue i due punti.
+      const comeNelDettaglio = (pezzo) => pezzo.charAt(0).toLocaleLowerCase("it-IT") + pezzo.slice(1);
+      for (const pezzo of [...v.descrizioni, ...v.fasi]) {
+        const f = normalizzaSpazi(fonte);
+        verifica(f.includes(normalizzaSpazi(pezzo)) || f.includes(comeNelDettaglio(normalizzaSpazi(pezzo))), `${file}: «${pezzo.slice(0, 50)}…» non viene dal dettaglio di «${v.nome}»`);
+      }
+      verifica(/^\p{Lu}/u.test(v.descrizioni[0]), `${file}: la descrizione di «${v.nome}» comincia con la minuscola`);
       const frasi = v.descrizioni.join(" ").match(/[^.!?]+[.!?]+/g)?.length ?? 0;
       verifica(frasi <= (v.etichetta ? 3 : 2), `${file}: «${v.nome}» ha ${frasi} frasi`);
     }
@@ -1508,7 +1517,7 @@ await controllo("come prenotare: tre passi di §8 in un <ol>, «Chiama» e «Scr
     "Chiama o scrivi su WhatsApp al 352 060 1109.",
     "Scegli il giorno e l'ora: dal lunedì al sabato, dalle 08:00 alle 17:00.",
     "Vieni in Via Roma 2/A a Caronno Varesino: il tuo appuntamento è pronto.",
-  ];
+  ].map(tipografico);
   for (const [file, id] of PAGINE.filter(([, id]) => id)) {
     const sez = sezioneDi(pagina(file), "come-prenotare");
     const passi = [...(sez.match(/<ol class="passi">([\s\S]*?)<\/ol>/)?.[1] ?? "").matchAll(/<li[^>]*>([\s\S]*?)<\/li>/g)].map((m) => normalizzaSpazi(testoVisibile(m[1])));
@@ -1531,7 +1540,7 @@ await controllo("dove siamo: <address> con indirizzo e telefono, orari, link Map
     verifica(decodifica(maps[0][1]) === (centro.social.schedaGoogle ?? MAPPA_ATTESA), `${file}: link Maps «${decodifica(maps[0][1])}»`);
     verifica(/target="_blank"/.test(maps[0][0]) && /rel="noopener"/.test(maps[0][0]), `${file}: Maps senza nuova scheda`);
     verifica(sez.includes(">Apri in Google Maps</span>") && /pulsante-secondario/.test(maps[0][0]), `${file}: pulsante secondario «Apri in Google Maps»`);
-    verifica(sez.includes('alt="L&#39;ingresso del centro Migliore – Estetica Avanzata in Via Roma 2/A"') && /ingresso-\d+\.webp/.test(sez), `${file}: foto 02`);
+    verifica(sez.includes('alt="L’ingresso del centro Migliore – Estetica Avanzata in Via Roma 2/A"') && /ingresso-\d+\.webp/.test(sez), `${file}: foto 02`);
     verifica(JSON.parse(jsonLdDi(pagina(file))[0]).hasMap === (centro.social.schedaGoogle ?? MAPPA_ATTESA), `${file}: hasMap del JSON-LD`);
     verifica(!("sameAs" in JSON.parse(jsonLdDi(pagina(file))[0])) || [centro.social.instagram, centro.social.facebook].some(Boolean), `${file}: sameAs senza social indicati`);
   }
@@ -1776,10 +1785,10 @@ await controllo("informativa privacy: titolare con i dati di §2.1, trattamenti 
     verifica(dt.join() === "Dati,Finalità,Base giuridica,Conservazione", `scheda «${testoVisibile(b.match(/<h3>([\s\S]*?)<\/h3>/)?.[1] ?? "")}»: ${dt.join(", ")}`);
   }
   verifica(/art\. 6, par\. 1, lett\. b/.test(testo) && /art\. 6, par\. 1, lett\. a/.test(testo), "basi giuridiche (misure precontrattuali e consenso)");
-  verifica(testo.includes("non oltre 24 mesi dall'ultima interazione"), "conservazione delle iscrizioni: 24 mesi");
+  verifica(testo.includes(tipografico("non oltre 24 mesi dall'ultima interazione")), "conservazione delle iscrizioni: 24 mesi");
   verifica(testo.includes("Oggi il sito non usa strumenti di statistica né di marketing"), "manca la frase sui tracciamenti spenti");
   verifica(/Netlify, Inc\. \(Stati Uniti\)/.test(testo) && /Supabase, Inc\. \(Stati Uniti\)/.test(testo), "fornitori Netlify e Supabase");
-  verifica(testo.includes("Brevo (Francia), per l'invio del codice sconto e delle promo, in attivazione."), "manca «Brevo (Francia), per l'invio del codice sconto e delle promo, in attivazione»");
+  verifica(testo.includes(tipografico("Brevo (Francia), per l'invio del codice sconto e delle promo, in attivazione.")), "manca «Brevo (Francia), per l'invio del codice sconto e delle promo, in attivazione»");
   verifica(!/Google Ireland|Meta Platforms/.test(testo), "Google o Meta citati come fornitori senza integrazione");
   verifica(/EU-US Data Privacy Framework/.test(testo) && /clausole contrattuali standard/.test(testo), "garanzie per gli Stati Uniti");
   for (const diritto of ["accesso", "rettifica", "cancellazione", "limitazione", "opposizione", "portabilità", "revocare il consenso", "Garante per la protezione dei dati personali"]) {
@@ -1790,22 +1799,22 @@ await controllo("informativa privacy: titolare con i dati di §2.1, trattamenti 
 });
 
 await controllo("pagine legali con GA4, pixel Meta e servizio email indicati (build in una copia): trattamenti c), fornitori Google, Meta e email, elenco dei cookie e «Preferenze cookie»; datiLegali() filtra per integrazione", () => {
-  // Funzione: voci filtrate per integrazione, «richiede» sconosciuto = errore, bozza spenta solo in produzione.
+  // Funzione: voci filtrate per integrazione, «richiede» sconosciuto = errore, bozza spenta solo con verificata true.
   const t = { privacy: { trattamenti: { voci: testi.comuni.privacy.trattamenti.voci }, fornitori: { voci: testi.comuni.privacy.fornitori.voci } }, cookie: { elenco: testi.comuni.cookie.elenco } };
   const conTutto = { ...centro, integrazioni: { ...centro.integrazioni, ga4Id: "G-PROVA123", metaPixelId: "123456789012345", servizioEmail: { nome: "Posta di prova", sede: "Paese di prova", inAttivazione: false } } };
   const senzaEmail = { ...centro, integrazioni: { ...centro.integrazioni, servizioEmail: null } };
   const aggiornamento = testi.legale.aggiornamento;
-  const pieno = build.datiLegali({ centro: conTutto, t, aggiornamento, contestoNetlify: "deploy-preview" });
-  const vuoto = build.datiLegali({ centro, t, aggiornamento, contestoNetlify: "production" });
+  const pieno = build.datiLegali({ centro: conTutto, t, aggiornamento });
+  const vuoto = build.datiLegali({ centro, t, aggiornamento, verificata: true });
   const nessuno = build.datiLegali({ centro: senzaEmail, t, aggiornamento });
   verifica(pieno.trattamenti.length === 4 && vuoto.trattamenti.length === 2, `trattamenti ${pieno.trattamenti.length}/${vuoto.trattamenti.length}`);
   verifica(pieno.fornitori.length === 5 && vuoto.fornitori.length === 3 && nessuno.fornitori.length === 2, `fornitori ${pieno.fornitori.length}/${vuoto.fornitori.length}/${nessuno.fornitori.length}`);
   // Qui i testi sono quelli grezzi di testi.json: il servizio email si riconosce dal ruolo, non dal nome (segnaposto).
   const email = vuoto.fornitori.filter((f) => f.inAttivazione);
-  verifica(email.length === 1 && email[0].ruolo.startsWith("per l'invio del codice sconto"), "servizio email senza «in attivazione»");
+  verifica(email.length === 1 && email[0].ruolo.startsWith(tipografico("per l'invio del codice sconto")), "servizio email senza «in attivazione»");
   verifica(pieno.fornitori.every((f) => !f.inAttivazione), "«in attivazione» con inAttivazione false");
   verifica(pieno.cookie.length === 5 && vuoto.cookie.length === 0, `cookie ${pieno.cookie.length}/${vuoto.cookie.length}`);
-  verifica(pieno.bozza === true && vuoto.bozza === false, "bozza: deve sparire solo con CONTEXT=production");
+  verifica(pieno.bozza === true && vuoto.bozza === false && nessuno.bozza === true, "bozza: deve sparire solo con verificata true");
   verifica(pieno.trattamenti.every((v) => !("richiede" in v)), "la chiave «richiede» arriva al template");
   let fermato = false;
   try {
@@ -1823,7 +1832,7 @@ await controllo("pagine legali con GA4, pixel Meta e servizio email indicati (bu
     verifica(r.status === 0, `build con integrazioni fallita: ${r.stderr || r.stdout}`);
     const privacy = normalizzaSpazi(testoVisibile(readFileSync(join(tmp, "dist", "privacy", "index.html"), "utf8")));
     const cookie = readFileSync(join(tmp, "dist", "cookie", "index.html"), "utf8");
-    for (const atteso of ["Statistiche (Google Analytics 4)", "Marketing (pixel Meta e API Conversioni)", "Google Ireland Limited (Irlanda)", "Meta Platforms Ireland Limited (Irlanda)", "Posta di prova (Paese di prova), per l'invio del codice sconto e delle promo."]) {
+    for (const atteso of ["Statistiche (Google Analytics 4)", "Marketing (pixel Meta e API Conversioni)", "Google Ireland Limited (Irlanda)", "Meta Platforms Ireland Limited (Irlanda)", tipografico("Posta di prova (Paese di prova), per l'invio del codice sconto e delle promo.")]) {
       verifica(privacy.includes(atteso), `privacy con integrazioni: manca «${atteso}»`);
     }
     verifica(!privacy.includes("in attivazione"), "privacy con il servizio email attivo: c'è ancora «in attivazione»");
@@ -1840,18 +1849,26 @@ await controllo("pagine legali con GA4, pixel Meta e servizio email indicati (bu
   verifica(testoVisibile(oggi).includes("Oggi il sito non usa cookie") && !/legale-cookie-nome/.test(oggi), "cookie policy di oggi: deve dire che il sito non usa cookie");
 });
 
-await controllo("riquadro «Bozza»: in cima a privacy e cookie nell'anteprima e nei Deploy Preview, mai con CONTEXT=production (build ripetuta)", () => {
+await controllo("riquadro «Bozza»: in cima a privacy e cookie in ogni contesto, produzione compresa, finché legale.verificata non è true; con true sparisce (build ripetuta)", () => {
   const testoBozza = testi.comuni.legali.bozza;
-  const build2 = (contesto) => {
+  verifica(testi.legale.verificata === false, "testi.json › legale.verificata deve restare false finché la titolare non scrive «privacy verificata»");
+  const build2 = (contesto, verificata) => {
     const tmp = mkdtempSync(join(tmpdir(), "migliore-bozza-"));
-    const r = spawnSync(process.execPath, ["build.mjs", "--dist", tmp], { cwd: RADICE, encoding: "utf8", env: { ...process.env, URL: "", CONTEXT: contesto } });
-    verifica(r.status === 0, `build con CONTEXT=${contesto} fallita: ${r.stderr || r.stdout}`);
-    const pagine = Object.fromEntries(elenca(tmp, (p) => p.endsWith(".html")).map((f) => [relative(tmp, f).split(sep).join("/"), readFileSync(f, "utf8")]));
-    rmSync(tmp, { recursive: true, force: true });
-    return pagine;
+    try {
+      for (const voce of ["build.mjs", "content", "src"]) cpSync(join(RADICE, voce), join(tmp, voce), { recursive: true });
+      const copia = JSON.parse(readFileSync(join(tmp, "content", "testi.json"), "utf8"));
+      copia.legale.verificata = verificata;
+      writeFileSync(join(tmp, "content", "testi.json"), JSON.stringify(copia, null, 2));
+      const r = spawnSync(process.execPath, ["build.mjs"], { cwd: tmp, encoding: "utf8", env: { ...process.env, URL: "", CONTEXT: contesto } });
+      verifica(r.status === 0, `build con CONTEXT=${contesto} fallita: ${r.stderr || r.stdout}`);
+      const dist = join(tmp, "dist");
+      return Object.fromEntries(elenca(dist, (p) => p.endsWith(".html")).map((f) => [relative(dist, f).split(sep).join("/"), readFileSync(f, "utf8")]));
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
   };
-  for (const contesto of ["", "deploy-preview", "branch-deploy"]) {
-    const pagine = build2(contesto);
+  for (const contesto of ["", "deploy-preview", "branch-deploy", "production"]) {
+    const pagine = build2(contesto, false);
     for (const [file, html] of Object.entries(pagine)) {
       const legale = PAGINE_LEGALI.some(([f]) => f === file);
       const presente = html.includes('class="legale-bozza"') && testoVisibile(html).includes(testoBozza);
@@ -1859,11 +1876,11 @@ await controllo("riquadro «Bozza»: in cima a privacy e cookie nell'anteprima e
       if (legale) verifica(html.indexOf('class="legale-bozza"') < html.indexOf("<h1"), `CONTEXT=«${contesto}»: ${file}: il riquadro non è in cima`);
     }
   }
-  const produzione = build2("production");
-  for (const [file, html] of Object.entries(produzione)) {
-    verifica(!html.includes("legale-bozza") && !testoVisibile(html).includes(testoBozza), `CONTEXT=production: ${file} con riquadro «Bozza»`);
+  const verificate = build2("production", true);
+  for (const [file, html] of Object.entries(verificate)) {
+    verifica(!html.includes("legale-bozza") && !testoVisibile(html).includes(testoBozza), `privacy verificata: ${file} con riquadro «Bozza»`);
   }
-  verifica(Object.keys(produzione).includes("privacy/index.html") && Object.keys(produzione).includes("cookie/index.html"), "CONTEXT=production: pagine legali mancanti");
+  verifica(Object.keys(verificate).includes("privacy/index.html") && Object.keys(verificate).includes("cookie/index.html"), "privacy verificata: pagine legali mancanti");
 });
 
 await controllo("nessun codice fiscale e nessun indirizzo diverso da §2.1 in nessuna pagina (testo, alt, meta, JSON-LD)", () => {
@@ -1916,12 +1933,12 @@ await controllo("codice sconto anche via email (§2.4): privacy, brief e testi d
   const brief = leggi("CLAUDE.md");
   verifica(brief.includes("Quando Brevo è attivo (Step 9) arriva anche via email, nello stesso momento, così la cliente non lo perde; fino ad allora solo a schermo."), "CLAUDE.md §2.4 senza la regola sull'email del codice");
   verifica(brief.includes("+ solo se l'email è partita davvero: «Te l'abbiamo mandato anche via email.»"), "CLAUDE.md §8 senza la riga del risultato via email");
-  verifica(testi.comuni.codiceSconto.risultatoEmail === "Te l'abbiamo mandato anche via email.", "testi.json: codiceSconto.risultatoEmail diverso da §8");
+  verifica(testi.comuni.codiceSconto.risultatoEmail === tipografico("Te l'abbiamo mandato anche via email."), "testi.json: codiceSconto.risultatoEmail diverso da §8");
   const privacy = normalizzaSpazi(testoVisibile(pagina("privacy/index.html")));
-  verifica(privacy.includes("mandartelo anche via email, quando l'invio è attivo"), "privacy: la finalità b) non dice che il codice arriva via email quando l'invio è attivo");
+  verifica(privacy.includes(tipografico("mandartelo anche via email, quando l'invio è attivo")), "privacy: la finalità b) non dice che il codice arriva via email quando l'invio è attivo");
   const email = centro.integrazioni.servizioEmail;
   verifica(email?.nome === "Brevo" && email.sede === "Francia", "centro.json: servizio email diverso da Brevo (Francia)");
-  const riga = `${email.nome} (${email.sede}), per l'invio del codice sconto e delle promo${email.inAttivazione ? ", in attivazione" : ""}.`;
+  const riga = tipografico(`${email.nome} (${email.sede}), per l'invio del codice sconto e delle promo${email.inAttivazione ? ", in attivazione" : ""}.`);
   verifica(privacy.includes(riga), `privacy: manca «${riga}»`);
 });
 
@@ -2506,6 +2523,181 @@ await controllo("pulizia dei dati (§10, privacy): pulisci_iscritti() cancella l
     /select cron\.schedule\('pulizia-iscritti', '\d+ \d+ \* \* \*', \$\$select public\.pulisci_iscritti\(\)\$\$\);/,
   ]) verifica(re.test(sql), `manca: ${re.source.slice(0, 60)}`);
   verifica(testi.comuni.privacy.trattamenti.voci[1].conservazione.includes("24 mesi"), "la privacy non dice più 24 mesi");
+});
+
+await controllo("CSS minificato in dist/ (Lighthouse «unminified-css») senza cambiarne il significato: per ogni file il browser legge le stesse regole dal sorgente e dal minificato; casi difficili (.a :focus, stringhe, commenti con apostrofi, calc)", async () => {
+  const { browser } = await browserCondiviso();
+  const pg = await browser.newPage();
+  const regole = (testo) =>
+    pg.evaluate((t) => {
+      const foglio = new CSSStyleSheet();
+      foglio.replaceSync(t);
+      // Le custom property (--x: a, b) e le condizioni di @supports conservano gli spazi come sono scritti:
+      // «a, b» e «a,b», «(x: y)» e «(x:y)» valgono uguale, quindi si confrontano senza spazi dopo virgole e due
+      // punti. Tutto il resto il browser lo riscrive da sé in forma canonica.
+      return [...foglio.cssRules].map((r) => r.cssText.replace(/([,:])\s+/g, "$1"));
+    }, testo);
+  try {
+    for (const nome of ["tokens.css", "base.css", "sezioni.css"]) {
+      const sorgente = leggi(`src/css/${nome}`);
+      const corto = build.minificaCss(sorgente);
+      const [a, b] = [await regole(sorgente), await regole(corto)];
+      verifica(a.length > 0 && JSON.stringify(a) === JSON.stringify(b), `${nome}: regole diverse dopo la minificazione (${a.length} → ${b.length})`);
+      verifica(corto.length < sorgente.length * 0.85, `${nome}: minificato solo del ${Math.round(100 - (corto.length / sorgente.length) * 100)}%`);
+      const pubblicato = readFileSync(join(DIST, "css", nome), "utf8");
+      verifica(!pubblicato.includes("\n") && !pubblicato.includes("/*"), `dist/css/${nome}: non è minificato`);
+    }
+    const difficile = `/* l'header: niente */ .a :focus , .b>.c { width : calc( 100% - 2rem ) ; content : "a  b ; c" ; } @media (min-width: 768px) { .d { grid-template-areas: "x y" 'z w'; } }`;
+    const corto = build.minificaCss(difficile);
+    verifica(corto.includes(".a :focus,") && corto.includes('"a  b ; c"') && corto.includes("calc( 100% - 2rem )") && !corto.includes("header"), `caso difficile: ${corto}`);
+    verifica(JSON.stringify(await regole(difficile)) === JSON.stringify(await regole(corto)), `caso difficile: regole diverse (${corto})`);
+  } finally {
+    await pg.close();
+  }
+});
+
+await controllo("tipografia (rilettura dello Step 9): in pagina, alt e meta solo apostrofi ’ e virgolette «» o “”, mai ' o \" dritti; nei testi nessuno spazio doppio, nessuno spazio prima di , . ; : ! ? e nessuno spazio a inizio o fine", () => {
+  const problemi = [];
+  for (const file of elenca(DIST, (p) => p.endsWith(".html"))) {
+    const html = readFileSync(file, "utf8").replace(/<script\b[\s\S]*?<\/script>/gi, " ");
+    const attributi = [...html.matchAll(/\s(?:alt|content|aria-label|title|placeholder)="([^"]*)"/g)].map((m) => decodifica(m[1])).filter((v) => !/^(https?:|\/|#|width=|[\d.]+$)/.test(v));
+    const titolo = decodifica(html.match(/<title>([^<]*)<\/title>/)?.[1] ?? "");
+    for (const testo of [testoVisibile(html), titolo, ...attributi]) {
+      if (/'/.test(testo)) problemi.push(`${rel(file)}: apostrofo dritto in «${testo.match(/.{0,30}'.{0,30}/)[0]}»`);
+      if (/"/.test(testo)) problemi.push(`${rel(file)}: virgolette dritte in «${testo.match(/.{0,30}".{0,30}/)[0]}»`);
+    }
+  }
+  const stringhe = [];
+  const raccogli = (o, percorso) => {
+    if (typeof o === "string") stringhe.push([percorso, o]);
+    else if (o && typeof o === "object") for (const [k, v] of Object.entries(o)) if (!k.startsWith("_")) raccogli(v, `${percorso}.${k}`);
+  };
+  raccogli(testi, "testi");
+  raccogli(json("content/listino.json"), "listino");
+  for (const [percorso, s] of stringhe) {
+    if (/ {2}/.test(s)) problemi.push(`${percorso}: spazio doppio`);
+    if (/ [,.;:!?](?!\d)/.test(s)) problemi.push(`${percorso}: spazio prima della punteggiatura in «${s.match(/.{0,20} [,.;:!?].{0,10}/)[0]}»`);
+    if (s !== s.trim()) problemi.push(`${percorso}: spazio a inizio o fine`);
+    if (/'/.test(s)) problemi.push(`${percorso}: apostrofo dritto`);
+  }
+  verifica(!problemi.length, problemi.slice(0, 8).join(" · "));
+});
+
+await controllo("link (Step 9): ogni link e risorsa interna di ogni pagina risponde 200 dal server di anteprima, ogni #ancora esiste; i link esterni sono solo tel:, wa.me, Maps, mailto e Garante; un indirizzo inesistente risponde 404 con la pagina 404; /viso senza barra porta a /viso/", async () => {
+  const { base } = await browserCondiviso();
+  const problemi = [];
+  const controllati = new Map();
+  const idDi = (html) => new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
+  const dominio = new URL(INDIRIZZO_PRINCIPALE).host;
+  for (const percorso of percorsiDist().filter((p) => !p.startsWith("/pagina-che-non-esiste"))) {
+    const risposta = await fetch(base + percorso);
+    const html = await risposta.text();
+    if (risposta.status !== 200) problemi.push(`${percorso}: ${risposta.status}`);
+    const riferimenti = [
+      ...[...html.matchAll(/\s(?:href|src|action)="([^"]+)"/g)].map((m) => decodifica(m[1])),
+      ...[...html.matchAll(/\ssrcset="([^"]+)"/g)].flatMap((m) => m[1].split(",").map((p) => p.trim().split(/\s+/)[0])),
+      ...[...html.matchAll(/<meta property="og:image" content="([^"]+)"/g)].map((m) => m[1]),
+    ];
+    for (const r of riferimenti) {
+      if (r.startsWith("#")) {
+        if (r.length > 1 && !idDi(html).has(r.slice(1))) problemi.push(`${percorso}: ancora ${r} inesistente`);
+        continue;
+      }
+      if (/^(tel:|mailto:|https:\/\/wa\.me\/|https:\/\/www\.google\.com\/maps\/|https:\/\/www\.garanteprivacy\.it)/.test(r)) {
+        if (r.startsWith("tel:") && r !== `tel:${centro.telefonoE164}`) problemi.push(`${percorso}: ${r}`);
+        if (r.startsWith("mailto:") && r !== `mailto:${centro.email}`) problemi.push(`${percorso}: ${r}`);
+        if (r.startsWith("https://wa.me/") && !Object.values(testi.whatsapp).some((t) => r === `https://wa.me/${centro.whatsappNumero}?text=${encodeURIComponent(t)}`)) problemi.push(`${percorso}: ${r}`);
+        if (r.startsWith("https://www.google.com/maps/")) {
+          const q = new URL(r).searchParams;
+          if (!r.startsWith("https://www.google.com/maps/search/?api=1&query=") || !q.get("query").startsWith(`${centro.indirizzo.via}, ${centro.indirizzo.cap} ${centro.indirizzo.comune}`)) problemi.push(`${percorso}: Maps ${r}`);
+        }
+        continue;
+      }
+      let url;
+      try {
+        url = new URL(r, base + percorso);
+      } catch {
+        problemi.push(`${percorso}: link non valido ${r}`);
+        continue;
+      }
+      if (url.host === dominio) url = new URL(url.pathname + url.search, base); // og:image assoluto sul dominio
+      else if (url.origin !== new URL(base).origin) {
+        problemi.push(`${percorso}: link esterno non previsto ${r}`);
+        continue;
+      }
+      const chiave = url.pathname + url.search;
+      if (!controllati.has(chiave)) {
+        const metodo = url.pathname === "/api/codice-sconto" ? "OPTIONS" : "GET";
+        controllati.set(chiave, metodo === "GET" ? (await fetch(url)).status : 405);
+      }
+      if (controllati.get(chiave) !== 200 && url.pathname !== "/api/codice-sconto") problemi.push(`${percorso}: ${chiave} → ${controllati.get(chiave)}`);
+      if (url.hash && url.hash.length > 1) {
+        const destinazione = url.pathname === percorso ? html : await (await fetch(new URL(url.pathname, base))).text();
+        if (!idDi(destinazione).has(url.hash.slice(1))) problemi.push(`${percorso}: ancora ${url.pathname}${url.hash} inesistente`);
+      }
+    }
+  }
+  const nessuna = await fetch(base + "/pagina-che-non-esiste/");
+  const testo404 = await nessuna.text();
+  if (nessuna.status !== 404 || !testo404.includes("Questa pagina non esiste.")) problemi.push(`indirizzo inesistente: ${nessuna.status}`);
+  const senzaBarra = await fetch(base + "/viso", { redirect: "manual" });
+  if (senzaBarra.status !== 301 || senzaBarra.headers.get("location") !== "/viso/") problemi.push(`/viso: ${senzaBarra.status} ${senzaBarra.headers.get("location")}`);
+  verifica(controllati.size > 20, `solo ${controllati.size} indirizzi interni controllati`);
+  verifica(!problemi.length, problemi.slice(0, 8).join(" · "));
+});
+
+await controllo("390, 768, 1024 e 1440 px su tutte le pagine (Step 9): nessuno scroll orizzontale, nessun elemento fuori dallo schermo, nessun testo tagliato; ogni foto sfumata (maschera sull'immagine o sulla sua cornice)", async () => {
+  const { browser, base } = await browserCondiviso();
+  const problemi = [];
+  for (const larghezza of [390, 768, 1024, 1440]) {
+    const contesto = await browser.newContext({ viewport: { width: larghezza, height: 900 } });
+    const pg = await contesto.newPage();
+    for (const percorso of percorsiDist()) {
+      await pg.goto(base + percorso, { waitUntil: "load" });
+      const esito = await pg.evaluate(() => {
+        const fuori = [];
+        // Testo nascosto per i lettori di schermo (1 × 1 px con clip): non è testo tagliato.
+        const soloLettori = (el) => el.getBoundingClientRect().width <= 1 && getComputedStyle(el).clip !== "auto";
+        for (const el of document.querySelectorAll("body *")) {
+          const s = getComputedStyle(el);
+          if (s.display === "none" || s.visibility === "hidden" || el.closest("[hidden], template") || soloLettori(el)) continue;
+          if (el.closest(".trappola")) continue; // campo trappola del codice sconto: fuori schermo apposta (Step 8)
+          const b = el.getBoundingClientRect();
+          if (b.width && (b.right > innerWidth + 1 || b.left < -1)) fuori.push(`${el.tagName.toLowerCase()}.${el.classList[0] ?? ""} fuori schermo (${Math.round(b.left)}–${Math.round(b.right)})`);
+          if (/hidden|clip/.test(`${s.overflowX} ${s.overflowY}`) && el.scrollWidth > el.clientWidth + 1 && el.textContent.trim() && !el.querySelector("img")) fuori.push(`${el.tagName.toLowerCase()}.${el.classList[0] ?? ""} testo tagliato`);
+        }
+        const mascherata = (img) => {
+          for (let el = img; el && el !== document.body; el = el.parentElement) {
+            const s = getComputedStyle(el);
+            if ((s.maskImage && s.maskImage !== "none") || (s.webkitMaskImage && s.webkitMaskImage !== "none")) return true;
+          }
+          return false;
+        };
+        const senza = [...document.querySelectorAll("main picture img")].filter((i) => !mascherata(i)).map((i) => i.getAttribute("alt"));
+        return { scroll: document.documentElement.scrollWidth - innerWidth, fuori, senza };
+      });
+      if (esito.scroll > 0) problemi.push(`${percorso} ${larghezza} px: scroll orizzontale di ${esito.scroll} px`);
+      for (const f of esito.fuori.slice(0, 3)) problemi.push(`${percorso} ${larghezza} px: ${f}`);
+      for (const alt of esito.senza) problemi.push(`${percorso} ${larghezza} px: foto non sfumata «${alt}»`);
+    }
+    await contesto.close();
+  }
+  verifica(!problemi.length, problemi.slice(0, 8).join(" · "));
+});
+
+await controllo("foto verticali anche a 800 px (Lighthouse «uses-responsive-images»): a 390 px con densità 2 e a 412 px con densità 1,75 il browser sceglie la 800, non la 941", async () => {
+  for (const nome of ["cristina-bancone", "cabina-viso", "cabina-lettino", "postazione-pedicure"]) {
+    verifica(manifesto.immagini[nome].larghezze.join() === "480,720,800,941", `${nome}: larghezze ${manifesto.immagini[nome].larghezze.join("/")}`);
+  }
+  const { browser, base } = await browserCondiviso();
+  for (const [larghezza, densita] of [[390, 2], [412, 1.75]]) {
+    const contesto = await browser.newContext({ viewport: { width: larghezza, height: 844 }, deviceScaleFactor: densita });
+    const pg = await contesto.newPage();
+    await pg.goto(base + "/", { waitUntil: "load" });
+    const scelta = await pg.evaluate(() => document.querySelector(".apertura-foto img").currentSrc);
+    verifica(/cristina-bancone-800\.avif/.test(scelta), `${larghezza} px × ${densita}: scelta ${scelta}`);
+    await contesto.close();
+  }
 });
 
 await controllo("pesi: main.js ≤ 3 KB, JS ≤ 12 KB e CSS ≤ 20 KB compressi, font ≤ 100 KB", () => {

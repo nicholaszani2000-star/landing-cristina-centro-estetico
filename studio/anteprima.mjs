@@ -15,6 +15,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { dirname, extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { brotliCompressSync } from "node:zlib";
 
 const STUDIO = dirname(fileURLToPath(import.meta.url));
 const RADICE = resolve(STUDIO, "..");
@@ -33,6 +34,7 @@ const LEGALI = [
 const MISURE = [
   [390, 844],
   [768, 1024],
+  [1024, 768],
   [1440, 900],
 ];
 const TIPI = {
@@ -88,14 +90,34 @@ function fileDi(percorso, cartella = DIST) {
 /** Header di netlify.toml per «/*» (sicurezza e Content-Security-Policy), da applicare ai file statici come fa
  *  Netlify. upgrade-insecure-requests si toglie solo qui: l'anteprima è in http, il sito vero in https. */
 export function intestazioniNetlify() {
-  const toml = readFileSync(join(RADICE, "netlify.toml"), "utf8");
-  const blocco = toml.split("[[headers]]").find((b) => /^\s*for\s*=\s*"\/\*"\s*$/m.test(b));
-  if (!blocco) return {};
-  const valori = [...blocco.matchAll(/^\s*([A-Za-z-]+)\s*=\s*"([^"]*)"\s*$/gm)].filter(([, k]) => k !== "for");
-  return Object.fromEntries(
-    valori.map(([, k, v]) => [k, k === "Content-Security-Policy" ? v.replace(/;?\s*upgrade-insecure-requests/, "") : v]),
-  );
+  return regoleNetlify().find((r) => r.per === "/*")?.valori ?? {};
 }
+
+/** Tutti i blocchi [[headers]] di netlify.toml: { per: "/fonts/*", valori: { … } }. */
+export function regoleNetlify() {
+  const toml = readFileSync(join(RADICE, "netlify.toml"), "utf8");
+  return toml
+    .split("[[headers]]")
+    .slice(1)
+    .map((blocco) => {
+      const per = blocco.match(/^\s*for\s*=\s*"([^"]+)"\s*$/m)?.[1];
+      const valori = [...blocco.matchAll(/^\s*([A-Za-z-]+)\s*=\s*"([^"]*)"\s*$/gm)].filter(([, k]) => k !== "for");
+      return {
+        per,
+        valori: Object.fromEntries(
+          valori.map(([, k, v]) => [k, k === "Content-Security-Policy" ? v.replace(/;?\s*upgrade-insecure-requests/, "") : v]),
+        ),
+      };
+    })
+    .filter((r) => r.per);
+}
+
+/** Header di netlify.toml che valgono per un percorso («/*» e i prefissi come «/fonts/*»), in ordine. */
+function intestazioniPer(percorso, regole) {
+  const valide = regole.filter((r) => (r.per.endsWith("*") ? percorso.startsWith(r.per.slice(0, -1)) : percorso === r.per));
+  return Object.assign({}, ...valide.map((r) => r.valori));
+}
+const COMPRIMIBILI = new Set([".html", ".css", ".js", ".mjs", ".json", ".xml", ".txt", ".svg"]);
 
 // ---------------------------------------------------------------- funzione del codice sconto
 
@@ -130,7 +152,9 @@ async function rispondiCodice(richiesta, risposta) {
 }
 const esisteFile = (p) => p && existsSync(p) && statSync(p).isFile();
 
-async function rispondi(richiesta, risposta, cartella = DIST, intestazioni = {}) {
+/** produzione = true imita Netlify anche su cache e compressione: header di tutti i blocchi di netlify.toml
+ *  (Cache-Control compreso) e brotli per i file di testo, se il browser lo accetta. Serve a Lighthouse. */
+async function rispondi(richiesta, risposta, cartella = DIST, intestazioni = {}, produzione = false) {
   const url = new URL(richiesta.url, "http://anteprima.local");
   let percorso;
   try {
@@ -173,20 +197,36 @@ async function rispondi(richiesta, risposta, cartella = DIST, intestazioni = {})
       }
     }
   }
-  const corpo = await readFile(file);
+  let corpo = await readFile(file);
+  const estensione = extname(file).toLowerCase();
+  const extra = produzione
+    ? { "Cache-Control": "public, max-age=0, must-revalidate", ...intestazioniPer(percorso, regoleProduzione) }
+    : { "Cache-Control": "no-store" };
+  if (produzione && COMPRIMIBILI.has(estensione) && /\bbr\b/.test(richiesta.headers["accept-encoding"] ?? "")) {
+    // Compresso una volta sola per file, come la cache di Netlify: senza, ogni richiesta pagherebbe la
+    // compressione brotli e Lighthouse misurerebbe un server più lento di quello vero.
+    const chiave = `${file}:${statSync(file).mtimeMs}`;
+    if (!compressi.has(chiave)) compressi.set(chiave, brotliCompressSync(corpo));
+    corpo = compressi.get(chiave);
+    extra["Content-Encoding"] = "br";
+    extra.Vary = "Accept-Encoding";
+  }
   risposta.writeHead(stato, {
     ...intestazioni,
-    "Content-Type": TIPI[extname(file).toLowerCase()] ?? "application/octet-stream",
-    "Cache-Control": "no-store",
+    "Content-Type": TIPI[estensione] ?? "application/octet-stream",
     "X-Content-Type-Options": "nosniff",
+    ...extra,
   });
   risposta.end(richiesta.method === "HEAD" ? undefined : corpo);
 }
+let regoleProduzione = [];
+const compressi = new Map();
 
-export function avviaServer(porta, { cartella = DIST, intestazioni = intestazioniNetlify() } = {}) {
+export function avviaServer(porta, { cartella = DIST, intestazioni = intestazioniNetlify(), produzione = false } = {}) {
+  if (produzione) regoleProduzione = regoleNetlify();
   return new Promise((ok, ko) => {
     const server = createServer((req, res) => {
-      rispondi(req, res, resolve(cartella), intestazioni).catch((e) => {
+      rispondi(req, res, resolve(cartella), intestazioni, produzione).catch((e) => {
         console.error(e);
         if (!res.headersSent) res.writeHead(500);
         res.end();

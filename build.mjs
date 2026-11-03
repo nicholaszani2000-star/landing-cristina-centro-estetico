@@ -155,7 +155,9 @@ export function estraiFasi(testo) {
 }
 
 /** Voci della sezione viso: nomi presi da listino.json, la voce in evidenza per prima, descrizioni dai
- *  dettagli (solo per nomi che coincidono con il listino), fasi della voce in evidenza in elenco. */
+ *  dettagli (solo per nomi che coincidono con il listino), fasi della voce in evidenza in elenco. Nel brief la
+ *  descrizione segue i due punti («Nome: descrizione»), quindi è minuscola; in pagina sta sotto il titolo, in
+ *  un paragrafo a sé, e comincia con la maiuscola (le fasi restano minuscole: continuano «in tre fasi:»). */
 export function sezioneViso({ listino, centro, dettagli }) {
   const dove = "content/centro.json › trattamenti.viso";
   const avvisi = [];
@@ -178,7 +180,7 @@ export function sezioneViso({ listino, centro, dettagli }) {
     return {
       nome: delListino.get(nome).nome,
       inEvidenza,
-      descrizione: fasi ? fasi.prima : breve,
+      descrizione: fasi ? maiuscola(fasi.prima) : breve && maiuscola(breve),
       fasi: fasi ? fasi.fasi : null,
       seguito: fasi ? fasi.dopo : null,
     };
@@ -281,10 +283,11 @@ export function dataIso(testo, dove = "content/testi.json › legale.aggiornamen
 
 /** Dati delle pagine privacy e cookie. Le voci di testi.json con «richiede» compaiono solo se quell'integrazione
  *  di centro.json è indicata («tracciamenti» = GA4 o pixel Meta); «inAttivazione» dell'integrazione aggiunge
- *  «in attivazione». Il riquadro «Bozza» compare sempre tranne quando Netlify costruisce la produzione
- *  (CONTEXT=production). La data di ultimo aggiornamento è fissa (testi.json › legale.aggiornamento, §10):
- *  non dipende dal giorno della build. */
-export function datiLegali({ centro, t, aggiornamento, contestoNetlify = process.env.CONTEXT }) {
+ *  «in attivazione». Il riquadro «Bozza» compare in ogni contesto, produzione compresa, finché testi.json ›
+ *  legale.verificata non è true: si mette true solo quando la titolare scrive «privacy verificata» (Step 9).
+ *  La data di ultimo aggiornamento è fissa (testi.json › legale.aggiornamento, §10): non dipende dal giorno
+ *  della build. */
+export function datiLegali({ centro, t, aggiornamento, verificata = false }) {
   const integrazioni = centro.integrazioni ?? {};
   const tracciamenti = Boolean(integrazioni.ga4Id || integrazioni.metaPixelId);
   const attiva = (chiave, dove) => {
@@ -298,7 +301,7 @@ export function datiLegali({ centro, t, aggiornamento, contestoNetlify = process
       .filter((voce) => attiva(voce.richiede, dove))
       .map(({ richiede, ...resto }) => ({ ...resto, inAttivazione: Boolean(richiede && integrazioni[richiede]?.inAttivazione) }));
   return {
-    bozza: contestoNetlify !== "production",
+    bozza: verificata !== true,
     data: aggiornamento,
     dataIso: dataIso(aggiornamento),
     sede: centro.legale.sedeLegale ?? centro.indirizzo.completo,
@@ -622,6 +625,25 @@ async function elencaFile(cartella) {
 
 const hash8 = (contenuto) => createHash("sha256").update(contenuto).digest("hex").slice(0, 8);
 
+/** Minifica il CSS senza cambiarne il significato: toglie i commenti, comprime gli spazi e li toglie intorno a
+ *  { } ; , e dopo i due punti; toglie l'ultimo ; di ogni blocco. Le stringhe tra virgolette restano intatte
+ *  (data: URL, grid-template-areas, list-style-type). Gli spazi prima dei due punti e intorno a + - > ~ restano:
+ *  servono ai selettori discendenti (.a :focus) e a calc(). */
+export function minificaCss(css) {
+  const stringhe = [];
+  // Una sola passata da sinistra: un commento con un apostrofo non viene scambiato per una stringa.
+  const protetto = css.replace(/("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')|\/\*[\s\S]*?\*\//g, (_, stringa) =>
+    stringa ? `\u0000${stringhe.push(stringa) - 1}\u0000` : "",
+  );
+  const corto = protetto
+    .replace(/\s+/g, " ")
+    .replace(/\s*([{};,])\s*/g, "$1")
+    .replace(/:\s+/g, ":")
+    .replace(/;}/g, "}")
+    .trim();
+  return corto.replace(/\u0000(\d+)\u0000/g, (_, i) => stringhe[Number(i)]);
+}
+
 /** Copia src/{fonts,img,js,css} in dist/ e restituisce gli hash per URL ("/css/base.css" → "1a2b3c4d"). */
 async function copiaRisorse(dist, { escludi = [] } = {}) {
   const hash = new Map();
@@ -647,7 +669,7 @@ async function copiaRisorse(dist, { escludi = [] } = {}) {
       return url.startsWith("/fonts/") ? `url(${virgolette}${url}?v=${hash.get(url)}${virgolette})` : intero;
     });
     if (/@import/i.test(css)) errore(rel(file), "@import non ammesso");
-    await scrivi(file, css);
+    await scrivi(file, minificaCss(css));
   }
   return hash;
 }
@@ -768,7 +790,7 @@ async function main() {
     errore(MANIFESTO, `listino stampato a ${LARGHEZZA_STAMPATO} px in WebP mancante`);
   }
   const categorieListino = sezioneListino({ listino, t });
-  const legali = datiLegali({ centro, t, aggiornamento: testi.legale?.aggiornamento });
+  const legali = datiLegali({ centro, t, aggiornamento: testi.legale?.aggiornamento, verificata: testi.legale?.verificata });
   if (!og?.file || !existsSync(join(SRC, "img", og.file))) errore(MANIFESTO, "immagine di condivisione mancante");
   const condivisione = {
     ogImage: base ? `${base}/img/${og.file}` : `/img/${og.file}`,
@@ -904,7 +926,7 @@ async function main() {
   for (const avviso of avvisi) console.log(`  · ${avviso}`);
   console.log(
     `✔ build in ${Date.now() - inizio} ms → ${rel(dist) || dist}: ${[...generate, ...pagineLegali].join(", ")}, 404.html, robots.txt` +
-      `${base ? ", sitemap.xml" : ""} · listino ${voci} voci · riquadro «Bozza» ${legali.bozza ? "sì" : "no (CONTEXT=production)"}` +
+      `${base ? ", sitemap.xml" : ""} · listino ${voci} voci · riquadro «Bozza» ${legali.bozza ? "sì" : "no (privacy verificata)"}` +
       ` · banner cookie ${tracciamenti.attivo ? "sì" : "no (nessun ID di GA4 o Meta)"}`,
   );
 }
