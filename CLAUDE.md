@@ -192,7 +192,7 @@ Le voci viso della sezione viso (§6) sono 5: Pulizia viso base, Trattamento vis
 - GA4: non indicato (GA4 resta spento)
 - Pixel Meta: non indicato (il pixel resta spento)
 - Progetto Supabase: migliore-estetica (bkcpnkrnhjirmbwnrozp), regione eu-central-1 (Francoforte), con supabase/iscritti.sql applicato. SUPABASE_URL è su Netlify; finché la chiave SUPABASE_SECRET_KEY non è su Netlify il codice resta in modalità prova.
-- Netlify: progetto esteticamigliore (https://esteticamigliore.netlify.app), branch di produzione landing-migliore. Dominio https://esteticamigliore.it con HTTPS attivo; finché GitHub non è collegato si pubblica trascinando lo zip del repository (studio/pacchetto-netlify.mjs).
+- Netlify: progetto esteticamigliore (https://esteticamigliore.netlify.app), collegato a GitHub dal 4 novembre 2026 con branch di produzione landing-migliore: ogni push su landing-migliore va online da solo (per un commit che non deve pubblicare, «[skip netlify]» nel messaggio). Dominio https://esteticamigliore.it con HTTPS attivo. Lo zip di studio/pacchetto-netlify.mjs resta solo come ripiego.
 - Google Search Console: proprietà «Prefisso URL» https://esteticamigliore.it, verificata con il file HTML (content/centro.json › integrazioni.googleFileVerifica).
 - Servizio email: Brevo (Francia). La chiave BREVO_API_KEY va solo su Netlify, con ambito Functions.
 - Chiavi segrete (Supabase, API Conversioni Meta, servizio email): MAI in questo file, MAI nel repository, MAI nella chat. Vanno solo nelle variabili d'ambiente di Netlify, con ambito «Functions».
