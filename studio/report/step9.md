@@ -374,6 +374,33 @@ Da ora ogni push su `landing-migliore` va online da solo. CLAUDE.md §2.5 è agg
   - Risultato: 104/104.
 - **CSP**: ammette già i domini di GA4 e del pixel. Con Google Signals acceso GA4 userebbe altri domini (doubleclick): va lasciato spento.
 
+### Brevo collegato (6 novembre)
+
+- **Chiave**: `BREVO_API_KEY` su Netlify, segreta, solo in produzione. Mai nel repository; va sostituita perché è passata in chat.
+- **Mittente**: `esteticamigliore@gmail.com` (in chat era scritto «esteticasmigliore»: usato l'indirizzo del centro, da confermare).
+- **Email con il codice**: parte da Brevo appena l'iscrizione è salvata.
+- **Lista delle promo per nome**: `servizioEmail.listaPromo` è «Promo sito».
+  - La funzione cerca la lista per nome, la ricorda e, se manca, la crea nella prima cartella dei contatti.
+  - Se viene cancellata e ricreata, la ritrova; se viene cancellata e basta, la ricrea alla prima iscrizione.
+  - Serve perché la prima lista (ID 3) è stata cancellata per sbaglio: con l'ID fisso le iscrizioni non sarebbero più entrate in nessuna lista.
+- **Privacy**: Brevo non è più «in attivazione».
+- **Controlli**: un Brevo finto prova ricerca, memoria, più di 50 liste, creazione di lista e cartella, lista cancellata e ricreata, risposte 201/204/400/401 e rete giù. Risultato: 105/105.
+
+### Pixel Meta: diagnosi (6 novembre)
+
+La titolare segnala che GA4 misura, ma Meta propone ancora di copiare il codice del pixel.
+
+- **Verificato sul sito**:
+  - la build di produzione contiene il pixel `1682509193499996` nel banner;
+  - `consenso.js` carica il codice base ufficiale di Meta solo dopo «Accetta» o «Marketing»;
+  - la CSP ammette `connect.facebook.net` (script) e `www.facebook.com` (immagini e connessioni);
+  - il controllo sul sito vero conferma la richiesta a Meta dopo «Accetta».
+- **Non verificabile da qui**: il sito online e i server di Meta non sono raggiungibili da questa sessione. Il pixel non è nei portfoli visibili al connettore Meta (Easybagno, Soleil Bronzè, Cotton Wine Food), quindi non si leggono i suoi eventi.
+- **Perché Meta chiede il codice**: lo propone finché il pixel non riceve il primo evento, e il pixel parte solo dopo «Accetta».
+- **Perché GA4 sì e Meta no**: alcuni browser bloccano Meta e non GA4. Per esempio Firefox, che blocca i tracciatori dei social anche nella protezione standard, poi Brave, i blocchi pubblicità e i DNS che filtrano.
+- **Come sbloccare**: Chrome senza blocchi → Gestione eventi → pixel → Eventi di test → apri il sito → «Accetta» → `PageView`. In alternativa, l'estensione Meta Pixel Helper.
+- **Codice**: nessuna modifica. Il codice è quello di Meta, e cambiarlo a caso non risolverebbe un blocco del browser.
+
 ## 7. Dati mancanti o dubbi
 
 - **Branch di produzione**: CLAUDE.md §2.5 dice `landing-migliore`, il prompt dello Step 9 dice il branch principale (`main`).
