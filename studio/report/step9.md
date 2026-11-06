@@ -345,6 +345,21 @@ La titolare ha poi collegato il repository su Netlify, con branch di produzione 
 
 Da ora ogni push su `landing-migliore` va online da solo. CLAUDE.md §2.5 è aggiornato. La pull request n. 1 verso `main` non serve più per pubblicare.
 
+### Supabase collegato davvero (6 novembre)
+
+- **La chiave**: la titolare ha mandato in chat la chiave segreta di Supabase. Il brief chiede di non farlo mai: va sostituita, e lo trovi nell'elenco per andare live.
+- **Su Netlify**: `SUPABASE_SECRET_KEY` è una variabile segreta (valore mascherato), nel contesto `production`, con ambiti builds, functions e runtime. Sul piano Free l'ambito solo «functions» dà 403, e una segreta con l'ambito «all» dà 422.
+- **Verifica su Supabase** (via MCP):
+  - tabella `iscritti` con RLS attivo e 0 policy;
+  - `service_role` ha solo select, insert e update;
+  - `iscrivi_email` è eseguibile solo da `service_role`;
+  - job `pulizia-iscritti` attivo;
+  - 0 righe;
+  - advisor: solo l'avviso informativo voluto.
+- **La chiave publishable**: non serve, il browser non parla mai con Supabase.
+- **Quando si salva un'email**: solo quando la persona chiede il codice sconto spuntando la casella del consenso alle promo. I cookie non c'entrano: il sito non usa cookie e il banner non conosce l'email.
+- **Deploy**: questo commit ripubblica il sito, perché la funzione legga la chiave nuova.
+
 ## 7. Dati mancanti o dubbi
 
 - **Branch di produzione**: CLAUDE.md §2.5 dice `landing-migliore`, il prompt dello Step 9 dice il branch principale (`main`).
