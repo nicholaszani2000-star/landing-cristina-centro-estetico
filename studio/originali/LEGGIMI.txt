@@ -1,0 +1,65 @@
+PACCHETTO IMMAGINI · MIGLIORE – ESTETICA AVANZATA
+=================================================
+
+Cosa contiene
+- foto/          le 6 foto del centro, IDENTICHE agli originali ricevuti (solo rinominate)
+- logo/          il logo ufficiale ritagliato dallo screenshot ricevuto, senza payoff:
+                 versione trasparente, versione su sabbia #F4DBCA, farfalla per le icone
+- condivisione/  immagine 1200×630 per le anteprime dei link (logo + foto 01 su sabbia)
+
+Regole
+- Le foto non vanno ritoccate: niente filtri, niente correzioni di luce o colore,
+  niente ritagli dei file, niente ingrandimenti. Si fanno solo ridimensionamento
+  e conversione in AVIF e WebP. La sfumatura nel sabbia la fa il CSS della pagina.
+- Il logo trasparente è ottenuto togliendo il fondo sabbia (#F4DBCA) dallo screenshot,
+  senza ridisegnarlo. Va usato solo su fondi chiari (sabbia, sabbia chiara, bianco).
+- L'immagine di condivisione è l'unico file composto: contiene il logo e la foto 01
+  ridimensionata e inquadrata, senza ritocchi.
+
+Come caricarlo su GitHub
+1. Apri il repository su github.com.
+2. In alto a sinistra scegli il branch di lavoro (non main).
+3. Add file → Upload files → trascina migliore-immagini.zip → Commit changes.
+4. Incolla in Claude Code il prompt dello Step 2.
+
+Dove va ogni file, misure e impronta SHA-256
+
+condivisione/og-1200x630.jpg
+  1200×630 px · 86 KB · dove va: Anteprima dei link (og:image)
+  sha256 49d5c1cac9f4627dcd698980c6ca29827cdd16696dc7cbe066ab6830efc70c45
+
+foto/01-cristina-bancone.png
+  941×1672 px · 1845 KB · dove va: Apertura (hero) di tutte e tre le pagine
+  sha256 ff1d5e560a50a886bec30a78247e464ed2a80526eb5756b42cc65f5accf5123b
+
+foto/02-ingresso.png
+  1346×1168 px · 2432 KB · dove va: Sezione «Dove siamo e orari»
+  sha256 416f6a9109054263c6cc65ec78f90ed5ac8defd21725d9cdb90433afe4f1dd7c
+
+foto/03-cabina-viso.png
+  941×1672 px · 2854 KB · dove va: Sezione viso
+  sha256 b2343ea062c5b658540cde65fabe7ac79d31b5613f45f64a78fcaf4a74bd88af
+
+foto/04-cabina-lettino.png
+  941×1672 px · 3043 KB · dove va: Sezione «Chi sono»
+  sha256 1843922b8749b7cb62bdacb31c930210f2da37590c8f47a9e7c55aafacb42fcd
+
+foto/05-postazione-pedicure.png
+  941×1672 px · 2200 KB · dove va: Sezione pedicure avanzato
+  sha256 7eea99ac0f22e1eeaca0a2ed79de228769cd8dcd7634f290490dc07538188928
+
+foto/06-listino-stampato.png
+  1536×1024 px · 2156 KB · dove va: Listino: link «Vedi il listino stampato»
+  sha256 aa103b99c6fe281721aec30775085944d1a9590bb8e4dc3cca95946b01aacd34
+
+logo/farfalla.png
+  210×210 px · 37 KB · dove va: Favicon e icona per iPhone
+  sha256 89109f3ee0e9c58cf1e8c2e944cab4c5d01db39a3ef8ff266245bc5bb87daafc
+
+logo/logo-sabbia.png
+  624×508 px · 141 KB · dove va: Riserva del logo, su fondo sabbia
+  sha256 3c2b615d4507cc147a9474100bb4cd22f7f5b3d47d3455f892ea2b4c2a08fcf0
+
+logo/logo-trasparente.png
+  624×508 px · 206 KB · dove va: Header e footer
+  sha256 a121e080e852ca2d1f8038b901ff1f1cca649c81c2fdbe6e874d42ae4fcdedab

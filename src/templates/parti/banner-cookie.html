@@ -1,0 +1,17 @@
+<section class="banner-cookie" aria-label="{{t.banner.titolo}}" data-banner-cookie{{#se tracciamenti.ga4Id}} data-ga4="{{tracciamenti.ga4Id}}"{{/se}}{{#se tracciamenti.metaPixelId}} data-meta="{{tracciamenti.metaPixelId}}"{{/se}} hidden>
+  <div class="contenitore banner-interno">
+    <p class="banner-testo">{{t.banner.testo}} <a href="{{link.cookie}}">{{t.banner.linkCookie}}</a></p>
+    <div class="banner-pulsanti">
+      <button class="pulsante pulsante-secondario" type="button" data-consenso="rifiuta">{{t.banner.rifiuta}}</button>
+      <button class="pulsante pulsante-secondario" type="button" data-consenso="personalizza" aria-expanded="false" aria-controls="banner-pannello">{{t.banner.personalizza}}</button>
+      <button class="pulsante pulsante-secondario" type="button" data-consenso="accetta">{{t.banner.accetta}}</button>
+    </div>
+    <div class="banner-pannello" id="banner-pannello" hidden>
+      <p class="banner-pannello-titolo" tabindex="-1">{{t.banner.pannelloTitolo}}</p>
+      {{#se tracciamenti.ga4Id}}<label class="interruttore"><input type="checkbox" role="switch" data-categoria="statistiche"><span><strong>{{t.banner.statistiche}}</strong> {{t.banner.statisticheTesto}}</span></label>
+      {{/se}}{{#se tracciamenti.metaPixelId}}<label class="interruttore"><input type="checkbox" role="switch" data-categoria="marketing"><span><strong>{{t.banner.marketing}}</strong> {{t.banner.marketingTesto}}</span></label>
+      {{/se}}<button class="pulsante pulsante-secondario" type="button" data-consenso="salva">{{t.banner.salva}}</button>
+    </div>
+    <button class="banner-chiudi" type="button" data-consenso="chiudi" aria-label="{{t.banner.chiudi}}">{{{icone.chiudi}}}</button>
+  </div>
+</section>

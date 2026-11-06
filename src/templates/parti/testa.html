@@ -1,0 +1,32 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{meta.title}}</title>
+{{#se meta.description}}<meta name="description" content="{{meta.description}}">
+{{/se}}{{#se meta.robots}}<meta name="robots" content="{{meta.robots}}">
+{{/se}}{{#se meta.canonical}}<link rel="canonical" href="{{meta.canonical}}">
+{{/se}}<meta property="og:type" content="website">
+<meta property="og:locale" content="it_IT">
+<meta property="og:site_name" content="{{centro.nome}}">
+<meta property="og:title" content="{{meta.title}}">
+{{#se meta.description}}<meta property="og:description" content="{{meta.description}}">
+{{/se}}{{#se meta.canonical}}<meta property="og:url" content="{{meta.canonical}}">
+{{/se}}<meta property="og:image" content="{{meta.ogImage}}">
+<meta property="og:image:width" content="{{meta.ogImageWidth}}">
+<meta property="og:image:height" content="{{meta.ogImageHeight}}">
+<meta property="og:image:alt" content="{{meta.ogImageAlt}}">
+<meta name="theme-color" content="{{meta.themeColor}}">
+{{#se centro.integrazioni.googleVerifica}}<meta name="google-site-verification" content="{{centro.integrazioni.googleVerifica}}">
+{{/se}}<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<script>document.documentElement.classList.add("js")</script>
+<link rel="preload" href="/fonts/marcellus-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/jost-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/css/tokens.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/sezioni.css">
+<script src="/js/main.js" defer></script>
+{{#se script.codice}}<script src="/js/codice.js" defer></script>
+{{/se}}{{#se tracciamenti.attivo}}<script src="/js/consenso.js" defer></script>
+{{/se}}{{#se jsonld}}<script type="application/ld+json">{{{jsonld}}}</script>
+{{/se}}

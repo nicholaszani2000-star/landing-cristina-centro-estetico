@@ -1,0 +1,80 @@
+{
+  "volte": 3,
+  "obiettivi": {
+    "performance": 90,
+    "accessibility": 100,
+    "best-practices": 95,
+    "seo": 100,
+    "lcp": 2000,
+    "cls": 0.05,
+    "tbt": 100
+  },
+  "risultati": {
+    "/": {
+      "performance": 99,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100,
+      "fcp": 1206.243,
+      "lcp": 1802.8514,
+      "cls": 0.0001821466076480565,
+      "tbt": 0,
+      "si": 1206.243,
+      "totale": 175232,
+      "document": 7008,
+      "script": 4102,
+      "stylesheet": 9260,
+      "font": 37309,
+      "image": 114863,
+      "richieste": 14,
+      "sotto": [
+        "uses-long-cache-ttl",
+        "render-blocking-resources"
+      ]
+    },
+    "/viso/": {
+      "performance": 99,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100,
+      "fcp": 1204.57665,
+      "lcp": 1813.1099999999997,
+      "cls": 0.0001821466076480565,
+      "tbt": 0,
+      "si": 1204.57665,
+      "totale": 175236,
+      "document": 7012,
+      "script": 4102,
+      "stylesheet": 9260,
+      "font": 37309,
+      "image": 114863,
+      "richieste": 14,
+      "sotto": [
+        "uses-long-cache-ttl",
+        "render-blocking-resources"
+      ]
+    },
+    "/pedicure/": {
+      "performance": 99,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100,
+      "fcp": 1207.9909499999999,
+      "lcp": 1801.7828999999997,
+      "cls": 0.0001821466076480565,
+      "tbt": 0,
+      "si": 1207.9909499999999,
+      "totale": 190147,
+      "document": 7000,
+      "script": 4102,
+      "stylesheet": 9260,
+      "font": 37309,
+      "image": 129786,
+      "richieste": 14,
+      "sotto": [
+        "uses-long-cache-ttl",
+        "render-blocking-resources"
+      ]
+    }
+  }
+}
