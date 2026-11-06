@@ -1,6 +1,6 @@
 # Cosa manca per andare live al 100%
 
-Aggiornato il 3 novembre 2026.
+Aggiornato il 6 novembre 2026.
 
 ## Già fatto
 
@@ -14,7 +14,7 @@ Aggiornato il 3 novembre 2026.
 - **Supabase** in UE (Francoforte):
   - tabella delle iscrizioni protetta (RLS);
   - pulizia automatica dopo 24 mesi.
-- **Codice pronto per Brevo, GA4, pixel Meta e banner cookie**: si accendono da soli quando arrivano i dati.
+- **Codice pronto per Brevo**: si accende da solo quando arrivano la chiave, il mittente e l’ID della lista.
 
 ## Cosa manca
 
@@ -42,4 +42,4 @@ Sul dominio di produzione, che oggi è https://esteticamigliore.it senza www:
 - Pedicure: https://esteticamigliore.it/pedicure/?utm_source=meta&utm_medium=paid_social&utm_campaign=pedicure
 - Generale: https://esteticamigliore.it/?utm_source=meta&utm_medium=paid_social&utm_campaign=generale
 
-Prima di far partire gli annunci servono almeno tre cose: la chiave Supabase, la verifica della privacy e il pixel Meta (per misurare le campagne).
+Chiave Supabase e pixel Meta sono attivi. Prima di far partire gli annunci mancano ancora la verifica della privacy e la prova finale sul telefono (codice sconto compreso).
