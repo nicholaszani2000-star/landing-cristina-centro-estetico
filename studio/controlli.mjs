@@ -1807,7 +1807,9 @@ await controllo("informativa privacy: titolare con i dati di §2.1, trattamenti 
   const tracciamenti = Boolean(centro.integrazioni.ga4Id || centro.integrazioni.metaPixelId);
   verifica(testo.includes("Oggi il sito non usa strumenti di statistica né di marketing") === !tracciamenti, tracciamenti ? "c'è la frase sui tracciamenti spenti, ma GA4 o Meta sono attivi" : "manca la frase sui tracciamenti spenti");
   verifica(/Netlify, Inc\. \(Stati Uniti\)/.test(testo) && /Supabase, Inc\. \(Stati Uniti\)/.test(testo), "fornitori Netlify e Supabase");
-  verifica(testo.includes(tipografico("Brevo (Francia), per l'invio del codice sconto e delle promo, in attivazione.")), "manca «Brevo (Francia), per l'invio del codice sconto e delle promo, in attivazione»");
+  const posta = centro.integrazioni.servizioEmail;
+  const rigaPosta = tipografico(`${posta.nome} (${posta.sede}), per l'invio del codice sconto e delle promo${posta.inAttivazione ? ", in attivazione" : ""}.`);
+  verifica(testo.includes(rigaPosta), `manca «${rigaPosta}»`);
   verifica(/Google Ireland/.test(testo) === Boolean(centro.integrazioni.ga4Id) && /Meta Platforms/.test(testo) === Boolean(centro.integrazioni.metaPixelId), "Google o Meta tra i fornitori non corrispondono agli ID di centro.json");
   verifica(/EU-US Data Privacy Framework/.test(testo) && /clausole contrattuali standard/.test(testo), "garanzie per gli Stati Uniti");
   for (const diritto of ["accesso", "rettifica", "cancellazione", "limitazione", "opposizione", "portabilità", "revocare il consenso", "Garante per la protezione dei dati personali"]) {
@@ -1824,7 +1826,7 @@ await controllo("pagine legali con GA4, pixel Meta e servizio email indicati (bu
   const senzaEmail = { ...centro, integrazioni: { ...centro.integrazioni, ga4Id: null, metaPixelId: null, servizioEmail: null } };
   const aggiornamento = testi.legale.aggiornamento;
   const pieno = build.datiLegali({ centro: conTutto, t, aggiornamento });
-  const senzaTracciamenti = { ...centro, integrazioni: { ...centro.integrazioni, ga4Id: null, metaPixelId: null } };
+  const senzaTracciamenti = { ...centro, integrazioni: { ...centro.integrazioni, ga4Id: null, metaPixelId: null, servizioEmail: { ...centro.integrazioni.servizioEmail, inAttivazione: true } } };
   const vuoto = build.datiLegali({ centro: senzaTracciamenti, t, aggiornamento, verificata: true });
   const nessuno = build.datiLegali({ centro: senzaEmail, t, aggiornamento });
   verifica(pieno.trattamenti.length === 4 && vuoto.trattamenti.length === 2, `trattamenti ${pieno.trattamenti.length}/${vuoto.trattamenti.length}`);
@@ -2581,7 +2583,9 @@ await controllo("Brevo (finto): POST /v3/smtp/email con api-key, mittente di cen
     risposta = () => Response.json([{ codice: "MIG-ABC234", scadenza: "2026-12-02", nuovo: true }]);
     const r2 = await (await invia()).json();
     verifica(r2.prova === false && r2.emailInviata === (centro.integrazioni.servizioEmail?.mittente ? true : false), `con Supabase: ${JSON.stringify(r2)}`);
-    verifica(chiamate.every((ch) => !String(ch.url).includes("brevo")) || centro.integrazioni.servizioEmail?.mittente, "senza mittente in centro.json è partita una chiamata a Brevo");
+    verifica(chiamate.every((ch) => !String(ch.url).includes("/v3/smtp/email")) || centro.integrazioni.servizioEmail?.mittente, "senza mittente in centro.json è partita un'email da Brevo");
+    const contatti = chiamate.filter((ch) => String(ch.url) === "https://api.brevo.com/v3/contacts").length;
+    verifica(contatti === (centro.integrazioni.servizioEmail?.listaPromo ? 1 : 0), `chiamate alla lista promo di Brevo: ${contatti}`);
   } finally {
     for (const [k, v] of [["BREVO_API_KEY", salvati.chiave], ["SUPABASE_URL", salvati.url], ["SUPABASE_SECRET_KEY", salvati.segreta]]) {
       if (v === undefined) delete process.env[k]; else process.env[k] = v;
