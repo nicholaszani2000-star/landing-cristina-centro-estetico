@@ -801,7 +801,9 @@ async function main() {
   const anno = new Date().getFullYear();
   // {cabina}: macchinari e prodotti indicati in centro.json (null se mancano entrambi: la riga non compare)
   const cabina = sezioneViso({ listino, centro, dettagli: null }).cabina;
-  const datiTesti = { ...centro, orari: { ...centro.orari, ...testiOrari(centro.orari) }, anno, cabina };
+  // {tipiCookie}: solo i cookie davvero attivi, per banner e cookie policy (GA4 = statistica, pixel Meta = marketing).
+  const tipiCookie = [tracciamenti.ga4Id && "di statistica", tracciamenti.metaPixelId && "di marketing"].filter(Boolean).join(" e ") || "di statistica e di marketing";
+  const datiTesti = { ...centro, orari: { ...centro.orari, ...testiOrari(centro.orari) }, anno, cabina, tipiCookie };
   const t = numeroUnito(componiTutto(testi.comuni, datiTesti, "content/testi.json › comuni"), centro.telefono);
   const viso = sezioneViso({ listino, centro, dettagli: t.viso.dettagli });
   avvisi.push(...viso.avvisi);

@@ -189,8 +189,8 @@ Le voci viso della sezione viso (§6) sono 5: Pulizia viso base, Trattamento vis
 
 ### §2.5 Integrazioni (si collegano solo all'ultimo step)
 
-- GA4: non indicato (GA4 resta spento)
-- Pixel Meta: non indicato (il pixel resta spento)
+- GA4: G-DFCM449BWE (attivo dal 6 novembre 2026: parte solo dopo «Accetta» o «Statistiche» nel banner, con Google Consent Mode; Google Signals va lasciato spento, la CSP ammette solo i domini base di GA4)
+- Pixel Meta: 1682509193499996 (attivo dal 6 novembre 2026: parte solo dopo «Accetta» o «Marketing» nel banner, con consent revoke prima di init; eventi PageView, Contact e Lead. API Conversioni non ancora attiva: serve il token META_CAPI_TOKEN su Netlify)
 - Progetto Supabase: migliore-estetica (bkcpnkrnhjirmbwnrozp), regione eu-central-1 (Francoforte), con supabase/iscritti.sql applicato. SUPABASE_URL è su Netlify; SUPABASE_SECRET_KEY è su Netlify dal 6 novembre 2026, segreta e solo nel contesto di produzione: lì le iscrizioni si salvano davvero, nei Deploy Preview e in locale il codice resta in modalità prova.
 - Netlify: progetto esteticamigliore (https://esteticamigliore.netlify.app), collegato a GitHub dal 4 novembre 2026 con branch di produzione landing-migliore: ogni push su landing-migliore va online da solo (per un commit che non deve pubblicare, «[skip netlify]» nel messaggio). Dominio https://esteticamigliore.it con HTTPS attivo. Lo zip di studio/pacchetto-netlify.mjs resta solo come ripiego.
 - Google Search Console: proprietà «Prefisso URL» https://esteticamigliore.it, verificata con il file HTML (content/centro.json › integrazioni.googleFileVerifica).

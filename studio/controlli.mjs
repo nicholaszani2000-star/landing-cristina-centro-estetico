@@ -860,7 +860,10 @@ await controllo("JSON-LD valido: JSON corretto, tipi schema.org esistenti, solo 
 /** Apre una pagina a 390×844 (densità 1) con le opzioni date e restituisce { contesto, pagina }. */
 async function apriMobile(percorso, opzioni = {}) {
   const { browser, base } = await browserCondiviso();
-  const contesto = await browser.newContext({ viewport: { width: 390, height: 844 }, ...opzioni });
+  const { senzaBanner, ...altre } = opzioni;
+  // senzaBanner: la visitatrice ha già scelto (cookie rifiutati), quindi il banner non compare e non copre la pagina.
+  const scelta = { cookies: [], origins: [{ origin: base, localStorage: [{ name: "migliore-consenso", value: JSON.stringify({ v: 1, t: Date.now(), statistiche: false, marketing: false }) }] }] };
+  const contesto = await browser.newContext({ viewport: { width: 390, height: 844 }, ...(senzaBanner ? { storageState: scelta } : {}), ...altre });
   const pagina = await contesto.newPage();
   await pagina.goto(base + percorso, { waitUntil: "networkidle" });
   return { contesto, pagina };
@@ -941,7 +944,7 @@ await controllo("768 px: nessuna foto verticale supera i 520 px di larghezza; co
   verifica(!problemi.length, problemi.join(" · "));
 });
 
-await controllo("barra contatti: nascosta sull'apertura, compare scorrendo oltre, non copre il footer; senza JS sempre visibile; assente da 768 px", async () => {
+await controllo("barra contatti: nascosta sull'apertura, compare scorrendo oltre, non copre il footer; senza JS sempre visibile; assente da 768 px (con il banner cookie, a scelta già fatta)", async () => {
   const problemi = [];
   const statoBarra = (pagina) =>
     pagina.evaluate(() => {
@@ -950,7 +953,7 @@ await controllo("barra contatti: nascosta sull'apertura, compare scorrendo oltre
       return { visibile: st.display !== "none" && st.visibility !== "hidden" && Number(st.opacity) > 0.99, top: barra.getBoundingClientRect().top };
     });
   for (const [percorso] of LINK_PAGINE) {
-    const { contesto, pagina } = await apriMobile(percorso);
+    const { contesto, pagina } = await apriMobile(percorso, { senzaBanner: true });
     await pagina.waitForTimeout(300);
     if ((await statoBarra(pagina)).visibile) problemi.push(`${percorso}: barra visibile mentre si vedono i pulsanti dell'apertura`);
     const fineApertura = await pagina.evaluate(() => document.querySelector(".apertura").getBoundingClientRect().bottom + scrollY);
@@ -1756,8 +1759,9 @@ await controllo("/privacy/ e /cookie/: esistono, un solo H1, header e footer del
 
 await controllo("data di ultimo aggiornamento fissa (testi.json › legale.aggiornamento, §10): la stessa su privacy e cookie, anche con l'orologio della build spostato al 2030", () => {
   const data = testi.legale?.aggiornamento;
-  verifica(data === "2 novembre 2026", `legale.aggiornamento «${data}»`);
-  const riga = `<p class="legale-data">Ultimo aggiornamento: <time datetime="2026-11-02">${data}</time></p>`;
+  // La data cambia solo quando cambiano i testi legali (6 novembre 2026: attivato GA4); non dipende dal giorno della build.
+  verifica(/^\d{1,2} \p{L}+ \d{4}$/u.test(data ?? ""), `legale.aggiornamento «${data}»`);
+  const riga = `<p class="legale-data">Ultimo aggiornamento: <time datetime="${build.dataIso(data)}">${data}</time></p>`;
   for (const [file] of PAGINE_LEGALI) verifica(pagina(file).includes(riga), `${file}: data diversa da «${data}»`);
   verifica(build.dataIso("2 novembre 2026") === "2026-11-02" && build.dataIso("31 dicembre 2027") === "2027-12-31", "dataIso non converte");
   for (const errata of ["31 febbraio 2026", "novembre 2026", "2/11/2026", "2 brumaio 2026", null]) {
@@ -1792,17 +1796,19 @@ await controllo("informativa privacy: titolare con i dati di §2.1, trattamenti 
   }
   const blocchi = [...html.matchAll(/<div class="legale-blocco">([\s\S]*?)<\/div>\s*(?=<div class="legale-blocco">|<h2)/g)].map((m) => m[1]);
   const schede = blocchi.filter((b) => /<dl class="legale-scheda">/.test(b));
-  verifica(schede.length === 2, `${schede.length} trattamenti con scheda invece di 2 (GA4 e Meta non sono indicati)`);
+  const attese = 2 + (centro.integrazioni.ga4Id ? 1 : 0) + (centro.integrazioni.metaPixelId ? 1 : 0);
+  verifica(schede.length === attese, `${schede.length} trattamenti con scheda invece di ${attese} (a, b, più GA4 e Meta se indicati)`);
   for (const b of schede) {
     const dt = [...b.matchAll(/<dt>([^<]*)<\/dt>/g)].map((m) => m[1]);
     verifica(dt.join() === "Dati,Finalità,Base giuridica,Conservazione", `scheda «${testoVisibile(b.match(/<h3>([\s\S]*?)<\/h3>/)?.[1] ?? "")}»: ${dt.join(", ")}`);
   }
   verifica(/art\. 6, par\. 1, lett\. b/.test(testo) && /art\. 6, par\. 1, lett\. a/.test(testo), "basi giuridiche (misure precontrattuali e consenso)");
   verifica(testo.includes(tipografico("non oltre 24 mesi dall'ultima interazione")), "conservazione delle iscrizioni: 24 mesi");
-  verifica(testo.includes("Oggi il sito non usa strumenti di statistica né di marketing"), "manca la frase sui tracciamenti spenti");
+  const tracciamenti = Boolean(centro.integrazioni.ga4Id || centro.integrazioni.metaPixelId);
+  verifica(testo.includes("Oggi il sito non usa strumenti di statistica né di marketing") === !tracciamenti, tracciamenti ? "c'è la frase sui tracciamenti spenti, ma GA4 o Meta sono attivi" : "manca la frase sui tracciamenti spenti");
   verifica(/Netlify, Inc\. \(Stati Uniti\)/.test(testo) && /Supabase, Inc\. \(Stati Uniti\)/.test(testo), "fornitori Netlify e Supabase");
   verifica(testo.includes(tipografico("Brevo (Francia), per l'invio del codice sconto e delle promo, in attivazione.")), "manca «Brevo (Francia), per l'invio del codice sconto e delle promo, in attivazione»");
-  verifica(!/Google Ireland|Meta Platforms/.test(testo), "Google o Meta citati come fornitori senza integrazione");
+  verifica(/Google Ireland/.test(testo) === Boolean(centro.integrazioni.ga4Id) && /Meta Platforms/.test(testo) === Boolean(centro.integrazioni.metaPixelId), "Google o Meta tra i fornitori non corrispondono agli ID di centro.json");
   verifica(/EU-US Data Privacy Framework/.test(testo) && /clausole contrattuali standard/.test(testo), "garanzie per gli Stati Uniti");
   for (const diritto of ["accesso", "rettifica", "cancellazione", "limitazione", "opposizione", "portabilità", "revocare il consenso", "Garante per la protezione dei dati personali"]) {
     verifica(testo.includes(diritto), `diritti: manca «${diritto}»`);
@@ -1815,10 +1821,11 @@ await controllo("pagine legali con GA4, pixel Meta e servizio email indicati (bu
   // Funzione: voci filtrate per integrazione, «richiede» sconosciuto = errore, bozza spenta solo con verificata true.
   const t = { privacy: { trattamenti: { voci: testi.comuni.privacy.trattamenti.voci }, fornitori: { voci: testi.comuni.privacy.fornitori.voci } }, cookie: { elenco: testi.comuni.cookie.elenco } };
   const conTutto = { ...centro, integrazioni: { ...centro.integrazioni, ga4Id: "G-PROVA123", metaPixelId: "123456789012345", servizioEmail: { nome: "Posta di prova", sede: "Paese di prova", inAttivazione: false } } };
-  const senzaEmail = { ...centro, integrazioni: { ...centro.integrazioni, servizioEmail: null } };
+  const senzaEmail = { ...centro, integrazioni: { ...centro.integrazioni, ga4Id: null, metaPixelId: null, servizioEmail: null } };
   const aggiornamento = testi.legale.aggiornamento;
   const pieno = build.datiLegali({ centro: conTutto, t, aggiornamento });
-  const vuoto = build.datiLegali({ centro, t, aggiornamento, verificata: true });
+  const senzaTracciamenti = { ...centro, integrazioni: { ...centro.integrazioni, ga4Id: null, metaPixelId: null } };
+  const vuoto = build.datiLegali({ centro: senzaTracciamenti, t, aggiornamento, verificata: true });
   const nessuno = build.datiLegali({ centro: senzaEmail, t, aggiornamento });
   verifica(pieno.trattamenti.length === 4 && vuoto.trattamenti.length === 2, `trattamenti ${pieno.trattamenti.length}/${vuoto.trattamenti.length}`);
   verifica(pieno.fornitori.length === 5 && vuoto.fornitori.length === 3 && nessuno.fornitori.length === 2, `fornitori ${pieno.fornitori.length}/${vuoto.fornitori.length}/${nessuno.fornitori.length}`);
@@ -1845,7 +1852,7 @@ await controllo("pagine legali con GA4, pixel Meta e servizio email indicati (bu
     verifica(r.status === 0, `build con integrazioni fallita: ${r.stderr || r.stdout}`);
     const privacy = normalizzaSpazi(testoVisibile(readFileSync(join(tmp, "dist", "privacy", "index.html"), "utf8")));
     const cookie = readFileSync(join(tmp, "dist", "cookie", "index.html"), "utf8");
-    for (const atteso of ["Statistiche (Google Analytics 4)", "Marketing (pixel Meta e API Conversioni)", "Google Ireland Limited (Irlanda)", "Meta Platforms Ireland Limited (Irlanda)", tipografico("Posta di prova (Paese di prova), per l'invio del codice sconto e delle promo.")]) {
+    for (const atteso of ["Statistiche (Google Analytics 4)", "Marketing (pixel Meta)", "Google Ireland Limited (Irlanda)", "Meta Platforms Ireland Limited (Irlanda)", tipografico("Posta di prova (Paese di prova), per l'invio del codice sconto e delle promo.")]) {
       verifica(privacy.includes(atteso), `privacy con integrazioni: manca «${atteso}»`);
     }
     verifica(!privacy.includes("in attivazione"), "privacy con il servizio email attivo: c'è ancora «in attivazione»");
@@ -1859,7 +1866,14 @@ await controllo("pagine legali con GA4, pixel Meta e servizio email indicati (bu
   }
   // Oggi: la cookie policy dice che il sito non usa cookie e non elenca nessun cookie.
   const oggi = pagina("cookie/index.html");
-  verifica(testoVisibile(oggi).includes("Oggi il sito non usa cookie") && !/legale-cookie-nome/.test(oggi), "cookie policy di oggi: deve dire che il sito non usa cookie");
+  const cookieOggi = [...oggi.matchAll(/<h3 class="legale-cookie-nome">([^<]*)<\/h3>/g)].map((m) => decodifica(m[1]));
+  const attesi = [
+    ...(centro.integrazioni.ga4Id || centro.integrazioni.metaPixelId ? ["migliore-consenso"] : []),
+    ...(centro.integrazioni.ga4Id ? ["_ga", "_ga_<ID>"] : []),
+    ...(centro.integrazioni.metaPixelId ? ["_fbp", "_fbc"] : []),
+  ];
+  verifica(cookieOggi.join() === attesi.join(), `cookie policy di oggi: elenca «${cookieOggi.join(", ")}» invece di «${attesi.join(", ")}»`);
+  verifica(testoVisibile(oggi).includes("Oggi il sito non usa cookie") === !attesi.length, "cookie policy di oggi: la frase «Oggi il sito non usa cookie» non corrisponde agli ID attivi");
 });
 
 await controllo("riquadro «Bozza»: in cima a privacy e cookie in ogni contesto, produzione compresa, finché legale.verificata non è true; con true sparisce (build ripetuta)", () => {
@@ -2196,33 +2210,81 @@ await controllo("supabase/iscritti.sql: tabella con email_norm generata e unica,
   verifica(!/sb_secret_[A-Za-z0-9_-]{8,}/.test(sql), "una chiave nel file SQL");
 });
 
-await controllo("build normale (nessun ID di GA4 e Meta): niente banner, niente consenso.js (né nell'HTML né in dist/js), niente «Preferenze cookie»; nessuna richiesta verso Google o Meta, neanche inviando il codice o toccando i contatti", async () => {
-  verifica(!centro.integrazioni.ga4Id && !centro.integrazioni.metaPixelId, "centro.json ha un ID di GA4 o Meta");
-  verifica(!existsSync(join(DIST, "js", "consenso.js")), "dist/js/consenso.js presente");
-  for (const file of elenca(DIST, (p) => p.endsWith(".html"))) {
+await controllo("sito senza ID di GA4 e Meta (build in una copia con gli ID a null): niente banner, niente consenso.js (né nell'HTML né in dist/js), niente «Preferenze cookie»; nessuna richiesta verso Google o Meta, neanche inviando il codice o toccando i contatti", async () => {
+  const copia = mkdtempSync(join(tmpdir(), "migliore-senza-id-"));
+  let server = null;
+  try {
+    for (const voce of ["build.mjs", "content", "src"]) cpSync(join(RADICE, voce), join(copia, voce), { recursive: true });
+    const c = JSON.parse(readFileSync(join(copia, "content", "centro.json"), "utf8"));
+    c.integrazioni.ga4Id = null;
+    c.integrazioni.metaPixelId = null;
+    writeFileSync(join(copia, "content", "centro.json"), JSON.stringify(c, null, 2));
+    const r = spawnSync(process.execPath, ["build.mjs"], { cwd: copia, encoding: "utf8", env: { ...process.env, URL: "", CONTEXT: "", TEST_TRACCIAMENTI: "" } });
+    verifica(r.status === 0, `build senza ID fallita: ${r.stderr || r.stdout}`);
+    const dist = join(copia, "dist");
+    verifica(!existsSync(join(dist, "js", "consenso.js")), "dist/js/consenso.js presente");
+    for (const file of elenca(dist, (f) => f.endsWith(".html"))) {
+      const html = readFileSync(file, "utf8");
+      const nome = relative(dist, file);
+      verifica(!/data-banner-cookie|consenso\.js|data-preferenze-cookie|Preferenze cookie/.test(html), `${nome}: banner, consenso.js o «Preferenze cookie»`);
+      verifica(!/googletagmanager|google-analytics|facebook\.net|fbq\(|gtag\(/.test(html), `${nome}: riferimenti a Google o Meta`);
+    }
+    const { avviaServer } = await import(pathToFileURL(join(STUDIO, "anteprima.mjs")).href);
+    server = await avviaServer(0, { cartella: dist });
+    const base = `http://127.0.0.1:${server.address().port}`;
+    const { browser } = await browserCondiviso();
+    const contesto = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const tentate = [];
+    await contesto.route((u) => TRACCIANTI.test(u.hostname), (rotta) => { tentate.push(rotta.request().url()); return rotta.abort(); });
+    const pg = await contesto.newPage();
+    for (const percorso of percorsiDist()) {
+      await pg.goto(base + percorso, { waitUntil: "networkidle" });
+      await pg.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+    }
+    await pg.goto(base + "/", { waitUntil: "networkidle" });
+    await pg.evaluate(() => window.addEventListener("click", (e) => { if (e.target.closest("a")) e.preventDefault(); }, true));
+    await pg.click('[data-pulsanti-apertura] a[href^="tel:"]');
+    await pg.fill("#codice-email", "anna@esempio.it");
+    await pg.check("#codice-consenso");
+    await pg.evaluate(() => document.querySelector(".codice-invia").form.requestSubmit());
+    await pg.waitForSelector(".codice-ottenuto");
+    verifica(await pg.evaluate(() => typeof window.migliore === "undefined" && typeof window.gtag === "undefined" && typeof window.fbq === "undefined"), "window.migliore, gtag o fbq definiti senza tracciamenti");
+    await contesto.close();
+    verifica(!tentate.length, `richieste: ${tentate.join(", ")}`);
+  } finally {
+    server?.close();
+    rmSync(copia, { recursive: true, force: true });
+  }
+});
+
+await controllo("sito vero con gli ID di centro.json (oggi solo GA4): banner con data-ga4 uguale all'ID, niente pixel né interruttore «Marketing» senza Meta, testo del banner con i soli cookie attivi, consenso.js in dist, «Preferenze cookie» in ogni pagina; prima della scelta nessuna richiesta a Google o Meta; dopo «Accetta» richieste solo verso i servizi attivi", async () => {
+  const ga4 = centro.integrazioni.ga4Id;
+  const meta = centro.integrazioni.metaPixelId;
+  if (!ga4 && !meta) return; // senza ID vale il controllo precedente
+  const home = pagina("index.html");
+  verifica(home.includes(`data-ga4="${ga4}"`) === Boolean(ga4), `data-ga4 diverso da «${ga4}»`);
+  verifica(/data-meta=/.test(home) === Boolean(meta), "data-meta non corrisponde al pixel Meta di centro.json");
+  verifica(/data-categoria="marketing"/.test(home) === Boolean(meta), "interruttore «Marketing» non corrisponde al pixel Meta");
+  verifica(/data-categoria="statistiche"/.test(home) === Boolean(ga4), "interruttore «Statistiche» non corrisponde a GA4");
+  const tipi = [ga4 && "di statistica", meta && "di marketing"].filter(Boolean).join(" e ");
+  verifica(testoVisibile(home.match(/<p class="banner-testo">([\s\S]*?)<\/p>/)?.[1] ?? "").startsWith(`Usiamo cookie ${tipi} solo se li accetti.`), `testo del banner senza «cookie ${tipi}»`);
+  verifica(existsSync(join(DIST, "js", "consenso.js")), "dist/js/consenso.js mancante");
+  for (const file of elenca(DIST, (f) => f.endsWith(".html"))) {
     const html = readFileSync(file, "utf8");
-    verifica(!/data-banner-cookie|consenso\.js|data-preferenze-cookie|Preferenze cookie/.test(html), `${rel(file)}: banner, consenso.js o «Preferenze cookie»`);
-    verifica(!/googletagmanager|google-analytics|facebook\.net|fbq\(|gtag\(/.test(html), `${rel(file)}: riferimenti a Google o Meta`);
+    verifica(/consenso\.js/.test(html) && /data-preferenze-cookie/.test(html), `${rel(file)}: senza consenso.js o «Preferenze cookie»`);
   }
   const { browser, base } = await browserCondiviso();
   const contesto = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const tentate = [];
-  await contesto.route((u) => TRACCIANTI.test(u.hostname), (r) => { tentate.push(r.request().url()); return r.abort(); });
+  await contesto.route((u) => TRACCIANTI.test(u.hostname), (rotta) => { tentate.push(new URL(rotta.request().url()).hostname); return rotta.abort(); });
   const pg = await contesto.newPage();
-  for (const percorso of percorsiDist()) {
-    await pg.goto(base + percorso, { waitUntil: "networkidle" });
-    await pg.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
-  }
   await pg.goto(base + "/", { waitUntil: "networkidle" });
-  await pg.evaluate(() => window.addEventListener("click", (e) => { if (e.target.closest("a")) e.preventDefault(); }, true));
-  await pg.click('[data-pulsanti-apertura] a[href^="tel:"]');
-  await pg.fill("#codice-email", "anna@esempio.it");
-  await pg.check("#codice-consenso");
-  await pg.evaluate(() => document.querySelector(".codice-invia").form.requestSubmit());
-  await pg.waitForSelector(".codice-ottenuto");
-  verifica(await pg.evaluate(() => typeof window.migliore === "undefined" && typeof window.gtag === "undefined" && typeof window.fbq === "undefined"), "window.migliore, gtag o fbq definiti senza tracciamenti");
+  verifica(!tentate.length, `richieste prima della scelta: ${tentate.join(", ")}`);
+  await pg.click('[data-consenso="accetta"]');
+  await pg.waitForTimeout(800);
+  verifica(tentate.some((h) => /googletagmanager/.test(h)) === Boolean(ga4), `GA4 dopo «Accetta»: ${tentate.join(", ") || "nessuna richiesta"}`);
+  verifica(tentate.some((h) => /facebook/.test(h)) === Boolean(meta), `Meta dopo «Accetta»: ${tentate.join(", ") || "nessuna richiesta"}`);
   await contesto.close();
-  verifica(!tentate.length, `richieste: ${tentate.join(", ")}`);
 });
 
 /** Build di prova con TEST_TRACCIAMENTI=1 (ID finti) in una cartella temporanea, servita da un secondo server. */

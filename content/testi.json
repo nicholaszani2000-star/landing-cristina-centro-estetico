@@ -1,5 +1,5 @@
 {
-  "_nota": "Tutti i testi del sito. I segnaposto tra graffe, per esempio {telefono} o {orari.testo}, si riempiono in build con i dati di content/centro.json ({orari.testo} e {orari.riga} li calcola la build dalle fasce di centro.json › orari: «dal martedì al venerdì, dalle 09:00 alle 18:00; il sabato, …», separate da «; » o da « · »); se il dato è null la frase non compare. [data] nel risultato del codice sconto lo riempie il JavaScript. {cabina} è calcolato in build da macchinari e prodotti di centro.json (null se mancano entrambi). In viso.dettagli: «nome della voce del listino»: descrizione; null se i dettagli non sono indicati. Le voci «include» del pedicure (centro.json) sono separate da punto e virgola: la build fa una voce per elemento, con la prima lettera maiuscola. Nelle pagine legali (privacy, cookie) una voce con «richiede» compare solo se quell'integrazione di centro.json è indicata («tracciamenti» = GA4 o pixel Meta). legale.aggiornamento è la data di ultimo aggiornamento di privacy e cookie: fissa, si cambia a mano solo quando cambiano i testi legali (CLAUDE.md §10). legale.verificata resta false (riquadro «Bozza» in cima a privacy e cookie, anche in produzione) finché la titolare non scrive «privacy verificata». codiceSconto.risultatoEmail compare solo se la funzione risponde emailInviata: true (Step 8; resta false finché lo Step 9 non collega Brevo). codiceSconto.email: testi dell'email con il codice (Brevo, Step 9); [data] la riempie la funzione.",
+  "_nota": "Tutti i testi del sito. I segnaposto tra graffe, per esempio {telefono} o {orari.testo}, si riempiono in build con i dati di content/centro.json ({orari.testo} e {orari.riga} li calcola la build dalle fasce di centro.json › orari: «dal martedì al venerdì, dalle 09:00 alle 18:00; il sabato, …», separate da «; » o da « · »); se il dato è null la frase non compare. [data] nel risultato del codice sconto lo riempie il JavaScript. {tipiCookie} lo calcola la build dagli ID di centro.json («di statistica», «di marketing» o «di statistica e di marketing»). {cabina} è calcolato in build da macchinari e prodotti di centro.json (null se mancano entrambi). In viso.dettagli: «nome della voce del listino»: descrizione; null se i dettagli non sono indicati. Le voci «include» del pedicure (centro.json) sono separate da punto e virgola: la build fa una voce per elemento, con la prima lettera maiuscola. Nelle pagine legali (privacy, cookie) una voce con «richiede» compare solo se quell'integrazione di centro.json è indicata («tracciamenti» = GA4 o pixel Meta). legale.aggiornamento è la data di ultimo aggiornamento di privacy e cookie: fissa, si cambia a mano solo quando cambiano i testi legali (CLAUDE.md §10). legale.verificata resta false (riquadro «Bozza» in cima a privacy e cookie, anche in produzione) finché la titolare non scrive «privacy verificata». codiceSconto.risultatoEmail compare solo se la funzione risponde emailInviata: true (Step 8; resta false finché lo Step 9 non collega Brevo). codiceSconto.email: testi dell'email con il codice (Brevo, Step 9); [data] la riempie la funzione.",
   "comuni": {
     "header": {
       "logoAlt": "{nome}",
@@ -126,7 +126,7 @@
     },
     "banner": {
       "titolo": "Preferenze cookie",
-      "testo": "Usiamo cookie di statistica e di marketing solo se li accetti. Puoi cambiare idea quando vuoi da «Preferenze cookie», in fondo alla pagina.",
+      "testo": "Usiamo cookie {tipiCookie} solo se li accetti. Puoi cambiare idea quando vuoi da «Preferenze cookie», in fondo alla pagina.",
       "linkCookie": "Cookie policy",
       "rifiuta": "Rifiuta",
       "personalizza": "Personalizza",
@@ -217,10 +217,10 @@
             "richiede": "ga4Id"
           },
           {
-            "titolo": "Marketing (pixel Meta e API Conversioni)",
-            "dati": "Dati di navigazione e azioni compiute sul sito, per esempio il tocco su «Chiama» o su «Scrivi su WhatsApp», con gli identificativi online salvati nei cookie. Con l’API Conversioni gli stessi eventi arrivano a Meta anche dal server del sito.",
+            "titolo": "Marketing (pixel Meta)",
+            "dati": "Dati di navigazione e azioni compiute sul sito, per esempio il tocco su «Chiama» o su «Scrivi su WhatsApp» e la richiesta del codice sconto (senza la tua email), con gli identificativi online salvati nei cookie.",
             "finalita": "Misurare i risultati degli annunci su Facebook e Instagram.",
-            "base": "Il tuo consenso, dato nel banner dei cookie (art. 6, par. 1, lett. a del GDPR). Senza consenso né il pixel né l’API Conversioni ricevono i tuoi dati.",
+            "base": "Il tuo consenso, dato nel banner dei cookie (art. 6, par. 1, lett. a del GDPR). Senza consenso il pixel non parte e Meta non riceve nulla.",
             "conservazione": "I cookie durano quanto indicato nella cookie policy; per i dati ricevuti valgono i tempi di conservazione di Meta.",
             "nota": null,
             "richiede": "metaPixelId"
@@ -262,7 +262,7 @@
           {
             "nome": "Meta Platforms Ireland Limited",
             "sede": "Irlanda",
-            "ruolo": "fornisce il pixel Meta e l’API Conversioni, con possibili trasferimenti a Meta Platforms, Inc. negli Stati Uniti",
+            "ruolo": "fornisce il pixel Meta, con possibili trasferimenti a Meta Platforms, Inc. negli Stati Uniti",
             "richiede": "metaPixelId"
           }
         ],
@@ -306,7 +306,7 @@
       "attivi": {
         "h2": "Quali cookie usiamo",
         "testi": [
-          "I cookie tecnici servono a far funzionare il sito e non richiedono consenso. I cookie di statistica e di marketing partono solo se li accetti nel banner.",
+          "I cookie tecnici servono a far funzionare il sito e non richiedono consenso. I cookie {tipiCookie} partono solo se li accetti nel banner.",
           "Chiudere il banner con la X equivale a rifiutare. La tua scelta viene ricordata per 6 mesi."
         ],
         "etichette": {
@@ -418,7 +418,7 @@
     "pedicure": "Ciao Cristina, vorrei prenotare un pedicure avanzato."
   },
   "legale": {
-    "aggiornamento": "2 novembre 2026",
+    "aggiornamento": "6 novembre 2026",
     "verificata": false
   }
 }

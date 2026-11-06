@@ -360,6 +360,20 @@ Da ora ogni push su `landing-migliore` va online da solo. CLAUDE.md §2.5 è agg
 - **Quando si salva un'email**: solo quando la persona chiede il codice sconto spuntando la casella del consenso alle promo. I cookie non c'entrano: il sito non usa cookie e il banner non conosce l'email.
 - **Deploy**: questo commit ripubblica il sito, perché la funzione legga la chiave nuova.
 
+### GA4 e pixel Meta attivi (6 novembre)
+
+- **ID**: GA4 `G-DFCM449BWE` e pixel Meta `1682509193499996` in `centro.json`. I codici incollati dalla titolare non sono stati usati: partirebbero prima del consenso, e il `<noscript>` del pixel traccerebbe senza consenso.
+- **Banner**: compare da solo; il testo dice solo i cookie attivi (`{tipiCookie}` calcolato in build).
+- **Pagine legali**:
+  - privacy e cookie policy mostrano le sezioni di Google e Meta;
+  - data aggiornata al 6 novembre 2026, perché il testo legale è cambiato;
+  - i testi su Meta parlano solo del pixel: le API Conversioni non sono attive.
+- **Controlli adattati** ai due casi, senza tracciamenti e con tracciamenti:
+  - il caso senza ID ora si prova su una copia;
+  - controllo nuovo sul sito vero: nessuna richiesta a Google o Meta prima della scelta, tutte e due dopo «Accetta».
+  - Risultato: 104/104.
+- **CSP**: ammette già i domini di GA4 e del pixel. Con Google Signals acceso GA4 userebbe altri domini (doubleclick): va lasciato spento.
+
 ## 7. Dati mancanti o dubbi
 
 - **Branch di produzione**: CLAUDE.md §2.5 dice `landing-migliore`, il prompt dello Step 9 dice il branch principale (`main`).
