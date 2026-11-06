@@ -8,7 +8,9 @@
 // Testo e versione del consenso vengono dal server (content/testi.json), mai dal browser.
 // Nei log non compare mai l'email. Con BREVO_API_KEY e un mittente in centro.json (integrazioni.servizioEmail.mittente)
 // il codice salvato arriva anche via email; emailInviata è true solo se Brevo ha accettato l'invio (§2.4).
-// Documentazione Brevo: «Send a transactional email» (POST /v3/smtp/email, header api-key, un solo tipo di corpo).
+// Con BREVO_API_KEY e integrazioni.servizioEmail.listaPromo l'email entra anche nella lista delle promo di Brevo.
+// Documentazione Brevo: «Send a transactional email» (POST /v3/smtp/email, header api-key, un solo tipo di corpo)
+// e «Create a contact» (POST /v3/contacts con listIds e updateEnabled).
 // Documentazione: contesto ufficiale Netlify Functions (gestore, config con path/method/rateLimit, Netlify.env.get).
 
 import { createHash } from "node:crypto";
@@ -164,6 +166,34 @@ export async function inviaEmail({ email, codice, scadenza }, mittente = centro.
   }
 }
 
+// ------------------------------------------------------------------ lista delle promo (Brevo)
+
+const BREVO_CONTATTI = "https://api.brevo.com/v3/contacts";
+
+/**
+ * Mette l'email nella lista delle promo su Brevo (centro.json › integrazioni.servizioEmail.listaPromo): Brevo crea il
+ * contatto o, se esiste già, lo aggiunge alla lista (updateEnabled). Non tocca chi si è disiscritto da Brevo.
+ * Le promo mensili si creano e si inviano dal pannello di Brevo, con il link di disiscrizione che Brevo aggiunge da sé.
+ * Restituisce true solo se Brevo accetta; senza chiave o senza un ID di lista valido non fa nulla.
+ */
+export async function aggiungiAllaLista({ email }, lista = centro.integrazioni?.servizioEmail?.listaPromo) {
+  const chiave = env("BREVO_API_KEY");
+  if (!chiave || !Number.isInteger(lista) || lista <= 0) return false;
+  try {
+    const risposta = await fetch(BREVO_CONTATTI, {
+      method: "POST",
+      headers: { "api-key": chiave, "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ email, listIds: [lista], updateEnabled: true }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!risposta.ok) console.error(`codice-sconto: Brevo lista ${risposta.status}`); // mai l'email nei log
+    return risposta.ok;
+  } catch (e) {
+    console.error(`codice-sconto: Brevo lista ${e.name}`);
+    return false;
+  }
+}
+
 // ------------------------------------------------------------------ risposte
 
 const NO_CACHE = { "Cache-Control": "no-store" };
@@ -240,8 +270,11 @@ export default async (req) => {
   );
   try {
     const esito = await iscrivi({ email, pagina: percorso(campi.pagina), utm });
-    // Il codice parte via email solo se è stato salvato davvero (non in modalità prova) e Brevo è configurato.
-    const emailInviata = esito.prova ? false : await inviaEmail({ email, codice: esito.codice, scadenza: esito.scadenza });
+    // Email con il codice e lista delle promo solo se l'iscrizione è stata salvata davvero (non in modalità prova)
+    // e Brevo è configurato. Le due chiamate vanno in parallelo; la lista non cambia la risposta.
+    const [emailInviata] = esito.prova
+      ? [false]
+      : await Promise.all([inviaEmail({ email, codice: esito.codice, scadenza: esito.scadenza }), aggiungiAllaLista({ email })]);
     const risposta = { ...esito, emailInviata };
     return vuoleJson ? json(risposta) : paginaCodice(risposta, ritorno);
   } catch (e) {

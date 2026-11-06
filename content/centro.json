@@ -83,6 +83,7 @@
       "nome": "Brevo",
       "sede": "Francia",
       "mittente": null,
+      "listaPromo": null,
       "inAttivazione": true
     }
   }

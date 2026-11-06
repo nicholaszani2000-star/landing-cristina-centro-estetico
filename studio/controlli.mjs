@@ -2591,6 +2591,53 @@ await controllo("Brevo (finto): POST /v3/smtp/email con api-key, mittente di cen
   }
 });
 
+await controllo("Brevo lista promo (finto): POST /v3/contacts con api-key, email, listIds con l'ID di centro.json e updateEnabled; true solo se Brevo accetta (201 o 204); senza chiave o senza un ID intero positivo nessuna chiamata; in modalità prova nessuna chiamata; mai l'email nei log", async () => {
+  const f = await import(pathToFileURL(FUNZIONE).href);
+  verifica(typeof f.aggiungiAllaLista === "function", "aggiungiAllaLista non esportata");
+  const lista = centro.integrazioni.servizioEmail?.listaPromo;
+  verifica(lista === null || (Number.isInteger(lista) && lista > 0), `centro.json › servizioEmail.listaPromo deve essere null o un numero intero positivo: ${JSON.stringify(lista)}`);
+  const salvati = { chiave: process.env.BREVO_API_KEY, url: process.env.SUPABASE_URL, segreta: process.env.SUPABASE_SECRET_KEY, fetch: globalThis.fetch, errore: console.error };
+  const chiamate = [];
+  const log = [];
+  let risposta = () => new Response(JSON.stringify({ id: 1 }), { status: 201 });
+  try {
+    globalThis.fetch = async (url, opz) => { chiamate.push({ url, opz }); return risposta(); };
+    console.error = (...a) => log.push(a.join(" "));
+    const dati = { email: "anna@esempio.it" };
+    delete process.env.BREVO_API_KEY;
+    verifica((await f.aggiungiAllaLista(dati, 7)) === false && chiamate.length === 0, "senza BREVO_API_KEY parte una chiamata");
+    process.env.BREVO_API_KEY = "chiave-brevo-finta";
+    for (const sbagliato of [null, 0, -3, 2.5, "7"]) {
+      verifica((await f.aggiungiAllaLista(dati, sbagliato)) === false && chiamate.length === 0, `con lista ${JSON.stringify(sbagliato)} parte una chiamata`);
+    }
+    verifica((await f.aggiungiAllaLista(dati, 7)) === true, "con Brevo che crea il contatto (201) non restituisce true");
+    const c = chiamate[0];
+    const corpo = JSON.parse(c.opz.body);
+    verifica(c.url === "https://api.brevo.com/v3/contacts" && c.opz.method === "POST" && c.opz.headers["api-key"] === "chiave-brevo-finta", "endpoint, metodo o api-key");
+    verifica(corpo.email === "anna@esempio.it" && JSON.stringify(corpo.listIds) === "[7]" && corpo.updateEnabled === true, `corpo: ${c.opz.body}`);
+    verifica(!("emailBlacklisted" in corpo), "la chiamata non deve cambiare chi si è disiscritto");
+    risposta = () => new Response(null, { status: 204 });
+    verifica((await f.aggiungiAllaLista(dati, 7)) === true, "con Brevo che aggiorna un contatto esistente (204) non restituisce true");
+    risposta = () => new Response("{}", { status: 400 });
+    verifica((await f.aggiungiAllaLista(dati, 7)) === false, "con Brevo che rifiuta restituisce true");
+    risposta = () => { throw new TypeError("rete"); };
+    verifica((await f.aggiungiAllaLista(dati, 7)) === false, "con la rete giù restituisce true");
+    verifica(log.length === 2 && log.every((l) => !l.includes("anna") && !l.includes("chiave-brevo")), `log: ${log.join(" | ")}`);
+    // Gestore in modalità prova: nessuna chiamata a Brevo.
+    chiamate.length = 0;
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_SECRET_KEY;
+    const r = await (await f.default(new Request("http://x/api/codice-sconto", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ email: "anna@esempio.it", consenso: true }) }))).json();
+    verifica(r.prova === true && chiamate.length === 0, "in modalità prova parte una chiamata a Brevo");
+  } finally {
+    for (const [k, v] of [["BREVO_API_KEY", salvati.chiave], ["SUPABASE_URL", salvati.url], ["SUPABASE_SECRET_KEY", salvati.segreta]]) {
+      if (v === undefined) delete process.env[k]; else process.env[k] = v;
+    }
+    globalThis.fetch = salvati.fetch;
+    console.error = salvati.errore;
+  }
+});
+
 await controllo("pulizia dei dati (§10, privacy): pulisci_iscritti() cancella le iscrizioni revocate e quelle senza interazioni da oltre 24 mesi; nessuno tranne postgres la esegue; Supabase Cron la lancia ogni giorno", () => {
   const sql = leggi("supabase/iscritti.sql").replace(/--[^\n]*/g, "");
   for (const re of [
