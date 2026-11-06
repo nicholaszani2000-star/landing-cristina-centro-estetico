@@ -8,9 +8,11 @@
 // Testo e versione del consenso vengono dal server (content/testi.json), mai dal browser.
 // Nei log non compare mai l'email. Con BREVO_API_KEY e un mittente in centro.json (integrazioni.servizioEmail.mittente)
 // il codice salvato arriva anche via email; emailInviata è true solo se Brevo ha accettato l'invio (§2.4).
-// Con BREVO_API_KEY e integrazioni.servizioEmail.listaPromo l'email entra anche nella lista delle promo di Brevo.
+// Con BREVO_API_KEY e integrazioni.servizioEmail.listaPromo (il nome della lista) l'email entra anche nella lista
+// delle promo di Brevo; se la lista non c'è più, la funzione la ricrea da sola.
 // Documentazione Brevo: «Send a transactional email» (POST /v3/smtp/email, header api-key, un solo tipo di corpo)
-// e «Create a contact» (POST /v3/contacts con listIds e updateEnabled).
+// e «Create a contact» (POST /v3/contacts con listIds e updateEnabled); liste e cartelle: GET/POST /v3/contacts/lists
+// (name e folderId obbligatori) e /v3/contacts/folders.
 // Documentazione: contesto ufficiale Netlify Functions (gestore, config con path/method/rateLimit, Netlify.env.get).
 
 import { createHash } from "node:crypto";
@@ -168,28 +170,80 @@ export async function inviaEmail({ email, codice, scadenza }, mittente = centro.
 
 // ------------------------------------------------------------------ lista delle promo (Brevo)
 
-const BREVO_CONTATTI = "https://api.brevo.com/v3/contacts";
+const BREVO_API = "https://api.brevo.com/v3";
+let listaInMemoria = null; // { nome, id }: resta finché l'istanza della funzione è calda, così si cerca una volta sola
+
+/** Chiamata a Brevo con la chiave e un tempo massimo (GET senza corpo, POST con corpo JSON). */
+function brevo(chiave, percorso, corpo) {
+  return fetch(BREVO_API + percorso, {
+    method: corpo ? "POST" : "GET",
+    headers: { "api-key": chiave, "Content-Type": "application/json", Accept: "application/json" },
+    ...(corpo ? { body: JSON.stringify(corpo) } : {}),
+    signal: AbortSignal.timeout(6000),
+  });
+}
+
+const stessoNome = (a, b) => String(a ?? "").trim().toLowerCase() === String(b ?? "").trim().toLowerCase();
 
 /**
- * Mette l'email nella lista delle promo su Brevo (centro.json › integrazioni.servizioEmail.listaPromo): Brevo crea il
- * contatto o, se esiste già, lo aggiunge alla lista (updateEnabled). Non tocca chi si è disiscritto da Brevo.
- * Le promo mensili si creano e si inviano dal pannello di Brevo, con il link di disiscrizione che Brevo aggiunge da sé.
- * Restituisce true solo se Brevo accetta; senza chiave o senza un ID di lista valido non fa nulla.
+ * ID della lista delle promo. In centro.json › integrazioni.servizioEmail.listaPromo c'è il NOME della lista
+ * («Promo sito»): la funzione la cerca su Brevo e, se non c'è (per esempio perché è stata cancellata), la crea nella
+ * prima cartella dei contatti, o in una cartella nuova «Sito» se non ce n'è nessuna. Così la lista si ripara da sola.
+ * Un numero intero positivo vale come ID fisso; qualsiasi altro valore spegne la lista (null).
+ */
+export async function idListaPromo(chiave, lista) {
+  if (Number.isInteger(lista) && lista > 0) return lista;
+  if (typeof lista !== "string" || !lista.trim()) return null;
+  if (listaInMemoria && stessoNome(listaInMemoria.nome, lista)) return listaInMemoria.id;
+  for (let offset = 0; offset < 500; ) {
+    const r = await brevo(chiave, `/contacts/lists?limit=50&offset=${offset}`);
+    if (!r.ok) throw new Error(`liste ${r.status}`);
+    const { lists = [], count = 0 } = await r.json();
+    const trovata = lists.find((l) => stessoNome(l.name, lista));
+    if (trovata) return (listaInMemoria = { nome: lista, id: trovata.id }).id;
+    offset += lists.length;
+    if (!lists.length || offset >= count) break;
+  }
+  const rc = await brevo(chiave, "/contacts/folders?limit=50&offset=0");
+  if (!rc.ok) throw new Error(`cartelle ${rc.status}`);
+  let cartella = (await rc.json()).folders?.[0]?.id;
+  if (!cartella) {
+    const rn = await brevo(chiave, "/contacts/folders", { name: "Sito" });
+    if (!rn.ok) throw new Error(`nuova cartella ${rn.status}`);
+    cartella = (await rn.json()).id;
+  }
+  const rl = await brevo(chiave, "/contacts/lists", { name: lista.trim(), folderId: cartella });
+  if (!rl.ok) throw new Error(`nuova lista ${rl.status}`);
+  const { id } = await rl.json();
+  if (!Number.isInteger(id)) throw new Error("nuova lista senza ID");
+  console.log(`codice-sconto: Brevo, creata la lista «${lista.trim()}» (ID ${id})`);
+  return (listaInMemoria = { nome: lista, id }).id;
+}
+
+/**
+ * Mette l'email nella lista delle promo su Brevo: Brevo crea il contatto o, se esiste già, lo aggiunge alla lista
+ * (updateEnabled). Non tocca chi si è disiscritto da Brevo. Le promo mensili si creano e si inviano dal pannello di
+ * Brevo, con il link di disiscrizione che Brevo aggiunge da sé. Se l'aggiunta fallisce con una lista ricordata in
+ * memoria, la lista si cerca di nuovo e si riprova una volta (può essere stata cancellata e ricreata).
+ * Restituisce true solo se Brevo accetta; senza chiave o senza lista non fa nulla. Mai l'email nei log.
  */
 export async function aggiungiAllaLista({ email }, lista = centro.integrazioni?.servizioEmail?.listaPromo) {
   const chiave = env("BREVO_API_KEY");
-  if (!chiave || !Number.isInteger(lista) || lista <= 0) return false;
+  if (!chiave) return false;
   try {
-    const risposta = await fetch(BREVO_CONTATTI, {
-      method: "POST",
-      headers: { "api-key": chiave, "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({ email, listIds: [lista], updateEnabled: true }),
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!risposta.ok) console.error(`codice-sconto: Brevo lista ${risposta.status}`); // mai l'email nei log
+    const id = await idListaPromo(chiave, lista);
+    if (!id) return false;
+    let risposta = await brevo(chiave, "/contacts", { email, listIds: [id], updateEnabled: true });
+    if (!risposta.ok && typeof lista === "string") {
+      listaInMemoria = null;
+      const nuovo = await idListaPromo(chiave, lista);
+      if (nuovo && nuovo !== id) risposta = await brevo(chiave, "/contacts", { email, listIds: [nuovo], updateEnabled: true });
+    }
+    if (!risposta.ok) console.error(`codice-sconto: Brevo lista ${risposta.status}`);
     return risposta.ok;
   } catch (e) {
-    console.error(`codice-sconto: Brevo lista ${e.name}`);
+    listaInMemoria = null;
+    console.error(`codice-sconto: Brevo lista ${e.name === "Error" ? e.message : e.name}`);
     return false;
   }
 }

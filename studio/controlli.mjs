@@ -2548,7 +2548,7 @@ await controllo("Brevo (finto): POST /v3/smtp/email con api-key, mittente di cen
   const log = [];
   let risposta = () => new Response(JSON.stringify({ messageId: "<prova@brevo>" }), { status: 201 });
   try {
-    globalThis.fetch = async (url, opz) => { chiamate.push({ url, opz }); return risposta(); };
+    globalThis.fetch = async (url, opz) => { chiamate.push({ url, opz }); return risposta(String(url), opz); };
     console.error = (...a) => log.push(a.join(" "));
     const dati = { email: "anna@esempio.it", codice: "MIG-ABC234", scadenza: "2026-12-02" };
     delete process.env.BREVO_API_KEY;
@@ -2580,7 +2580,9 @@ await controllo("Brevo (finto): POST /v3/smtp/email con api-key, mittente di cen
     verifica(r1.prova === true && r1.emailInviata === false && chiamate.length === 0, "in modalità prova parte l'email");
     process.env.SUPABASE_URL = "https://progetto-finto.supabase.co";
     process.env.SUPABASE_SECRET_KEY = "chiave-finta";
-    risposta = () => Response.json([{ codice: "MIG-ABC234", scadenza: "2026-12-02", nuovo: true }]);
+    risposta = (url) => url.includes("/contacts/lists")
+      ? Response.json({ lists: [{ id: 3, name: String(centro.integrazioni.servizioEmail?.listaPromo ?? "") }], count: 1 })
+      : Response.json([{ codice: "MIG-ABC234", scadenza: "2026-12-02", nuovo: true }]);
     const r2 = await (await invia()).json();
     verifica(r2.prova === false && r2.emailInviata === (centro.integrazioni.servizioEmail?.mittente ? true : false), `con Supabase: ${JSON.stringify(r2)}`);
     verifica(chiamate.every((ch) => !String(ch.url).includes("/v3/smtp/email")) || centro.integrazioni.servizioEmail?.mittente, "senza mittente in centro.json è partita un'email da Brevo");
@@ -2595,38 +2597,102 @@ await controllo("Brevo (finto): POST /v3/smtp/email con api-key, mittente di cen
   }
 });
 
-await controllo("Brevo lista promo (finto): POST /v3/contacts con api-key, email, listIds con l'ID di centro.json e updateEnabled; true solo se Brevo accetta (201 o 204); senza chiave o senza un ID intero positivo nessuna chiamata; in modalità prova nessuna chiamata; mai l'email nei log", async () => {
+await controllo("Brevo lista promo (finto): listaPromo è il nome della lista; la funzione la cerca (GET /v3/contacts/lists), la ricorda, la crea se manca (nella prima cartella o in una cartella nuova) e la ritrova se è stata cancellata e ricreata; POST /v3/contacts con api-key, email, listIds e updateEnabled; true solo se Brevo accetta (201 o 204); senza chiave o senza lista nessuna chiamata; in modalità prova nessuna chiamata; mai l'email nei log", async () => {
   const f = await import(pathToFileURL(FUNZIONE).href);
-  verifica(typeof f.aggiungiAllaLista === "function", "aggiungiAllaLista non esportata");
+  verifica(typeof f.aggiungiAllaLista === "function" && typeof f.idListaPromo === "function", "aggiungiAllaLista o idListaPromo non esportate");
   const lista = centro.integrazioni.servizioEmail?.listaPromo;
-  verifica(lista === null || (Number.isInteger(lista) && lista > 0), `centro.json › servizioEmail.listaPromo deve essere null o un numero intero positivo: ${JSON.stringify(lista)}`);
-  const salvati = { chiave: process.env.BREVO_API_KEY, url: process.env.SUPABASE_URL, segreta: process.env.SUPABASE_SECRET_KEY, fetch: globalThis.fetch, errore: console.error };
+  verifica(lista === null || (Number.isInteger(lista) && lista > 0) || (typeof lista === "string" && lista.trim().length > 0), `centro.json › servizioEmail.listaPromo deve essere null, un nome o un ID intero positivo: ${JSON.stringify(lista)}`);
+  const salvati = { chiave: process.env.BREVO_API_KEY, url: process.env.SUPABASE_URL, segreta: process.env.SUPABASE_SECRET_KEY, fetch: globalThis.fetch, errore: console.error, log: console.log };
   const chiamate = [];
   const log = [];
-  let risposta = () => new Response(JSON.stringify({ id: 1 }), { status: 201 });
+  // Brevo finto: liste e cartelle in memoria, contatti accettati solo se la lista esiste.
+  let liste = [];
+  let cartelle = [{ id: 1, name: "Your first folder" }];
+  let prossimo = 50;
+  let contattoRisponde = null; // per forzare una risposta dei contatti (400, rete giù…)
+  const brevoFinto = async (url, opz = {}) => {
+    const u = new URL(url);
+    const metodo = opz.method ?? "GET";
+    const corpo = opz.body ? JSON.parse(opz.body) : null;
+    chiamate.push({ percorso: u.pathname, metodo, corpo, chiave: opz.headers?.["api-key"] });
+    if (u.pathname === "/v3/contacts/lists" && metodo === "GET") {
+      const da = Number(u.searchParams.get("offset")), quanti = Number(u.searchParams.get("limit"));
+      return Response.json({ lists: liste.slice(da, da + quanti), count: liste.length });
+    }
+    if (u.pathname === "/v3/contacts/folders" && metodo === "GET") return Response.json({ folders: cartelle, count: cartelle.length });
+    if (u.pathname === "/v3/contacts/folders" && metodo === "POST") { const id = prossimo++; cartelle.push({ id, name: corpo.name }); return Response.json({ id }, { status: 201 }); }
+    if (u.pathname === "/v3/contacts/lists" && metodo === "POST") {
+      if (!corpo.name || !corpo.folderId) return Response.json({ code: "missing_parameter" }, { status: 400 });
+      const id = prossimo++; liste.unshift({ id, name: corpo.name, folderId: corpo.folderId }); return Response.json({ id }, { status: 201 });
+    }
+    if (u.pathname === "/v3/contacts" && metodo === "POST") {
+      if (contattoRisponde) return contattoRisponde();
+      return corpo.listIds.every((id) => liste.some((l) => l.id === id)) ? Response.json({ id: 1 }, { status: 201 }) : Response.json({ code: "invalid_parameter" }, { status: 400 });
+    }
+    return new Response("{}", { status: 404 });
+  };
   try {
-    globalThis.fetch = async (url, opz) => { chiamate.push({ url, opz }); return risposta(); };
+    globalThis.fetch = brevoFinto;
     console.error = (...a) => log.push(a.join(" "));
+    console.log = (...a) => log.push(a.join(" "));
     const dati = { email: "anna@esempio.it" };
     delete process.env.BREVO_API_KEY;
-    verifica((await f.aggiungiAllaLista(dati, 7)) === false && chiamate.length === 0, "senza BREVO_API_KEY parte una chiamata");
+    verifica((await f.aggiungiAllaLista(dati, "Promo prova")) === false && chiamate.length === 0, "senza BREVO_API_KEY parte una chiamata");
     process.env.BREVO_API_KEY = "chiave-brevo-finta";
-    for (const sbagliato of [null, 0, -3, 2.5, "7"]) {
+    for (const sbagliato of [null, 0, -3, 2.5, "", "   ", {}]) {
       verifica((await f.aggiungiAllaLista(dati, sbagliato)) === false && chiamate.length === 0, `con lista ${JSON.stringify(sbagliato)} parte una chiamata`);
     }
-    verifica((await f.aggiungiAllaLista(dati, 7)) === true, "con Brevo che crea il contatto (201) non restituisce true");
+    // ID fisso: nessuna ricerca, solo il contatto.
+    liste = [{ id: 7, name: "Altra" }];
+    verifica((await f.aggiungiAllaLista(dati, 7)) === true && chiamate.length === 1 && chiamate[0].percorso === "/v3/contacts", `ID fisso: ${JSON.stringify(chiamate.map((c) => c.percorso))}`);
     const c = chiamate[0];
-    const corpo = JSON.parse(c.opz.body);
-    verifica(c.url === "https://api.brevo.com/v3/contacts" && c.opz.method === "POST" && c.opz.headers["api-key"] === "chiave-brevo-finta", "endpoint, metodo o api-key");
-    verifica(corpo.email === "anna@esempio.it" && JSON.stringify(corpo.listIds) === "[7]" && corpo.updateEnabled === true, `corpo: ${c.opz.body}`);
-    verifica(!("emailBlacklisted" in corpo), "la chiamata non deve cambiare chi si è disiscritto");
-    risposta = () => new Response(null, { status: 204 });
+    verifica(c.metodo === "POST" && c.chiave === "chiave-brevo-finta" && c.corpo.email === "anna@esempio.it" && JSON.stringify(c.corpo.listIds) === "[7]" && c.corpo.updateEnabled === true && !("emailBlacklisted" in c.corpo), `contatto: ${JSON.stringify(c.corpo)}`);
+    // Per nome: trova la lista (maiuscole e spazi non contano), poi la ricorda.
+    chiamate.length = 0;
+    liste = [{ id: 7, name: "Altra" }, { id: 12, name: " promo PROVA " }];
+    verifica((await f.aggiungiAllaLista(dati, "Promo prova")) === true, "per nome: la lista esistente non viene trovata");
+    verifica(chiamate.length === 2 && chiamate[0].percorso === "/v3/contacts/lists" && JSON.stringify(chiamate[1].corpo.listIds) === "[12]", `per nome: ${JSON.stringify(chiamate.map((c) => [c.metodo, c.percorso, c.corpo?.listIds]))}`);
+    chiamate.length = 0;
+    verifica((await f.aggiungiAllaLista(dati, "Promo prova")) === true && chiamate.length === 1, "la lista trovata non resta in memoria");
+    // Più di 50 liste: si sfoglia.
+    chiamate.length = 0;
+    liste = Array.from({ length: 60 }, (_, k) => ({ id: 100 + k, name: `Lista ${k}` }));
+    liste[55].name = "Promo lontana";
+    verifica((await f.idListaPromo("chiave-brevo-finta", "Promo lontana")) === 155 && chiamate.filter((c) => c.percorso === "/v3/contacts/lists").length === 2, "con più di 50 liste non sfoglia la seconda pagina");
+    // Lista che non c'è: si crea nella prima cartella.
+    chiamate.length = 0;
+    liste = [{ id: 7, name: "Altra" }];
+    verifica((await f.aggiungiAllaLista(dati, "Promo nuova")) === true, "lista mancante: non viene creata");
+    const creata = chiamate.find((c) => c.metodo === "POST" && c.percorso === "/v3/contacts/lists");
+    verifica(creata && creata.corpo.name === "Promo nuova" && creata.corpo.folderId === 1, `creazione: ${JSON.stringify(creata?.corpo)}`);
+    verifica(liste.filter((l) => l.name === "Promo nuova").length === 1, "lista creata due volte");
+    // Nessuna cartella: si crea anche la cartella «Sito».
+    chiamate.length = 0;
+    cartelle = [];
+    verifica((await f.aggiungiAllaLista(dati, "Promo senza cartella")) === true && cartelle.some((k) => k.name === "Sito"), "senza cartelle non crea la cartella «Sito»");
+    // Lista cancellata e ricreata con un altro ID: la memoria si aggiorna e il contatto entra nella nuova.
+    chiamate.length = 0;
+    liste = liste.filter((l) => !stessoNomeProva(l.name, "Promo prova"));
+    liste.unshift({ id: 99, name: "Promo prova" });
+    verifica((await f.aggiungiAllaLista(dati, "Promo prova")) === true, "lista cancellata e ricreata: il contatto non entra");
+    const ultimo = chiamate.filter((c) => c.percorso === "/v3/contacts").at(-1);
+    verifica(JSON.stringify(ultimo?.corpo.listIds) === "[99]", `lista ricreata: ${JSON.stringify(chiamate.map((c) => [c.metodo, c.percorso, c.corpo?.listIds]))}`);
+    // Lista cancellata e non ricreata: la funzione la ricrea da sola.
+    chiamate.length = 0;
+    liste = liste.filter((l) => l.id !== 99);
+    verifica((await f.aggiungiAllaLista(dati, "Promo prova")) === true && liste.some((l) => l.name === "Promo prova"), "lista cancellata: non viene ricreata");
+    // Risposte di Brevo: 204 vale come riuscita, 400 e rete giù no.
+    contattoRisponde = () => new Response(null, { status: 204 });
     verifica((await f.aggiungiAllaLista(dati, 7)) === true, "con Brevo che aggiorna un contatto esistente (204) non restituisce true");
-    risposta = () => new Response("{}", { status: 400 });
+    contattoRisponde = () => new Response("{}", { status: 400 });
     verifica((await f.aggiungiAllaLista(dati, 7)) === false, "con Brevo che rifiuta restituisce true");
-    risposta = () => { throw new TypeError("rete"); };
+    contattoRisponde = () => { throw new TypeError("rete"); };
     verifica((await f.aggiungiAllaLista(dati, 7)) === false, "con la rete giù restituisce true");
-    verifica(log.length === 2 && log.every((l) => !l.includes("anna") && !l.includes("chiave-brevo")), `log: ${log.join(" | ")}`);
+    contattoRisponde = null;
+    globalThis.fetch = async () => new Response("{}", { status: 401 });
+    verifica((await f.aggiungiAllaLista(dati, "Promo con chiave sbagliata")) === false, "con la chiave rifiutata restituisce true");
+    globalThis.fetch = brevoFinto;
+    verifica(log.length >= 3 && log.every((l) => !l.includes("anna") && !l.includes("chiave-brevo")), `log: ${log.join(" | ")}`);
     // Gestore in modalità prova: nessuna chiamata a Brevo.
     chiamate.length = 0;
     delete process.env.SUPABASE_URL;
@@ -2639,8 +2705,10 @@ await controllo("Brevo lista promo (finto): POST /v3/contacts con api-key, email
     }
     globalThis.fetch = salvati.fetch;
     console.error = salvati.errore;
+    console.log = salvati.log;
   }
 });
+function stessoNomeProva(a, b) { return String(a).trim().toLowerCase() === String(b).trim().toLowerCase(); }
 
 await controllo("pulizia dei dati (§10, privacy): pulisci_iscritti() cancella le iscrizioni revocate e quelle senza interazioni da oltre 24 mesi; nessuno tranne postgres la esegue; Supabase Cron la lancia ogni giorno", () => {
   const sql = leggi("supabase/iscritti.sql").replace(/--[^\n]*/g, "");
