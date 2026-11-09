@@ -19,6 +19,15 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
     X-Frame-Options = "DENY"
+    # Step 9 (§4). L'impronta sha256 è quella dell'unico script inline (classe «js» sull'<html>): se lo script
+    # cambia, va ricalcolata (lo verifica studio/controlli.mjs). Google e Meta solo per GA4 e pixel, dopo il consenso.
+    # Niente upgrade-insecure-requests: finché il certificato HTTPS del dominio non è attivo, la pagina arriva in
+    # http e quella direttiva chiederebbe CSS, immagini e font in https, che non risponde (pagina senza stile, primo
+    # deploy del 3 novembre). Gli indirizzi del sito sono tutti relativi; il passaggio a https lo fa Netlify.
+    # Pixel Meta: oltre a script (connect.facebook.net), immagini e connessioni (www.facebook.com), per gli eventi con
+    # molti dati lo script di Meta invia con un modulo in un iframe nascosto verso www.facebook.com/tr: per questo
+    # frame-src e form-action ammettono www.facebook.com (configurazione usata anche da Sharetribe per il pixel).
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'sha256-qOhFsq0QMV2REqNwk5hGH5bZE9SkX6gt6yeyKdYPv+U=' https://*.googletagmanager.com https://connect.facebook.net; style-src 'self'; img-src 'self' data: https://*.google-analytics.com https://*.googletagmanager.com https://www.facebook.com; font-src 'self'; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://www.facebook.com https://connect.facebook.net; frame-src https://www.facebook.com; object-src 'none'; base-uri 'self'; form-action 'self' https://www.facebook.com; frame-ancestors 'none'"
 
 # Cache: font, CSS e JS hanno ?v=<hash> nei link, quindi sono immutabili.
 [[headers]]
@@ -42,4 +51,3 @@
   [headers.values]
     Cache-Control = "public, max-age=2592000"
 
-# Content-Security-Policy: allo Step 9, quando si conoscono i domini di GA4 e Meta.

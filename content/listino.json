@@ -1,0 +1,74 @@
+{
+  "categorie": [
+    {
+      "id": "mani-piedi",
+      "titolo": "Manicure e pedicure",
+      "voci": [
+        { "nome": "Manicure senza smalto", "prezzo": 15 },
+        { "nome": "Pedicure estetico senza smalto", "prezzo": 35 },
+        { "nome": "Pedicure avanzato senza smalto", "prezzo": 40 },
+        { "nome": "Applicazione smalto", "supplemento": 5 },
+        { "nome": "Pedicure estetico con semipermanente", "prezzo": 45 },
+        { "nome": "Pedicure avanzato con semipermanente", "prezzo": 50 },
+        { "nome": "Taglio unghie mani o piedi", "prezzo": 10 },
+        { "nome": "Trattamento paraffina mani", "prezzo": 30 },
+        { "nome": "Trattamento paraffina piedi", "prezzo": 35 }
+      ]
+    },
+    {
+      "id": "epilazione",
+      "titolo": "Epilazione",
+      "voci": [
+        { "nome": "Labbro superiore", "prezzo": 5 },
+        { "nome": "Sopracciglia", "prezzo": 10 },
+        { "nome": "Braccia", "prezzo": 15 },
+        { "nome": "Ascelle", "prezzo": 10 },
+        { "nome": "Pancia", "prezzo": 10 },
+        { "nome": "Glutei", "prezzo": 10 },
+        { "nome": "Inguine", "prezzo": 10 },
+        { "nome": "Inguine completo", "prezzo": 15 },
+        { "nome": "Mezza gamba (senza/con inguine)", "prezzi": [20, 25] },
+        { "nome": "Gamba intera (senza/con inguine)", "prezzi": [30, 35] },
+        { "nome": "Petto e addome uomo", "da": 30, "a": 40 },
+        { "nome": "Schiena uomo", "da": 30, "a": 40 }
+      ]
+    },
+    {
+      "id": "brasiliana",
+      "titolo": "Epilazione brasiliana multidirezionale",
+      "voci": [
+        { "nome": "Labbro superiore", "prezzo": 10 },
+        { "nome": "Ascelle", "prezzo": 15 },
+        { "nome": "Pancia", "prezzo": 20 },
+        { "nome": "Glutei", "prezzo": 20 },
+        { "nome": "Inguine", "prezzo": 20 },
+        { "nome": "Inguine completo", "prezzo": 25 },
+        { "nome": "Petto e addome uomo", "prezzo": 30 },
+        { "nome": "Schiena uomo", "da": 40, "a": 50 }
+      ]
+    },
+    {
+      "id": "massaggi",
+      "titolo": "Massaggi",
+      "voci": [
+        { "nome": "Massaggio gambe e addome", "prezzo": 35 },
+        { "nome": "Massaggio schiena", "prezzo": 35 },
+        { "nome": "Massaggio completo", "prezzo": 55 }
+      ]
+    },
+    {
+      "id": "corpo-viso",
+      "titolo": "Trattamenti corpo e viso",
+      "voci": [
+        { "nome": "Peeling corpo", "da": 50, "a": 60 },
+        { "nome": "Trattamento corpo", "da": 60 },
+        { "nome": "Pulizia schiena", "prezzo": 35 },
+        { "nome": "Pulizia viso base", "prezzo": 55 },
+        { "nome": "Trattamento viso Antiage", "da": 80, "a": 120 },
+        { "nome": "Trattamento Antiage contorno occhi e labbra", "prezzo": 40 },
+        { "nome": "Laminazione ciglia", "prezzo": 50 },
+        { "nome": "Laminazione sopracciglia", "prezzo": 50 }
+      ]
+    }
+  ]
+}

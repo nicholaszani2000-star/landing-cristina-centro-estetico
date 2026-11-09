@@ -7,7 +7,8 @@
   "scripts": {
     "build": "node build.mjs",
     "anteprima": "node studio/anteprima.mjs",
-    "controlli": "node studio/controlli.mjs"
+    "controlli": "node studio/controlli.mjs",
+    "lighthouse": "node studio/lighthouse.mjs"
   },
   "engines": {
     "node": ">=20"

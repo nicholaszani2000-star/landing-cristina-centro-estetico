@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+{{> testa}}
+</head>
+<body>
+{{> header}}
+<main id="contenuto">
+<section class="sezione legale" aria-labelledby="legale-titolo">
+  <div class="contenitore">
+    <div class="legale-testo">
+      {{> legale-testata}}
+      {{#se legali.tracciamenti}}
+      <h2>{{t.cookie.attivi.h2}}</h2>
+      {{#ogni t.cookie.attivi.testi}}<p>{{.}}</p>
+      {{/ogni}}
+      {{#ogni legali.cookie}}<div class="legale-blocco">
+        <h3 class="legale-cookie-nome">{{nome}}</h3>
+        <dl class="legale-scheda">
+          <div><dt>{{t.cookie.attivi.etichette.categoria}}</dt><dd>{{categoria}}</dd></div>
+          <div><dt>{{t.cookie.attivi.etichette.fornitore}}</dt><dd>{{fornitore}}</dd></div>
+          <div><dt>{{t.cookie.attivi.etichette.durata}}</dt><dd>{{durata}}</dd></div>
+          <div><dt>{{t.cookie.attivi.etichette.finalita}}</dt><dd>{{finalita}}</dd></div>
+        </dl>
+      </div>
+      {{/ogni}}
+      <h2>{{t.cookie.scelta.h2}}</h2>
+      {{#ogni t.cookie.scelta.testi}}<p>{{.}}</p>
+      {{/ogni}}
+      {{altrimenti}}
+      <h2>{{t.cookie.nessuno.h2}}</h2>
+      {{#ogni t.cookie.nessuno.testi}}<p>{{.}}</p>
+      {{/ogni}}
+      {{/se}}
+
+      <p class="legale-link"><a href="{{link.privacy}}">{{t.cookie.linkPrivacy}}</a></p>
+    </div>
+  </div>
+</section>
+</main>
+{{> footer}}
+{{#se tracciamenti.attivo}}{{> banner-cookie}}{{/se}}
+</body>
+</html>

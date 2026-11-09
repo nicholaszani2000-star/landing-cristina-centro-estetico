@@ -40,7 +40,7 @@ Struttura obbligatoria:
 │  ├─ testi.json          tutti i testi, per pagina
 │  └─ listino.json        il listino prezzi (§2.3)
 ├─ src/
-│  ├─ templates/          pagina.html, parti/*.html, privacy.html, cookie.html, 404.html
+│  ├─ templates/          pagina.html, parti/*.html, icone/*.svg, privacy.html, cookie.html, 404.html
 │  ├─ css/                tokens.css, base.css, sezioni.css
 │  ├─ js/                 main.js, consenso.js, codice.js
 │  ├─ fonts/              woff2 self-hosted
@@ -83,16 +83,16 @@ Regola generale: se un dato manca non inventarlo. Usa un testo neutro, oppure om
 - Indirizzo del centro: Via Roma 2/A, 21040 Caronno Varesino (VA)
 - Telefono (anche WhatsApp): 352 060 1109 · formato internazionale +393520601109 · numero per wa.me 393520601109
 - Email: esteticamigliore@gmail.com
-- Giorni: dal lunedì al sabato · Orario: dalle 08:00 alle 17:00 · solo su appuntamento
+- Orari (aggiornati dalla titolare il 3 novembre 2026): dal martedì al venerdì, dalle 09:00 alle 18:00; il sabato, dalle 08:00 alle 14:00; lunedì e domenica chiuso · solo su appuntamento
 - Presentazione di Cristina: non indicata (usa il testo predefinito di §8)
-- Dominio: non indicato (usa l'indirizzo .netlify.app)
+- Dominio: esteticamigliore.it, registrato su Register.it, DNS esterno puntato a Netlify. Indirizzo principale del sito: https://esteticamigliore.it, senza www (deciso il 3 novembre 2026: è l'indirizzo principale su Netlify, con HTTPS attivo, ed è quello verificato su Google Search Console). www.esteticamigliore.it, quando ha il suo record CNAME verso Netlify, porta lì da solo.
 - Instagram: non indicato (nessun link) · Facebook: non indicato (nessun link) · Scheda Google: non indicata (il pulsante Maps usa la ricerca dell'indirizzo)
 
 Regole condizionali:
 - Se il REA non è indicato, la riga REA nel footer non compare.
 - Se la sede legale non è indicata, nel footer compare solo l'indirizzo del centro.
 - Un social senza link non compare: niente icone vuote.
-- Gli orari si scrivono come «dal lunedì al sabato, dalle 08:00 alle 17:00, su appuntamento». Nei dati strutturati (`openingHoursSpecification`) ricava i giorni da «dal lunedì al sabato»; se non riesci a ricavarli senza ambiguità, ometti `openingHoursSpecification` e segnalalo.
+- Gli orari sono a fasce: in `centro.json › orari.fasce` una voce per fascia (giorni, apertura, chiusura). Si scrivono come «dal martedì al venerdì, dalle 09:00 alle 18:00; il sabato, dalle 08:00 alle 14:00», su appuntamento. Nei dati strutturati (`openingHoursSpecification`) una specifica per fascia, con i giorni ricavati da «dal martedì al venerdì» e «il sabato»; se una fascia non si ricava senza ambiguità, ometti `openingHoursSpecification` e segnalalo.
 - Il codice fiscale e il domicilio personale della titolare non compaiono mai nel sito.
 
 ### §2.2 Trattamenti in evidenza
@@ -108,10 +108,10 @@ Laminazione sopracciglia: i peli vengono fissati nella forma scelta, per sopracc
 - Macchinari (marca e modello): non indicati (non nominare macchinari)
 - Linee di prodotti usate: Natinuel, linea cosmetica professionale per centri estetici
 
-Pedicure:
-- Il pedicure estetico è la pedicure classica. Include: taglio e forma delle unghie, cura delle cuticole, levigatura della pelle dei talloni, crema finale. Durata: non indicata (non scrivere la durata).
-- Il pedicure avanzato va più a fondo. Include: tutto il pedicure estetico, un lavoro approfondito sulle zone dove la pelle si ispessisce, levigatura con strumenti professionali, idratazione finale. Durata: non indicata (non scrivere la durata).
-- Strumenti: non indicati (non nominare strumenti)
+Pedicure (le voci di «Include» sono separate da punto e virgola):
+- Il pedicure estetico è la pedicure classica. Include: pediluvio; scostamento delle cuticole; taglio e limatura delle unghie; levigatura dei talloni; smalto (base, due mani di colore e top coat) o semipermanente, se li scegli; crema finale. Durata: 30 minuti senza smalto, 40 con smalto, 50 con semipermanente.
+- Il pedicure avanzato aggiunge il lavoro con micromotore e frese. Include: pediluvio; scostamento delle cuticole; taglio e limatura delle unghie; lavoro con micromotore e frese sulle unghie e sulle zone dove la pelle si ispessisce; levigatura dei talloni; smalto o semipermanente, se li scegli. Durata: 45–50 minuti senza smalto, 50–55 con smalto, 60 con semipermanente.
+- Strumenti e igiene: micromotore professionale con frese specifiche per le unghie e per la pelle; strumenti puliti con gli ultrasuoni, sterilizzati a secco e conservati in buste sigillate
 
 Regole condizionali:
 - Dettagli, macchinari, prodotti, strumenti e durate compaiono solo se indicati qui. Se mancano, la sezione usa solo i nomi del listino e il copy neutro di §8, senza descrizioni inventate.
@@ -175,9 +175,9 @@ Trattamenti corpo e viso (id `corpo-viso`)
 - Trattamento viso Antiage — da 80 a 120 €
 - Trattamento Antiage contorno occhi e labbra — 40 €
 - Laminazione ciglia — 50 €
-- Laminazione sopracciglia — 30 €
+- Laminazione sopracciglia — 50 € (prezzo aggiornato dalla titolare il 3 novembre 2026; il listino stampato in foto 06 riporta ancora 30 €)
 
-Le voci viso della sezione viso (§6) sono, in quest'ordine: Pulizia viso base, Trattamento viso Antiage, Trattamento Antiage contorno occhi e labbra, Laminazione ciglia, Laminazione sopracciglia. La voce «Trattamento viso Antiage» va per prima, con l'etichetta «In evidenza».
+Le voci viso della sezione viso (§6) sono 5: Pulizia viso base, Trattamento viso Antiage, Trattamento Antiage contorno occhi e labbra, Laminazione ciglia, Laminazione sopracciglia. Nella sezione la voce «Trattamento viso Antiage» va per prima, con l'etichetta «In evidenza»; le altre seguono nell'ordine di questo elenco. Nel listino (sezione 9) l'ordine resta quello del cartaceo.
 
 ### §2.4 Codice sconto e promo email
 
@@ -185,13 +185,16 @@ Le voci viso della sezione viso (§6) sono, in quest'ordine: Pulizia viso base, 
 - Validità del codice: 30 giorni dalla generazione
 - Condizioni: su un trattamento a scelta, uno per persona, non cumulabile con altre promozioni
 - Frequenza delle promo: circa una volta al mese
-- Il codice si genera al momento, si mostra subito a schermo e si mostra a Cristina all'arrivo. Uno per email: se la stessa email si iscrive di nuovo, riceve lo stesso codice.
+- Il codice si genera al momento, si mostra subito a schermo e si mostra a Cristina all'arrivo. Quando Brevo è attivo (Step 9) arriva anche via email, nello stesso momento, così la cliente non lo perde; fino ad allora solo a schermo. Uno per email: se la stessa email si iscrive di nuovo, riceve lo stesso codice.
 
 ### §2.5 Integrazioni (si collegano solo all'ultimo step)
 
-- GA4: non indicato (GA4 resta spento)
-- Pixel Meta: non indicato (il pixel resta spento)
-- Progetto Supabase: non indicato (il codice resta in modalità prova)
+- GA4: G-DFCM449BWE (attivo dal 6 novembre 2026: parte solo dopo «Accetta» o «Statistiche» nel banner, con Google Consent Mode; Google Signals va lasciato spento, la CSP ammette solo i domini base di GA4)
+- Pixel Meta: 1682509193499996 (attivo dal 6 novembre 2026: parte solo dopo «Accetta» o «Marketing» nel banner, con consent revoke prima di init; eventi PageView, Contact e Lead. API Conversioni non ancora attiva: serve il token META_CAPI_TOKEN su Netlify)
+- Progetto Supabase: migliore-estetica (bkcpnkrnhjirmbwnrozp), regione eu-central-1 (Francoforte), con supabase/iscritti.sql applicato. SUPABASE_URL è su Netlify; SUPABASE_SECRET_KEY è su Netlify dal 6 novembre 2026, segreta e solo nel contesto di produzione: lì le iscrizioni si salvano davvero, nei Deploy Preview e in locale il codice resta in modalità prova.
+- Netlify: progetto esteticamigliore (https://esteticamigliore.netlify.app), collegato a GitHub dal 4 novembre 2026 con branch di produzione landing-migliore: ogni push su landing-migliore va online da solo (per un commit che non deve pubblicare, «[skip netlify]» nel messaggio). Dominio https://esteticamigliore.it con HTTPS attivo. Lo zip di studio/pacchetto-netlify.mjs resta solo come ripiego.
+- Google Search Console: proprietà «Prefisso URL» https://esteticamigliore.it, verificata con il file HTML (content/centro.json › integrazioni.googleFileVerifica).
+- Servizio email: Brevo (Francia). BREVO_API_KEY è su Netlify dal 6 novembre 2026, segreta e solo nel contesto di produzione. Lista delle promo: «Promo sito» (content/centro.json › integrazioni.servizioEmail.listaPromo, il nome della lista, non il numero): ogni iscritto entra da solo in questa lista, da cui Cristina invia le promo mensili. La funzione cerca la lista per nome e, se manca (per esempio perché è stata cancellata), la ricrea da sola. Mittente: esteticamigliore@gmail.com (servizioEmail.mittente): il codice arriva anche via email. Per una consegna più sicura, più avanti, meglio un mittente @esteticamigliore.it con il dominio autenticato su Brevo.
 - Chiavi segrete (Supabase, API Conversioni Meta, servizio email): MAI in questo file, MAI nel repository, MAI nella chat. Vanno solo nelle variabili d'ambiente di Netlify, con ambito «Functions».
 
 ### §2.6 Immagini (pacchetto «migliore-immagini.zip»)
@@ -206,7 +209,7 @@ Sono foto vere del centro. Restano identiche: niente ritocchi, niente rigenerazi
 | foto/04-cabina-lettino.png (941×1672) | Cabina con lettino, lampada a lente, lavabo | «Chi sono» |
 | foto/05-postazione-pedicure.png (941×1672) | Poltrona pedicure, poggiapiedi, carrello attrezzi | Sezione pedicure |
 | foto/06-listino-stampato.png (1536×1024) | Il listino stampato, due facciate | Listino: link «Vedi il listino stampato» |
-| logo/logo-trasparente.png (624×508) | Logo su fondo trasparente, senza payoff | Header e footer |
+| logo/logo-trasparente.png (624×508) | Logo su fondo trasparente, senza payoff | Header e footer, esportato a 240 e 320 px |
 | logo/logo-sabbia.png (624×508) | Lo stesso logo su fondo sabbia #F4DBCA | Riserva, se il trasparente dà problemi |
 | logo/farfalla.png (210×210) | La farfalla del logo su fondo sabbia | Favicon e icona per iPhone |
 | condivisione/og-1200x630.jpg | Logo e foto 01 su sabbia, per le anteprime dei link | Meta tag og:image |
@@ -260,12 +263,12 @@ Requisiti verificati sulla documentazione ufficiale, con le loro insidie:
 - Gli header di `netlify.toml` valgono solo per i file statici, non per le risposte delle Functions: quelle impostano i propri header nel codice.
 - Pretty URLs è attivo di default: non creare redirect per aggiungere o togliere la barra finale, causano cicli.
 - I Deploy Preview non vengono indicizzati da Google (`X-Robots-Tag: noindex` automatico).
-- La variabile `URL` è disponibile durante la build con l'indirizzo principale del sito: usala per URL assoluti (canonical, og:url, sitemap); se manca, usa il dominio di §2.1 con `https://`; se anche il dominio non è indicato, ometti gli URL assoluti e segnalalo.
+- La variabile `URL` è disponibile durante la build con l'indirizzo principale del sito: usala per URL assoluti (canonical, og:url, sitemap); se manca, usa l'indirizzo principale di §2.1 (https://esteticamigliore.it); se anche il dominio non è indicato, ometti gli URL assoluti e segnalalo.
 - `.netlify/` va in `.gitignore`.
 - Supabase: RLS sempre attivo sulle tabelle in `public`. Creando la tabella in SQL bisogna attivarlo e dare i permessi esplicitamente. Qui: nessun permesso ad `anon` e `authenticated`, permessi solo a `service_role`. La chiave segreta o `service_role` scavalca RLS e non va mai nel browser.
 
 Motore di template (`build.mjs`):
-- Sintassi: `{{chiave.annidata}}` (testo con escape HTML), `{{{chiave}}}` (HTML già sicuro, solo per JSON-LD e SVG interni), `{{> parte}}`, `{{#se chiave}}…{{/se}}`, `{{#ogni lista}}…{{/ogni}}`.
+- Sintassi: `{{chiave.annidata}}` (testo con escape HTML), `{{{chiave}}}` (HTML già sicuro, solo per JSON-LD, SVG interni e il <picture> generato dall'helper immagine(), che fa da sé l'escape di alt e attributi), `{{> parte}}`, `{{#se chiave}}…{{altrimenti}}…{{/se}}` (con la negazione `{{#se !chiave}}`), `{{#ogni lista}}…{{/ogni}}`.
 - Modalità severa, come gli strictFilters: una chiave mancante, una parte inesistente o un `{{` rimasto nell'output fermano la build con un errore che dice file e chiave.
 - Aggiunge `?v=<hash8>` ai link di CSS, JS e font, calcolato sul contenuto.
 - Genera i dati strutturati JSON-LD `BeautySalon` da `centro.json`: name, image, telephone, email, address, url (se c'è), openingHoursSpecification (se ricavabile), priceRange «€€».
@@ -284,7 +287,7 @@ Atmosfera: luce calda di sera, carta sabbia, silenzio. Le foto del centro hanno 
 
 Palette (token CSS in `tokens.css`, contrasti verificati WCAG):
 - `--sabbia: #F4DBCA` — fondo principale, preso dal logo.
-- `--sabbia-chiara: #FAEDE4` — fondo delle sezioni alternate.
+- `--sabbia-chiara: #FAEDE4` — solo per piccoli dettagli (per esempio lo stato «aperto» di una voce del listino); mai come fondo di sezione o di pagina.
 - `--sabbia-profonda: #EBCBB5` — schede e blocchi in rilievo.
 - `--crema: #FFF8F3` — campi dei moduli.
 - `--inchiostro: #1F1612` — testi e pulsante principale. Contrasto 13,4:1 sul sabbia.
@@ -294,6 +297,8 @@ Palette (token CSS in `tokens.css`, contrasti verificati WCAG):
 - `--farfalla: #EB7D40` — SOLO decorazione. 2,1:1 sul sabbia: vietato per testi, icone informative e bordi.
 
 Il body ha `background: var(--sabbia)`. Niente modalità scura: la pagina è sempre sabbia, ma imposta `color-scheme: light`.
+
+Fondo unico: tutto il sito è color sabbia. Ogni sezione e ogni pagina (codice sconto, listino, privacy, cookie e 404 comprese) ha fondo --sabbia, senza alternanza. Le sezioni si separano con lo spazio e con un filetto sottile --linea largo quanto il contenuto. --sabbia-profonda resta solo per i blocchi in rilievo dentro una sezione (scheda «Pedicure avanzato», blocco del codice sconto, pillola «In evidenza»); --crema solo per i campi dei moduli.
 
 Font (self-hosted, woff2, solo caratteri latini):
 - Titoli: Marcellus 400. Richiama il carattere del logo.
@@ -321,7 +326,8 @@ Pulsanti:
 Foto (la firma visiva del progetto):
 - Ogni foto sfuma nel sabbia con `mask-image` sul bordo verso il testo: su mobile dal basso (`linear-gradient(to bottom, #000 72%, transparent)`), su desktop dal lato del testo. Il soggetto non viene mai coperto dalla sfumatura.
 - Ripiego: dove `mask-image` non è supportato, la foto ha angoli arrotondati di 6 px e nessuna sfumatura.
-- Proporzioni: su mobile la foto si vede intera (proporzione originale). Su desktop la cornice è 4:5 con `object-position` dichiarato per ogni foto, scelto per tenere il soggetto al centro.
+- Proporzioni: fino a 767 px la foto si vede intera, in proporzione originale e a tutta larghezza. Tra 768 e 1023 px le foto verticali (01, 03, 04, 05) stanno in una cornice larga al massimo 520 px e centrata, con la stessa proporzione e lo stesso object-position del desktop, e sfumano in basso: intere a tutta larghezza sarebbero alte oltre 1300 px. La foto 02, orizzontale, resta intera. Da 1024 px la cornice è 4:5 (3:4 per la foto 01) con object-position dichiarato per ogni foto, scelto per tenere il soggetto al centro. La sfumatura in basso può arrivare all'86% dove serve a tenere nitido un dettaglio (per esempio la scritta MIGLIORE sul bancone).
+- Ordine su mobile: fino a 1023 px, in ogni sezione con foto (tranne l'apertura) vengono prima occhiello, H2 e testo introduttivo, poi la foto, poi il resto (elenco, schede, pulsanti). Così due foto non arrivano mai una dopo l'altra e la sfumatura della foto dell'apertura passa sul testo della sezione successiva.
 
 Dettaglio firma: un arco sottile «a pennello» (SVG originale disegnato da te, ispirato al cerchio del logo, non ricalcato) sopra l'occhiello di ogni H2. Colore `--accento` al 60%, larghezza 48 px. Una sola volta per sezione.
 
@@ -336,7 +342,7 @@ Movimento:
 Ordine delle sezioni (stesso template per le tre pagine; cambiano solo i testi dell'apertura e l'ordine delle sezioni 3 e 4):
 
 1. Header — logo (altezza 64 px su mobile, 80 px da 1024 px: sotto queste misure la scritta MIGLIORE diventa illeggibile) a sinistra; a destra il link «Chiama» (da 768 px mostra anche il numero). Scopo: riconoscibilità e contatto immediato. Non fisso.
-2. Apertura — occhiello, H1, sottotitolo, due pulsanti («Chiama» principale, «Scrivi su WhatsApp» secondario), riga info «Su appuntamento · dal lunedì al sabato · dalle 08:00 alle 17:00», payoff piccolo in Marcellus, foto 01. Mobile: testo poi foto (sfuma in basso). Desktop: testo a sinistra, foto a destra (sfuma a sinistra). Scopo: in 3 secondi chi arriva capisce cosa, dove e come prenotare.
+2. Apertura — occhiello, H1, sottotitolo, due pulsanti («Chiama» principale, «Scrivi su WhatsApp» secondario), riga info «Su appuntamento · dal martedì al venerdì, dalle 09:00 alle 18:00 · il sabato, dalle 08:00 alle 14:00», payoff piccolo in Marcellus, foto 01. Mobile: testo poi foto (sfuma in basso). Desktop: testo a sinistra, foto a destra (sfuma a sinistra). Scopo: in 3 secondi chi arriva capisce cosa, dove e come prenotare.
 3. Viso (sulle pagine `/` e `/viso/`; quarta su `/pedicure/`) — foto 03, testo, voci viso dal listino senza prezzi, link «Vedi i prezzi ↓» al listino, pulsante WhatsApp con messaggio viso. Scopo: conferma dell'annuncio viso.
 4. Pedicure avanzato (terza su `/pedicure/`) — foto 05, testo, confronto «Pedicure estetico / Pedicure avanzato» in due schede, riga sul limite (§8), link «Vedi i prezzi ↓», pulsante WhatsApp con messaggio pedicure. Scopo: spiegare perché non è la solita pedicure.
 5. Chi sono — foto 04, titolo, presentazione di Cristina, payoff. Scopo: fiducia.
@@ -367,6 +373,13 @@ Per ogni pagina cambiano: `<title>`, meta description, H1, sottotitolo, ordine d
 | `/` | Migliore – Estetica Avanzata · Caronno Varesino | Trattamenti viso e pedicure avanzato a Caronno Varesino |
 | `/viso/` | Trattamenti viso a Caronno Varesino · Migliore | Trattamenti viso a Caronno Varesino |
 | `/pedicure/` | Pedicure avanzato a Caronno Varesino · Migliore | Pedicure avanzato a Caronno Varesino |
+
+I `<title>` restano entro 60 caratteri (oltre, Google li taglia).
+
+Meta description (60–160 caratteri, una per pagina):
+- `/`: «Trattamenti viso, pedicure avanzato, epilazione e massaggi a Caronno Varesino. Solo su appuntamento: chiama o scrivi su WhatsApp al 352 060 1109.»
+- `/viso/`: «Pulizia viso e trattamenti anti-age a Caronno Varesino, su appuntamento. Chiama o scrivi su WhatsApp al 352 060 1109.»
+- `/pedicure/`: «Pedicure avanzato a Caronno Varesino: non la solita pedicure. Su appuntamento, chiama o scrivi su WhatsApp al 352 060 1109.»
 
 Titoli alternativi da testare negli annunci (non vanno nel sito ora):
 - Viso, simili: «Pulizia viso e anti-age a Caronno Varesino» · «Il tuo trattamento viso, su appuntamento» · «Trattamenti viso con Cristina, a Caronno Varesino»
@@ -400,9 +413,10 @@ Apertura `/pedicure/`
 
 Comuni all'apertura
 - pulsanti: «Chiama» · «Scrivi su WhatsApp»
-- riga info: «Su appuntamento · dal lunedì al sabato · dalle 08:00 alle 17:00»
+- riga info: «Su appuntamento · dal martedì al venerdì, dalle 09:00 alle 18:00 · il sabato, dalle 08:00 alle 14:00»
 - payoff: «“Diventa la versione più bella di te”»
 - alt foto 01: «Cristina Migliore al bancone del centro Migliore – Estetica Avanzata»
+- alt dell'immagine di condivisione (og:image): «Logo di Migliore – Estetica Avanzata e Cristina Migliore al bancone del centro»
 
 Viso
 - occhiello: «Viso» · H2: «Trattamenti viso»
@@ -420,13 +434,14 @@ Laminazione sopracciglia: i peli vengono fissati nella forma scelta, per sopracc
 
 Pedicure avanzato
 - occhiello: «Piedi» · H2: «Pedicure avanzato»
-- testo: «Non la solita pedicure. Il pedicure estetico si prende cura dell'aspetto di unghie e piedi. Il pedicure avanzato va più a fondo, con più attenzione alle zone dove la pelle si ispessisce.»
-- scheda 1, titolo «Pedicure estetico», sottotitolo «La pedicure classica», include: taglio e forma delle unghie, cura delle cuticole, levigatura della pelle dei talloni, crema finale; durata se indicata.
-- scheda 2, titolo «Pedicure avanzato», sottotitolo «Un lavoro più approfondito», include: tutto il pedicure estetico, un lavoro approfondito sulle zone dove la pelle si ispessisce, levigatura con strumenti professionali, idratazione finale; durata se indicata. Scheda 2 in rilievo (`--sabbia-profonda`).
-- strumenti, solo se indicati: «Strumenti: non indicati (non nominare strumenti).»
+- testo: «Non la solita pedicure. Il pedicure estetico si prende cura dell'aspetto di unghie e piedi. Il pedicure avanzato aggiunge un lavoro approfondito con micromotore e frese professionali sulle unghie e sulle zone dove la pelle si ispessisce, per una pelle più liscia e morbida e unghie in ordine.»
+- scheda 1, titolo «Pedicure estetico», sottotitolo «La pedicure classica», include: le voci del pedicure estetico di §2.2; sotto, «Durata: …» con il testo indicato, se c'è.
+- scheda 2, titolo «Pedicure avanzato», sottotitolo «Un lavoro più approfondito», include: le voci del pedicure avanzato di §2.2; sotto, «Durata: …» con il testo indicato, se c'è. Scheda 2 in rilievo (`--sabbia-profonda`).
+- strumenti e igiene, solo se indicati, sotto le schede: «Strumenti e igiene: …».
 - riga sul limite (sempre presente, testo piccolo `--inchiostro-tenue`): «Unghie incarnite, verruche, diabete o dolore ai piedi? In questi casi rivolgiti a un podologo o al tuo medico.»
 - link: «Vedi i prezzi ↓» · pulsante: «Prenota il pedicure avanzato»
 - alt foto 05: «Postazione per manicure e pedicure del centro Migliore – Estetica Avanzata»
+- Dalle note di Cristina non si riportano: calli, unghie ispessite o incarnite, ragadi, «base curativa», il marchio del micromotore. Si descrive l'aspetto e il metodo (§10).
 
 Chi sono
 - occhiello: «Chi sono» · H2: «Migliore è il mio cognome. Ed è anche una promessa.»
@@ -437,7 +452,7 @@ Chi sono
 Come prenotare
 - occhiello: «Prenotare è semplice» · H2: «Come prenotare»
 - 1 «Chiama o scrivi su WhatsApp al 352 060 1109.»
-- 2 «Scegli il giorno e l'ora: dal lunedì al sabato, dalle 08:00 alle 17:00.»
+- 2 «Scegli il giorno e l'ora: dal martedì al venerdì, dalle 09:00 alle 18:00; il sabato, dalle 08:00 alle 14:00.»
 - 3 «Vieni in Via Roma 2/A a Caronno Varesino: il tuo appuntamento è pronto.»
 
 Codice sconto
@@ -447,13 +462,13 @@ Codice sconto
 - consenso (casella non spuntata, obbligatoria per ricevere il codice): «Voglio ricevere via email le promozioni di Migliore – Estetica Avanzata su trattamenti viso e corpo, mani e piedi, epilazione e massaggi, circa una volta al mese. Posso cancellarmi quando voglio. Ho letto l'informativa privacy.» con link a `/privacy/`
 - condizioni sotto il modulo: «Il codice vale 30 giorni, su un trattamento a scelta, uno per persona, non cumulabile con altre promozioni. Mostralo a Cristina quando arrivi.»
 - pulsante: «Ricevi il codice»
-- risultato: «Ecco il tuo codice» + codice grande + «Valido fino al [data]. Fai uno screenshot o mostralo dal telefono quando arrivi.»
+- risultato: «Ecco il tuo codice» + codice grande + «Valido fino al [data]. Fai uno screenshot o mostralo dal telefono quando arrivi.» + solo se l'email è partita davvero: «Te l'abbiamo mandato anche via email.»
 - errori: «Controlla l'indirizzo email.» · «Per ricevere il codice serve il consenso.» · «Qualcosa non ha funzionato. Riprova tra poco o scrivici su WhatsApp.»
 
 Dove siamo e orari
 - occhiello: «Dove siamo» · H2: «Ti aspettiamo a Caronno Varesino»
 - indirizzo: «Via Roma 2/A, 21040 Caronno Varesino (VA)»
-- orari: «dal lunedì al sabato, dalle 08:00 alle 17:00. Solo su appuntamento.»
+- orari: «dal martedì al venerdì, dalle 09:00 alle 18:00; il sabato, dalle 08:00 alle 14:00. Solo su appuntamento.»
 - pulsante: «Apri in Google Maps» → `https://www.google.com/maps/search/?api=1&query=` + indirizzo completo codificato
 - alt foto 02: «L'ingresso del centro Migliore – Estetica Avanzata in Via Roma 2/A»
 
@@ -462,9 +477,15 @@ Listino
 - testo: «Prezzi finali. È lo stesso listino che trovi in centro.»
 - link: «Vedi il listino stampato»
 
+Pagina 404
+- title: «Pagina non trovata · Migliore – Estetica Avanzata» · meta robots noindex
+- H1: «Questa pagina non esiste.»
+- testo: «Forse il link è cambiato. Torna alla pagina iniziale o contattaci direttamente.»
+- link: «Torna alla pagina iniziale» · pulsanti «Chiama» e «Scrivi su WhatsApp»
+
 Footer
 - «Migliore Cristina · P.IVA 04123400121» · «Registro Imprese di Varese · REA non indicato (la riga REA non compare)» (solo se indicato) · indirizzo · telefono · email · «© [anno] Migliore – Estetica Avanzata»
-- link: «Privacy» · «Cookie» · «Preferenze cookie» (solo se il banner è attivo)
+- link: «Privacy» · «Cookie» · «Preferenze cookie» (solo se il banner è attivo). Privacy e Cookie puntano a /privacy/ e /cookie/ fin dallo Step 1: fino allo Step 7 portano alla 404, ed è previsto.
 
 ## §9 Performance e accessibilità
 
@@ -473,7 +494,7 @@ Obiettivi, misurati con Lighthouse in modalità mobile sulla build di produzione
 - LCP ≤ 2,0 s; CLS ≤ 0,05; TBT ≤ 100 ms; INP ≤ 200 ms sul campo.
 - JavaScript proprio ≤ 12 KB compresso in totale. GA4 e Meta si caricano solo dopo il consenso e non contano nel primo caricamento.
 - CSS ≤ 20 KB compresso. Font ≤ 100 KB in totale.
-- Immagini: AVIF con ripiego WebP in `<picture>`, `srcset` e `sizes` corretti, mai ingrandite oltre l'originale. Foto 01 ≤ 120 KB alla larghezza 720; altre foto ≤ 160 KB; foto 06 ≤ 300 KB alla larghezza 1536.
+- Immagini: AVIF con ripiego WebP in `<picture>`, `srcset` e `sizes` corretti, mai ingrandite oltre l'originale. Foto 01 ≤ 120 KB alla larghezza 720; altre foto ≤ 160 KB; foto 06 ≤ 300 KB alla larghezza 1536. Logo: solo 240 e 320 px, AVIF con trasparenza e WebP, ogni file ≤ 40 KB.
 - `width` e `height` su ogni immagine; `loading="lazy"` e `decoding="async"` su tutte tranne la foto dell'apertura, che ha `fetchpriority="high"`.
 - Contrasto AA (valori in §5), focus sempre visibile, aree di tocco ≥ 44×44 px, `lang="it"`, un solo H1 per pagina, titoli in ordine, link con testo che si capisce da solo, `<label>` su ogni campo, errori annunciati con `aria-live="polite"`.
 
@@ -483,7 +504,7 @@ Obiettivi, misurati con Lighthouse in modalità mobile sulla build di produzione
 - Attività di estetista (L. 1/1990): sono escluse le prestazioni con finalità terapeutica. Nessuna parola o promessa terapeutica o sanitaria (elenco in §8).
 - Pedicure avanzato: non si scrive mai «podologico» né si nominano condizioni da trattare. Si descrive solo l'aspetto estetico e il metodo. La riga sul limite indirizza al podologo.
 - Trattamenti viso: si descrivono l'aspetto della pelle e il metodo, mai meccanismi biologici, condizioni della pelle o termini medici (elenco in §8). Le affermazioni del produttore restano del produttore: sul sito diventano solo fatti (nome, fasi, ingredienti) e benefici d'aspetto. Una pubblicità che promette più di quanto il servizio dà è una pratica commerciale ingannevole (Codice del Consumo, art. 21).
-- Niente foto prima/dopo: né del produttore né di clienti.
+- Niente foto prima/dopo: né del produttore né di clienti. Il poster «REVINOL» sulla parete della foto 03 è parte della cabina vera e a dimensione web è illeggibile: la foto resta intera e non si ritaglia per nasconderlo. Il divieto vale per le immagini che il sito usa come prova di un risultato.
 - Niente confronti con trattamenti medici («alternativa alle punture», «come il botox», «al posto del filler») e niente risultati in numeri o frazioni («rallenta di un terzo l'invecchiamento»): servono prove che il centro non ha. Si può dire solo ciò che è un fatto, per esempio «senza aghi».
 - Nessuna promessa di risultato («garantito», «definitivo», «visibile dalla prima seduta»).
 - Non scrivere «nuova apertura» o simili: il centro è già aperto da mesi.
@@ -495,7 +516,7 @@ Obiettivi, misurati con Lighthouse in modalità mobile sulla build di produzione
 - Cookie: finché GA4 e Meta non sono configurati il sito non usa cookie, quindi nessun banner. Con GA4 o Meta: banner con «Rifiuta» e «Accetta» di uguale evidenza, «Personalizza», chiusura con X = rifiuto, nessun tracciamento prima del consenso, scelta ricordata per 6 mesi, link «Preferenze cookie» nel footer.
 - Mappe: niente Google Maps incorporato, solo il link.
 - Foto: vere, del centro e della titolare, senza ritocchi.
-- Informativa privacy e cookie policy: bozze generate allo Step 7, da far verificare a un professionista prima del lancio degli annunci. Titolare del trattamento: Migliore Cristina.
+- Informativa privacy e cookie policy: bozze generate allo Step 7, da far verificare a un professionista prima del lancio degli annunci. Titolare del trattamento: Migliore Cristina. La data di ultimo aggiornamento è fissa (testi.json, legale.aggiornamento) e si cambia solo quando cambiano i testi legali.
 
 ## §11 Gli step
 

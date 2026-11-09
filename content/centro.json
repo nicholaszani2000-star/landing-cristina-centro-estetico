@@ -1,0 +1,90 @@
+{
+  "nome": "Migliore – Estetica Avanzata",
+  "nomeBreve": "Migliore",
+  "payoff": "Diventa la versione più bella di te",
+  "titolare": {
+    "nome": "Cristina",
+    "cognome": "Migliore",
+    "completo": "Cristina Migliore"
+  },
+  "legale": {
+    "denominazione": "Migliore Cristina",
+    "partitaIva": "04123400121",
+    "registroImprese": "Varese",
+    "rea": null,
+    "sedeLegale": null
+  },
+  "indirizzo": {
+    "via": "Via Roma 2/A",
+    "cap": "21040",
+    "comune": "Caronno Varesino",
+    "provincia": "VA",
+    "nazione": "IT",
+    "completo": "Via Roma 2/A, 21040 Caronno Varesino (VA)"
+  },
+  "telefono": "352 060 1109",
+  "telefonoE164": "+393520601109",
+  "whatsappNumero": "393520601109",
+  "email": "esteticamigliore@gmail.com",
+  "orari": {
+    "fasce": [
+      { "giorni": "dal martedì al venerdì", "apertura": "09:00", "chiusura": "18:00" },
+      { "giorni": "il sabato", "apertura": "08:00", "chiusura": "14:00" }
+    ],
+    "soloSuAppuntamento": true
+  },
+  "presentazione": null,
+  "dominio": "esteticamigliore.it",
+  "indirizzoPrincipale": "https://esteticamigliore.it",
+  "social": {
+    "instagram": null,
+    "facebook": null,
+    "schedaGoogle": null
+  },
+  "trattamenti": {
+    "viso": {
+      "inEvidenza": "Trattamento viso Antiage",
+      "voci": [
+        "Pulizia viso base",
+        "Trattamento viso Antiage",
+        "Trattamento Antiage contorno occhi e labbra",
+        "Laminazione ciglia",
+        "Laminazione sopracciglia"
+      ],
+      "macchinari": null,
+      "prodotti": "Natinuel, linea cosmetica professionale per centri estetici"
+    },
+    "pedicure": {
+      "estetico": {
+        "include": "pediluvio; scostamento delle cuticole; taglio e limatura delle unghie; levigatura dei talloni; smalto (base, due mani di colore e top coat) o semipermanente, se li scegli; crema finale",
+        "durata": "30 minuti senza smalto, 40 con smalto, 50 con semipermanente"
+      },
+      "avanzato": {
+        "include": "pediluvio; scostamento delle cuticole; taglio e limatura delle unghie; lavoro con micromotore e frese sulle unghie e sulle zone dove la pelle si ispessisce; levigatura dei talloni; smalto o semipermanente, se li scegli",
+        "durata": "45–50 minuti senza smalto, 50–55 con smalto, 60 con semipermanente"
+      },
+      "strumentiIgiene": "micromotore professionale con frese specifiche per le unghie e per la pelle; strumenti puliti con gli ultrasuoni, sterilizzati a secco e conservati in buste sigillate"
+    }
+  },
+  "codiceSconto": {
+    "percentuale": 10,
+    "validitaGiorni": 30,
+    "condizioni": "su un trattamento a scelta, uno per persona, non cumulabile con altre promozioni",
+    "frequenzaPromo": "circa una volta al mese",
+    "unoPerEmail": true
+  },
+  "integrazioni": {
+    "ga4Id": "G-DFCM449BWE",
+    "metaPixelId": "1682509193499996",
+    "googleVerifica": "FU-2BJUStycqt-GUM5fvAc4VhCiTQ9VUtw1ZBU3mfXI",
+    "googleFileVerifica": "google1308769860b5c5bc.html",
+    "supabase": "bkcpnkrnhjirmbwnrozp",
+    "servizioEmail": {
+      "nome": "Brevo",
+      "sede": "Francia",
+      "mittente": "esteticamigliore@gmail.com",
+      "listaPromo": "Promo sito",
+      "inAttivazione": false
+    }
+  }
+}

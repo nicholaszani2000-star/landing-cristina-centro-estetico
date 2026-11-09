@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+{{> testa}}
+</head>
+<body class="con-barra">
+{{> header}}
+<main id="contenuto">
+{{> apertura}}
+{{#se p.visoPrima}}
+{{> viso}}
+{{> pedicure}}
+{{altrimenti}}
+{{> pedicure}}
+{{> viso}}
+{{/se}}
+{{> chi-sono}}
+{{> prenota}}
+{{> codice}}
+{{> dove}}
+{{> listino}}
+</main>
+{{> footer}}
+{{> barra-contatti}}
+{{#se tracciamenti.attivo}}{{> banner-cookie}}{{/se}}
+</body>
+</html>
