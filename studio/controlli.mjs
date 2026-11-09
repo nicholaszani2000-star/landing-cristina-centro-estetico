@@ -2491,6 +2491,11 @@ await controllo("Content-Security-Policy in netlify.toml: direttive di base, imp
   verifica(!/unsafe-inline|unsafe-eval|\*\s|'\*'|\shttp:/.test(csp), "CSP con unsafe-inline, unsafe-eval, jolly o http:");
   const script = csp.match(/script-src ([^;]*)/)?.[1] ?? "";
   verifica(/https:\/\/\*\.googletagmanager\.com/.test(script) && /https:\/\/connect\.facebook\.net/.test(script), `script-src: ${script}`);
+  // Pixel Meta: per gli eventi con molti dati lo script invia con un modulo in un iframe nascosto verso www.facebook.com.
+  const frame = csp.match(/frame-src ([^;]*)/)?.[1]?.trim() ?? "";
+  const modulo = csp.match(/form-action ([^;]*)/)?.[1]?.trim() ?? "";
+  verifica(frame === "https://www.facebook.com", `frame-src: «${frame}» (deve ammettere solo www.facebook.com)`);
+  verifica(modulo === "'self' https://www.facebook.com", `form-action: «${modulo}»`);
   const impronte = new Set();
   for (const file of elenca(DIST, (f) => f.endsWith(".html"))) {
     const html = readFileSync(file, "utf8");

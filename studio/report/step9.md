@@ -400,6 +400,11 @@ La titolare segnala che GA4 misura, ma Meta propone ancora di copiare il codice 
 - **Perché GA4 sì e Meta no**: alcuni browser bloccano Meta e non GA4. Per esempio Firefox, che blocca i tracciatori dei social anche nella protezione standard, poi Brave, i blocchi pubblicità e i DNS che filtrano.
 - **Come sbloccare**: Chrome senza blocchi → Gestione eventi → pixel → Eventi di test → apri il sito → «Accetta» → `PageView`. In alternativa, l'estensione Meta Pixel Helper.
 - **Codice**: nessuna modifica. Il codice è quello di Meta, e cambiarlo a caso non risolverebbe un blocco del browser.
+- **9 novembre, CSP**: `frame-src https://www.facebook.com` e `form-action 'self' https://www.facebook.com`.
+  - Servono per gli eventi con molti dati: lo script di Meta li invia con un modulo in un iframe nascosto (configurazione usata anche da Sharetribe).
+  - Il `PageView` non ne aveva bisogno: questa modifica toglie un possibile blocco, ma non spiega da sola l'assenza di eventi.
+- **9 novembre, log di Netlify** (ultime 24 ore): 11 visite con JavaScript, nessuna richiesta del codice sconto, alcuni robot che cercano `.env` e `wp-login.php` (tutti 404).
+- **Per chiudere**: ricollegare il connettore Meta di Claude includendo il portfolio del pixel, così gli eventi si leggono direttamente, oppure la prova con Eventi di test e Meta Pixel Helper.
 
 ## 7. Dati mancanti o dubbi
 
