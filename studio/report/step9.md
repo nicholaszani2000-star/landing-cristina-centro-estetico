@@ -414,8 +414,22 @@ La titolare segnala che GA4 misura, ma Meta propone ancora di copiare il codice 
 - **15 novembre, dati veri dalla diagnostica**:
   - 10:21 e 11:05 (ora italiana): `meta-avviato` e `ga4-caricato` sulla home, con Chrome su Mac. Lo script di Meta parte dopo il consenso, senza blocchi della CSP verso Meta.
   - Le richieste del codice sconto di oggi (3, tutte con risposta 200, 2 iscrizioni nuove su Supabase, nessun errore di Brevo) sono arrivate da pagine senza consenso ai cookie: per quelle Meta non riceve nulla, come deve essere.
-  - I rapporti CSP «script-src-elem/style-src-elem inline su /about» arrivano da un documento about:blank aperto insieme all'HUD di Netlify (`/.netlify/scripts/hud`, solo per chi è collegato a Netlify): non riguardano i visitatori né il pixel.
+  - I rapporti CSP «script-src-elem/style-src-elem inline su /about» arrivano da un documento about:blank aperto dallo script che Netlify aggiunge da sé a ogni pagina online (`/.netlify/scripts/hud?variant=public`, per tutti i visitatori: verificato confrontando l'HTML online con quello della build). La CSP ne blocca le parti inline; non riguardano i visitatori né il pixel.
   - Aggiunto `meta-inviato` / `meta-non-inviato`: 5 secondi dopo l'avvio, il browser dice se il PageView è uscito verso www.facebook.com/tr.
+
+### Pixel Meta: causa trovata e prova dal vivo (15 novembre)
+
+- **Due pixel**: la configurazione che Meta chiedeva di completare era del pixel `1398659902074060`, mentre sul sito c'era solo `1682509193499996`. Ora `metaPixelId` li contiene tutti e due, separati da una virgola: un `init` per pixel e un solo `PageView` (e `Contact`/`Lead`) che va a entrambi.
+- **Il PageView restava nel browser**: la diagnostica dei visitatori veri diceva `meta-avviato` ma `meta-non-inviato`. La causa era la sequenza `consent revoke` → `init` → `consent grant` → `track`, aggiunta al codice base di Meta. Tolta: lo script parte già solo dopo il consenso.
+- **Prova della causa**, nello stesso browser verso i server veri di Meta: vecchio codice → nessun PageView; codice attuale → PageView a `1682509193499996` e a `1398659902074060`, entrambi con risposta 200.
+- **Prova dal vivo sul sito online** (`node studio/prova-pixel.mjs`, come iPhone):
+  - prima della scelta, nessuna richiesta a Meta;
+  - dopo «Accetta», `fbevents.js` e la configurazione di entrambi i pixel con risposta 200;
+  - PageView a entrambi con risposta 200, circa 1 secondo dopo il clic.
+- **Prove scartate da Meta**: con l'identità «HeadlessChrome» lo script di Meta si carica ma non manda eventi (filtro per i browser automatici). Per questo la prova si presenta come iPhone.
+- **Bloccate dalla CSP, di proposito**: le chiamate di misurazione di Meta verso `*.run.app` e `*.on.aws` (`/events?cee=no`). I domini cambiano e non servono agli eventi; aprirli vorrebbe dire ammettere interi servizi cloud.
+- **Rete della sessione**: per la prova serve raggiungere `esteticamigliore.it`, `connect.facebook.net` e `www.facebook.com`, ammessi nell'ambiente «Siti clienti (Migliore e Lunaria)» approvato dalla titolare del progetto.
+- **Da decidere**: quale dei due pixel usa l'account pubblicitario. L'altro poi si toglie da `metaPixelId`.
 
 ## 7. Dati mancanti o dubbi
 
