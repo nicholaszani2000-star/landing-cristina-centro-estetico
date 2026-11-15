@@ -42,6 +42,14 @@ export function bloccato(valore) {
   }
 }
 
+/** Dettaglio di meta-inviato / meta-non-inviato: le richieste verso Meta come «host/percorso:tipo», solo quelle con
+ *  la forma attesa (domini di Meta, niente parametri), al massimo 10. Tutto il resto si scarta. */
+export function richieste(valore) {
+  if (typeof valore !== "string" || !valore) return "";
+  const voci = valore.split(" ").filter((v) => /^(connect|www)\.facebook\.(net|com)\/[\w/.-]{0,120}:[a-z]{1,20}$/.test(v)).slice(0, 10);
+  return voci.length ? ` [${voci.join(" ")}]` : "";
+}
+
 /** La riga di log per una segnalazione, oppure null se non è una segnalazione riconosciuta. */
 export function riga(dati) {
   const csp = dati?.["csp-report"];
@@ -49,7 +57,7 @@ export function riga(dati) {
     const direttiva = String(csp["effective-directive"] ?? csp["violated-directive"] ?? "?").split(" ")[0].replace(/[^\w-]/g, "").slice(0, 40) || "?";
     return `diagnostica: csp ${direttiva} ${bloccato(csp["blocked-uri"])} su ${percorso(csp["document-uri"])}`;
   }
-  if (typeof dati?.evento === "string" && EVENTI.has(dati.evento)) return `diagnostica: ${dati.evento} su ${percorso(dati.pagina)}`;
+  if (typeof dati?.evento === "string" && EVENTI.has(dati.evento)) return `diagnostica: ${dati.evento} su ${percorso(dati.pagina)}${richieste(dati.dettaglio)}`;
   return null;
 }
 

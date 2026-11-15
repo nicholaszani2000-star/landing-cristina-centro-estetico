@@ -2568,6 +2568,8 @@ await controllo("diagnostica anonima (POST /api/diagnostica): esiti degli script
   verifica(r.stato === 204 && r.righe[0] === "diagnostica: csp frame-src https://www.facebook.com/tr/ su /pedicure/", `csp: ${JSON.stringify(r.righe)}`);
   r = await invia(JSON.stringify({ "csp-report": { "document-uri": "https://esteticamigliore.it/", "violated-directive": "script-src-elem", "blocked-uri": "inline" } }), { tipo: "application/csp-report" });
   verifica(r.righe[0] === "diagnostica: csp script-src-elem inline su /", `csp inline: ${JSON.stringify(r.righe)}`);
+  r = await invia(JSON.stringify({ evento: "meta-inviato", pagina: "/", dettaglio: "connect.facebook.net/signals/config/123:script www.facebook.com/tr/:img evil.com/x:img www.facebook.com/tr/?ud=anna@esempio.it:img\nfalso" }));
+  verifica(r.righe[0] === "diagnostica: meta-inviato su / [connect.facebook.net/signals/config/123:script www.facebook.com/tr/:img]", `dettaglio: ${JSON.stringify(r.righe)}`);
   r = await invia(JSON.stringify({ evento: "meta-avviato", pagina: "/\nfalso: anna@esempio.it" }));
   verifica(r.stato === 204 && !/\n|@/.test(r.righe[0]), `a capo o email nel log: ${JSON.stringify(r.righe)}`);
   for (const [corpo, atteso, perche] of [["non json", 400, "testo non JSON"], [JSON.stringify({ evento: "altro" }), 400, "evento sconosciuto"], [JSON.stringify({}), 400, "corpo vuoto"], ["x".repeat(9000), 413, "corpo troppo grande"]]) {
@@ -2604,9 +2606,9 @@ await controllo("diagnostica anonima (POST /api/diagnostica): esiti degli script
     verifica(esito.righe.includes("diagnostica: meta-avviato su /viso/"), `Meta che parte: ${JSON.stringify(esito.righe)}`);
     // Dopo 5 secondi: PageView uscito verso www.facebook.com/tr (meta-inviato) oppure no (meta-non-inviato).
     esito = await prova("window.fbq.callMethod = function () {}; new Image().src = 'https://www.facebook.com/tr/?id=1&ev=PageView';", 3, 7000);
-    verifica(esito.righe.includes("diagnostica: meta-inviato su /viso/"), `PageView inviato: ${JSON.stringify(esito.righe)}`);
+    verifica(esito.righe.some((r) => r.startsWith("diagnostica: meta-inviato su /viso/ [") && r.includes("connect.facebook.net/en_US/fbevents.js:script") && r.includes("www.facebook.com/tr/:img")), `PageView inviato: ${JSON.stringify(esito.righe)}`);
     esito = await prova("window.fbq.callMethod = function () {};", 3, 7000);
-    verifica(esito.righe.includes("diagnostica: meta-non-inviato su /viso/"), `PageView non inviato: ${JSON.stringify(esito.righe)}`);
+    verifica(esito.righe.some((r) => r.startsWith("diagnostica: meta-non-inviato su /viso/")), `PageView non inviato: ${JSON.stringify(esito.righe)}`);
     esito = await prova("/* arrivato ma non partito */");
     verifica(esito.righe.includes("diagnostica: meta-non-avviato su /viso/"), `Meta che non parte: ${JSON.stringify(esito.righe)}`);
   }

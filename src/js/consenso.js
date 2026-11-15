@@ -1,6 +1,6 @@
 // consenso.js — banner cookie, consenso e tracciamenti (CLAUDE.md §10). La build lo include solo se in
 // content/centro.json c'è l'ID di GA4 o del pixel Meta. Nessuno script di Google o Meta prima del consenso.
-// Documentazione: Google Consent Mode (gtag consent default/update) e Meta Pixel GDPR (consent revoke/grant).
+// Documentazione: Google Consent Mode (gtag consent default/update) e codice base del pixel Meta (init e PageView, caricato solo dopo il consenso).
 (function () {
   "use strict";
   var d = document, radice = d.documentElement, banner = d.querySelector("[data-banner-cookie]");
@@ -24,18 +24,23 @@
   }
   // Diagnostica anonima (netlify/functions/diagnostica.mjs): solo dopo il consenso, dice se lo script è partito o
   // se il browser l'ha bloccato. Nessun dato personale: il nome dell'esito e il percorso della pagina.
-  function segnala(esito) {
+  function segnala(esito, dettaglio) {
     try {
-      navigator.sendBeacon("/api/diagnostica", new Blob([JSON.stringify({ evento: esito, pagina: location.pathname })], { type: "text/plain;charset=UTF-8" }));
+      navigator.sendBeacon("/api/diagnostica", new Blob([JSON.stringify({ evento: esito, pagina: location.pathname, dettaglio: dettaglio })], { type: "text/plain;charset=UTF-8" }));
     } catch (e) { /* niente */ }
   }
   // 5 secondi dopo l'avvio: il PageView è uscito dal browser verso www.facebook.com/tr? (Resource Timing del browser:
   // c'è la richiesta anche se la risposta non si può leggere). Se no, un blocco l'ha fermato dopo lo script.
+  // Nel dettaglio, le richieste verso Meta (solo host e percorso, mai i parametri).
   function inviatoAMeta() {
-    var voci = [];
+    var voci = [], fb = [], inviato = false;
     try { voci = performance.getEntriesByType("resource"); } catch (e) { /* niente */ }
-    for (var i = 0; i < voci.length; i++) if (/^https:\/\/www\.facebook\.com\/tr\b/.test(voci[i].name)) return segnala("meta-inviato");
-    segnala("meta-non-inviato");
+    for (var i = 0; i < voci.length; i++) {
+      if (!/^https:\/\/(connect|www)\.facebook\.(net|com)\//.test(voci[i].name)) continue;
+      fb.push(voci[i].name.split("?")[0].replace("https://", "") + ":" + (voci[i].initiatorType || "?"));
+      if (/^https:\/\/www\.facebook\.com\/tr\b/.test(voci[i].name)) inviato = true;
+    }
+    segnala(inviato ? "meta-inviato" : "meta-non-inviato", fb.slice(0, 10).join(" "));
   }
   function script(src, nome, avviato) {
     var s = d.createElement("script");
@@ -68,9 +73,9 @@
     f.push = f; f.loaded = true; f.version = "2.0"; f.queue = [];
     // fbevents.js, quando parte, mette callMethod sul suo fbq: se manca, lo script è arrivato ma non è partito.
     script("https://connect.facebook.net/en_US/fbevents.js", "meta", function () { return typeof f.callMethod === "function"; });
-    f("consent", "revoke"); // prima di init, come chiede Meta
-    meta.split(",").forEach(function (id) { f("init", id); }); // uno o più pixel: PageView, Contact e Lead vanno a tutti
-    f("consent", "grant");
+    // Come il codice base di Meta (init e PageView). Il consenso c'è già: questo script parte solo dopo «Accetta»
+    // o «Marketing». Uno o più pixel: PageView, Contact e Lead vanno a tutti.
+    meta.split(",").forEach(function (id) { f("init", id); });
     f("track", "PageView");
   }
   function applica(s) {
