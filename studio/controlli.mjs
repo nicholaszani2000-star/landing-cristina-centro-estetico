@@ -2571,16 +2571,18 @@ await controllo("diagnostica anonima (POST /api/diagnostica): esiti degli script
   // Nel browser, dopo «Accetta»: Meta e Google bloccati → meta-bloccato e ga4-bloccato; uno script di Meta finto che
   // parte → meta-avviato; uno che arriva ma non parte → meta-non-avviato. Prima della scelta, nessuna segnalazione.
   const { browser, server, base } = await browserCondiviso();
-  const prova = async (fbevents) => {
+  const prova = async (fbevents, attese = 2, attesaMax = 3000) => {
     server.segnalazioni.length = 0;
     const contesto = await browser.newContext({ viewport: { width: 390, height: 844 } });
     await contesto.route((u) => TRACCIANTI.test(u.hostname), (rotta) =>
-      fbevents && /fbevents\.js$/.test(new URL(rotta.request().url()).pathname) ? rotta.fulfill({ contentType: "text/javascript", body: fbevents }) : rotta.abort());
+      fbevents && /fbevents\.js$/.test(new URL(rotta.request().url()).pathname) ? rotta.fulfill({ contentType: "text/javascript", body: fbevents })
+        : fbevents && /^\/tr\/?$/.test(new URL(rotta.request().url()).pathname) ? rotta.fulfill({ contentType: "image/gif", body: Buffer.from("R0lGODlhAQABAAAAACw=", "base64") })
+        : rotta.abort());
     const pg = await contesto.newPage();
     await pg.goto(base + "/viso/?utm_source=prova", { waitUntil: "networkidle" });
     const prima = server.segnalazioni.length;
     await pg.click('[data-consenso="accetta"]');
-    for (let t = 0; t < 30 && server.segnalazioni.length < 2; t++) await pg.waitForTimeout(100);
+    for (let t = 0; t < attesaMax / 100 && server.segnalazioni.length < attese; t++) await pg.waitForTimeout(100);
     const righe = [...server.segnalazioni];
     await contesto.close();
     return { prima, righe };
@@ -2592,6 +2594,11 @@ await controllo("diagnostica anonima (POST /api/diagnostica): esiti degli script
   if (meta) {
     esito = await prova("window.fbq.callMethod = function () {};");
     verifica(esito.righe.includes("diagnostica: meta-avviato su /viso/"), `Meta che parte: ${JSON.stringify(esito.righe)}`);
+    // Dopo 5 secondi: PageView uscito verso www.facebook.com/tr (meta-inviato) oppure no (meta-non-inviato).
+    esito = await prova("window.fbq.callMethod = function () {}; new Image().src = 'https://www.facebook.com/tr/?id=1&ev=PageView';", 3, 7000);
+    verifica(esito.righe.includes("diagnostica: meta-inviato su /viso/"), `PageView inviato: ${JSON.stringify(esito.righe)}`);
+    esito = await prova("window.fbq.callMethod = function () {};", 3, 7000);
+    verifica(esito.righe.includes("diagnostica: meta-non-inviato su /viso/"), `PageView non inviato: ${JSON.stringify(esito.righe)}`);
     esito = await prova("/* arrivato ma non partito */");
     verifica(esito.righe.includes("diagnostica: meta-non-avviato su /viso/"), `Meta che non parte: ${JSON.stringify(esito.righe)}`);
   }

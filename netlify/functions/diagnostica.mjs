@@ -2,7 +2,8 @@
 //
 // Serve a sapere, senza accesso ai pannelli di Meta e Google, se gli script partono davvero dopo il consenso:
 //   - consenso.js, solo dopo «Accetta» (o la singola voce in «Personalizza»), segnala come è andato il caricamento:
-//     meta-avviato, meta-non-avviato, meta-bloccato, ga4-caricato, ga4-bloccato;
+//     meta-avviato, meta-non-avviato, meta-bloccato, ga4-caricato, ga4-bloccato; 5 secondi dopo l'avvio di Meta,
+//     meta-inviato (il PageView è partito verso www.facebook.com/tr) o meta-non-inviato;
 //   - il browser manda qui i rapporti della Content-Security-Policy (report-uri in netlify.toml).
 // Ogni segnalazione diventa una riga nei log della funzione (Netlify → Logs → Functions).
 // Nessun dato personale: niente IP, user agent, email o identificativi; delle pagine solo il percorso (mai i
@@ -15,7 +16,7 @@ export const config = {
   rateLimit: { action: "rate_limit", aggregateBy: ["ip", "domain"], windowSize: 60, windowLimit: 30 },
 };
 
-export const EVENTI = new Set(["meta-avviato", "meta-non-avviato", "meta-bloccato", "ga4-caricato", "ga4-bloccato"]);
+export const EVENTI = new Set(["meta-avviato", "meta-non-avviato", "meta-bloccato", "meta-inviato", "meta-non-inviato", "ga4-caricato", "ga4-bloccato"]);
 const MAX_CORPO = 8_000;
 const VUOTA = (stato, extra = {}) => new Response(null, { status: stato, headers: { "Cache-Control": "no-store", ...extra } });
 

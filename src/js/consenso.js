@@ -29,12 +29,23 @@
       navigator.sendBeacon("/api/diagnostica", new Blob([JSON.stringify({ evento: esito, pagina: location.pathname })], { type: "text/plain;charset=UTF-8" }));
     } catch (e) { /* niente */ }
   }
+  // 5 secondi dopo l'avvio: il PageView è uscito dal browser verso www.facebook.com/tr? (Resource Timing del browser:
+  // c'è la richiesta anche se la risposta non si può leggere). Se no, un blocco l'ha fermato dopo lo script.
+  function inviatoAMeta() {
+    var voci = [];
+    try { voci = performance.getEntriesByType("resource"); } catch (e) { /* niente */ }
+    for (var i = 0; i < voci.length; i++) if (/^https:\/\/www\.facebook\.com\/tr\b/.test(voci[i].name)) return segnala("meta-inviato");
+    segnala("meta-non-inviato");
+  }
   function script(src, nome, avviato) {
     var s = d.createElement("script");
     s.async = true;
     s.src = src;
     s.onerror = function () { segnala(nome + "-bloccato"); };
-    s.onload = function () { segnala(avviato ? nome + (avviato() ? "-avviato" : "-non-avviato") : nome + "-caricato"); };
+    s.onload = function () {
+      segnala(avviato ? nome + (avviato() ? "-avviato" : "-non-avviato") : nome + "-caricato");
+      if (nome === "meta") setTimeout(inviatoAMeta, 5000);
+    };
     d.head.appendChild(s);
   }
 
