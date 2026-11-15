@@ -430,6 +430,7 @@ La titolare segnala che GA4 misura, ma Meta propone ancora di copiare il codice 
 - **Bloccate dalla CSP, di proposito**: le chiamate di misurazione di Meta verso `*.run.app` e `*.on.aws` (`/events?cee=no`). I domini cambiano e non servono agli eventi; aprirli vorrebbe dire ammettere interi servizi cloud.
 - **Rete della sessione**: per la prova serve raggiungere `esteticamigliore.it`, `connect.facebook.net` e `www.facebook.com`, ammessi nell'ambiente «Siti clienti (Migliore e Lunaria)» approvato dalla titolare del progetto.
 - **Da decidere**: quale dei due pixel usa l'account pubblicitario. L'altro poi si toglie da `metaPixelId`.
+- **Prima visita vera dopo la correzione** (14:09, Chrome su Mac della titolare del progetto): `meta-avviato` e `meta-inviato`, con le due richieste a `www.facebook.com/tr`. Alle 14:12 la prova dal vivo conferma PageView 200 a entrambi i pixel.
 
 ## 7. Dati mancanti o dubbi
 
