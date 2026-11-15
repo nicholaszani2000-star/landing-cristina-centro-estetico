@@ -1,0 +1,424 @@
+{
+  "_nota": "Tutti i testi del sito. I segnaposto tra graffe, per esempio {telefono} o {orari.testo}, si riempiono in build con i dati di content/centro.json ({orari.testo} e {orari.riga} li calcola la build dalle fasce di centro.json › orari: «dal martedì al venerdì, dalle 09:00 alle 18:00; il sabato, …», separate da «; » o da « · »); se il dato è null la frase non compare. [data] nel risultato del codice sconto lo riempie il JavaScript. {tipiCookie} lo calcola la build dagli ID di centro.json («di statistica», «di marketing» o «di statistica e di marketing»). {cabina} è calcolato in build da macchinari e prodotti di centro.json (null se mancano entrambi). In viso.dettagli: «nome della voce del listino»: descrizione; null se i dettagli non sono indicati. Le voci «include» del pedicure (centro.json) sono separate da punto e virgola: la build fa una voce per elemento, con la prima lettera maiuscola. Nelle pagine legali (privacy, cookie) una voce con «richiede» compare solo se quell'integrazione di centro.json è indicata («tracciamenti» = GA4 o pixel Meta). legale.aggiornamento è la data di ultimo aggiornamento di privacy e cookie: fissa, si cambia a mano solo quando cambiano i testi legali (CLAUDE.md §10). legale.verificata resta false (riquadro «Bozza» in cima a privacy e cookie, anche in produzione) finché la titolare non scrive «privacy verificata». codiceSconto.risultatoEmail compare solo se la funzione risponde emailInviata: true (Step 8; resta false finché lo Step 9 non collega Brevo). codiceSconto.email: testi dell'email con il codice (Brevo, Step 9); [data] la riempie la funzione.",
+  "comuni": {
+    "header": {
+      "logoAlt": "{nome}",
+      "chiama": "Chiama"
+    },
+    "condivisione": {
+      "ogImageAlt": "Logo di {nome} e {titolare.completo} al bancone del centro"
+    },
+    "apertura": {
+      "pulsanteChiama": "Chiama",
+      "pulsanteWhatsapp": "Scrivi su WhatsApp",
+      "rigaInfo": "Su appuntamento · {orari.riga}",
+      "payoff": "“{payoff}”",
+      "altFoto": "{titolare.completo} al bancone del centro {nome}"
+    },
+    "viso": {
+      "occhiello": "Viso",
+      "h2": "Trattamenti viso",
+      "testo": "Dalla pulizia del viso ai trattamenti anti-age: in cabina scegli con Cristina il trattamento adatto alla tua pelle.",
+      "secondaFrase": "Prima di iniziare guardate insieme la tua pelle e parlate delle tue abitudini: il trattamento si sceglie così.",
+      "etichettaInEvidenza": "In evidenza",
+      "dettagli": {
+        "Pulizia viso base": "detersione delicata, pulizia accurata delle impurità, maschera e crema finale scelte per il tuo tipo di pelle. Per una pelle più pulita, fresca e luminosa.",
+        "Trattamento viso Antiage": "un trattamento professionale Natinuel, senza aghi, scelto in base alla tua pelle per renderla più luminosa, compatta e idratata, con linee sottili meno visibili e un colorito più uniforme. Uno dei trattamenti è Revinol, in tre fasi: esfoliazione delicata, maschera peel-off e siero finale, con retinolo, vitamina C, vitamina E e acido ialuronico. Fatto con costanza, aiuta la pelle a mantenere più a lungo un aspetto fresco e compatto.",
+        "Trattamento Antiage contorno occhi e labbra": "un trattamento mirato sulle zone più delicate del viso, per idratare e attenuare l’aspetto delle linee sottili intorno a occhi e labbra.",
+        "Laminazione ciglia": "ciglia più definite e incurvate, senza extension.",
+        "Laminazione sopracciglia": "i peli vengono fissati nella forma scelta, per sopracciglia più ordinate e piene alla vista."
+      },
+      "inCabina": "In cabina usiamo: {cabina}.",
+      "linkPrezzi": "Vedi i prezzi ↓",
+      "pulsante": "Prenota il tuo trattamento viso",
+      "altFoto": "Cabina per i trattamenti viso del centro {nome}"
+    },
+    "pedicure": {
+      "occhiello": "Piedi",
+      "h2": "Pedicure avanzato",
+      "testo": "Non la solita pedicure. Il pedicure estetico si prende cura dell’aspetto di unghie e piedi. Il pedicure avanzato aggiunge un lavoro approfondito con micromotore e frese professionali sulle unghie e sulle zone dove la pelle si ispessisce, per una pelle più liscia e morbida e unghie in ordine.",
+      "scheda1": {
+        "titolo": "Pedicure estetico",
+        "sottotitolo": "La pedicure classica",
+        "durata": "Durata: {trattamenti.pedicure.estetico.durata}"
+      },
+      "scheda2": {
+        "titolo": "Pedicure avanzato",
+        "sottotitolo": "Un lavoro più approfondito",
+        "durata": "Durata: {trattamenti.pedicure.avanzato.durata}"
+      },
+      "strumentiIgiene": "Strumenti e igiene: {trattamenti.pedicure.strumentiIgiene}.",
+      "rigaLimite": "Unghie incarnite, verruche, diabete o dolore ai piedi? In questi casi rivolgiti a un podologo o al tuo medico.",
+      "linkPrezzi": "Vedi i prezzi ↓",
+      "pulsante": "Prenota il pedicure avanzato",
+      "altFoto": "Postazione per manicure e pedicure del centro {nome}"
+    },
+    "chiSono": {
+      "occhiello": "Chi sono",
+      "h2": "Migliore è il mio cognome. Ed è anche una promessa.",
+      "testo": "{presentazione}",
+      "testoPredefinito": "Sono Cristina e ti aspetto nel mio centro di Caronno Varesino. Ricevo solo su appuntamento, così il tuo trattamento ha il suo tempo.",
+      "payoff": "“{payoff}”",
+      "altFoto": "Una delle cabine del centro {nome}"
+    },
+    "comePrenotare": {
+      "occhiello": "Prenotare è semplice",
+      "h2": "Come prenotare",
+      "passi": [
+        "Chiama o scrivi su WhatsApp al {telefono}.",
+        "Scegli il giorno e l’ora: {orari.testo}.",
+        "Vieni in {indirizzo.via} a {indirizzo.comune}: il tuo appuntamento è pronto."
+      ],
+      "pulsanteChiama": "Chiama",
+      "pulsanteWhatsapp": "Scrivi su WhatsApp"
+    },
+    "codiceSconto": {
+      "occhiello": "Per te",
+      "h2": "{codiceSconto.percentuale}% di sconto sul tuo trattamento",
+      "testo": "Lascia la tua email: ricevi subito un codice sconto del {codiceSconto.percentuale}% e, {codiceSconto.frequenzaPromo}, le promo del centro.",
+      "campoEtichetta": "La tua email",
+      "campoSegnaposto": "nome@esempio.it",
+      "consenso": "Voglio ricevere via email le promozioni di {nome} su trattamenti viso e corpo, mani e piedi, epilazione e massaggi, {codiceSconto.frequenzaPromo}. Posso cancellarmi quando voglio. Ho letto l’informativa privacy.",
+      "consensoTestoLink": "informativa privacy",
+      "condizioni": "Il codice vale {codiceSconto.validitaGiorni} giorni, {codiceSconto.condizioni}. Mostralo a Cristina quando arrivi.",
+      "pulsante": "Ricevi il codice",
+      "trappola": "Lascia vuoto",
+      "risultatoTitolo": "Ecco il tuo codice",
+      "risultatoValidita": "Valido fino al [data]. Fai uno screenshot o mostralo dal telefono quando arrivi.",
+      "risultatoEmail": "Te l’abbiamo mandato anche via email.",
+      "copia": "Copia il codice",
+      "copiato": "Codice copiato",
+      "tornaAlSito": "Torna al sito",
+      "paginaErroreTitolo": "Il codice non è stato generato",
+      "tornaAlModulo": "Torna al modulo",
+      "errori": {
+        "email": "Controlla l’indirizzo email.",
+        "consenso": "Per ricevere il codice serve il consenso.",
+        "generico": "Qualcosa non ha funzionato. Riprova tra poco o scrivici su WhatsApp."
+      },
+      "email": {
+        "oggetto": "Il tuo codice sconto del {codiceSconto.percentuale}% · {nome}",
+        "apertura": "Ecco il tuo codice sconto del {codiceSconto.percentuale}%:",
+        "prenota": "Per prenotare chiama o scrivi su WhatsApp al {telefono}. Ti aspettiamo in {indirizzo.completo}.",
+        "firma": "A presto, {titolare.nome}",
+        "piede": "Ricevi questa email perché hai chiesto il codice sul sito di {nome}. Per non ricevere più le promozioni rispondi a questa email."
+      }
+    },
+    "doveSiamo": {
+      "occhiello": "Dove siamo",
+      "h2": "Ti aspettiamo a Caronno Varesino",
+      "indirizzo": "{indirizzo.completo}",
+      "orari": "{orari.testo}. Solo su appuntamento.",
+      "pulsanteMaps": "Apri in Google Maps",
+      "altFoto": "L’ingresso del centro {nome} in {indirizzo.via}"
+    },
+    "listino": {
+      "occhiello": "Prezzi",
+      "h2": "Listino",
+      "testo": "Prezzi finali. È lo stesso listino che trovi in centro.",
+      "linkStampato": "Vedi il listino stampato",
+      "voce": "voce",
+      "voci": "voci"
+    },
+    "barraContatti": {
+      "chiama": "Chiama",
+      "whatsapp": "WhatsApp"
+    },
+    "banner": {
+      "titolo": "Preferenze cookie",
+      "testo": "Usiamo cookie {tipiCookie} solo se li accetti. Puoi cambiare idea quando vuoi da «Preferenze cookie», in fondo alla pagina.",
+      "linkCookie": "Cookie policy",
+      "rifiuta": "Rifiuta",
+      "personalizza": "Personalizza",
+      "accetta": "Accetta",
+      "chiudi": "Chiudi e rifiuta i cookie",
+      "pannelloTitolo": "Scegli quali cookie accettare",
+      "statistiche": "Statistiche",
+      "statisticheTesto": "Ci dicono, in forma aggregata, come viene usato il sito (Google Analytics).",
+      "marketing": "Marketing",
+      "marketingTesto": "Misurano i risultati degli annunci su Facebook e Instagram (pixel Meta).",
+      "salva": "Salva le scelte"
+    },
+    "footer": {
+      "logoAlt": "{nome}",
+      "legale": "{legale.denominazione} · P.IVA {legale.partitaIva}",
+      "rea": "Registro Imprese di {legale.registroImprese} · REA {legale.rea}",
+      "sedeLegale": "Sede legale: {legale.sedeLegale}",
+      "indirizzo": "{indirizzo.completo}",
+      "copyright": "© {anno} {nome}",
+      "instagram": "Instagram",
+      "facebook": "Facebook",
+      "schedaGoogle": "Scheda Google",
+      "privacy": "Privacy",
+      "cookie": "Cookie",
+      "preferenzeCookie": "Preferenze cookie"
+    },
+    "pagina404": {
+      "title": "Pagina non trovata · {nome}",
+      "h1": "Questa pagina non esiste.",
+      "testo": "Forse il link è cambiato. Torna alla pagina iniziale o contattaci direttamente.",
+      "linkHome": "Torna alla pagina iniziale",
+      "pulsanteChiama": "Chiama",
+      "pulsanteWhatsapp": "Scrivi su WhatsApp"
+    },
+    "legali": {
+      "bozza": "Bozza da far verificare a un professionista prima di pubblicare gli annunci.",
+      "ultimoAggiornamento": "Ultimo aggiornamento:",
+      "etichette": {
+        "dati": "Dati",
+        "finalita": "Finalità",
+        "base": "Base giuridica",
+        "conservazione": "Conservazione"
+      }
+    },
+    "privacy": {
+      "title": "Informativa privacy · {nome}",
+      "description": "Come {nome} tratta i dati personali: richieste di appuntamento, codice sconto e promozioni via email, fornitori e diritti.",
+      "h1": "Informativa privacy",
+      "intro": "Questa informativa spiega come trattiamo i dati personali di chi visita il sito, chiede un appuntamento o lascia l’email per ricevere il codice sconto (art. 13 del Regolamento UE 2016/679, «GDPR»).",
+      "titolare": {
+        "h2": "Titolare del trattamento",
+        "etichette": {
+          "titolare": "Titolare",
+          "partitaIva": "Partita IVA",
+          "sede": "Sede",
+          "email": "Email",
+          "telefono": "Telefono"
+        }
+      },
+      "trattamenti": {
+        "h2": "Quali dati trattiamo e perché",
+        "voci": [
+          {
+            "titolo": "Richieste di appuntamento per telefono e WhatsApp",
+            "dati": "I dati che ci comunichi tu quando chiami o scrivi su WhatsApp, per esempio nome, numero di telefono e trattamento che ti interessa.",
+            "finalita": "Rispondere alla tua richiesta e gestire l’appuntamento.",
+            "base": "Misure precontrattuali adottate su tua richiesta (art. 6, par. 1, lett. b del GDPR).",
+            "conservazione": "Per il tempo necessario a gestire l’appuntamento.",
+            "nota": "Se scrivi su WhatsApp, il messaggio passa dal servizio di WhatsApp Ireland Limited, che ha la sua informativa privacy.",
+            "richiede": null
+          },
+          {
+            "titolo": "Codice sconto e promozioni via email",
+            "dati": "Il tuo indirizzo email, data e ora dell’iscrizione, il testo del consenso che hai accettato con la sua versione, la pagina del sito da cui ti iscrivi e il codice sconto che ti viene assegnato.",
+            "finalita": "Generare il codice sconto del {codiceSconto.percentuale}% e mostrartelo; mandartelo anche via email, quando l’invio è attivo; inviarti via email le promozioni del centro, {codiceSconto.frequenzaPromo}.",
+            "base": "Il tuo consenso (art. 6, par. 1, lett. a del GDPR). Puoi revocarlo quando vuoi: la revoca vale da quel momento in poi.",
+            "conservazione": "Fino alla revoca del consenso e comunque non oltre 24 mesi dall’ultima interazione.",
+            "nota": "Lasciare l’email è facoltativo: senza consenso non ricevi il codice, ma puoi prenotare come sempre. Le promozioni sono uguali per tutti: nessuna profilazione.",
+            "richiede": null
+          },
+          {
+            "titolo": "Statistiche (Google Analytics 4)",
+            "dati": "Dati di navigazione: pagine visitate, dispositivo e browser, area geografica approssimativa, identificativi online salvati nei cookie.",
+            "finalita": "Capire in forma aggregata come viene usato il sito.",
+            "base": "Il tuo consenso, dato nel banner dei cookie (art. 6, par. 1, lett. a del GDPR). Senza consenso Google Analytics non parte.",
+            "conservazione": "I cookie durano quanto indicato nella cookie policy; i dati restano in Google Analytics per il periodo impostato, al massimo 14 mesi.",
+            "nota": null,
+            "richiede": "ga4Id"
+          },
+          {
+            "titolo": "Marketing (pixel Meta)",
+            "dati": "Dati di navigazione e azioni compiute sul sito, per esempio il tocco su «Chiama» o su «Scrivi su WhatsApp» e la richiesta del codice sconto (senza la tua email), con gli identificativi online salvati nei cookie.",
+            "finalita": "Misurare i risultati degli annunci su Facebook e Instagram.",
+            "base": "Il tuo consenso, dato nel banner dei cookie (art. 6, par. 1, lett. a del GDPR). Senza consenso il pixel non parte e Meta non riceve nulla.",
+            "conservazione": "I cookie durano quanto indicato nella cookie policy; per i dati ricevuti valgono i tempi di conservazione di Meta.",
+            "nota": null,
+            "richiede": "metaPixelId"
+          }
+        ]
+      },
+      "tracciamentiSpenti": {
+        "titolo": "Statistiche e marketing",
+        "testo": "Oggi il sito non usa strumenti di statistica né di marketing, come Google Analytics o il pixel di Meta. Se li attiveremo, partiranno solo con il tuo consenso dato nel banner dei cookie e questa informativa verrà aggiornata."
+      },
+      "fornitori": {
+        "h2": "A chi affidiamo i dati",
+        "testo": "Per far funzionare il sito ci affidiamo ad alcuni fornitori, nominati responsabili del trattamento: trattano i dati solo per nostro conto e secondo le nostre istruzioni.",
+        "voci": [
+          {
+            "nome": "Netlify, Inc.",
+            "sede": "Stati Uniti",
+            "ruolo": "ospita il sito e le funzioni che generano il codice sconto; come ogni server, registra per sicurezza alcuni dati tecnici delle visite, come l’indirizzo IP",
+            "richiede": null
+          },
+          {
+            "nome": "Supabase, Inc.",
+            "sede": "Stati Uniti",
+            "ruolo": "custodisce le iscrizioni al codice sconto in un database che si trova nell’Unione europea",
+            "richiede": null
+          },
+          {
+            "nome": "{integrazioni.servizioEmail.nome}",
+            "sede": "{integrazioni.servizioEmail.sede}",
+            "ruolo": "per l’invio del codice sconto e delle promo",
+            "richiede": "servizioEmail"
+          },
+          {
+            "nome": "Google Ireland Limited",
+            "sede": "Irlanda",
+            "ruolo": "fornisce Google Analytics 4, con possibili trasferimenti a Google LLC negli Stati Uniti",
+            "richiede": "ga4Id"
+          },
+          {
+            "nome": "Meta Platforms Ireland Limited",
+            "sede": "Irlanda",
+            "ruolo": "fornisce il pixel Meta, con possibili trasferimenti a Meta Platforms, Inc. negli Stati Uniti",
+            "richiede": "metaPixelId"
+          }
+        ],
+        "trasferimento": "Alcuni fornitori hanno sede negli Stati Uniti. In questi casi il trasferimento dei dati avviene con le garanzie previste dal GDPR: l’adesione del fornitore all’EU-US Data Privacy Framework oppure le clausole contrattuali standard approvate dalla Commissione europea.",
+        "altro": "Non vendiamo i tuoi dati e non li diffondiamo. Li comunichiamo alle autorità solo quando la legge lo richiede.",
+        "inAttivazione": "in attivazione"
+      },
+      "diritti": {
+        "h2": "I tuoi diritti",
+        "testo": "In ogni momento puoi chiederci di:",
+        "elenco": [
+          "accedere ai tuoi dati e riceverne una copia (accesso);",
+          "correggerli o completarli (rettifica);",
+          "cancellarli (cancellazione);",
+          "limitarne il trattamento (limitazione);",
+          "opporti al trattamento (opposizione);",
+          "riceverli in un formato leggibile da un computer, per portarli altrove (portabilità);",
+          "revocare il consenso, senza effetti sui trattamenti fatti prima della revoca."
+        ],
+        "scrivi": "Per esercitare i tuoi diritti scrivi a",
+        "risposta": "Ti rispondiamo entro un mese.",
+        "reclamo": "Se ritieni che i tuoi dati siano trattati in modo non conforme al GDPR, puoi presentare reclamo al",
+        "garante": "Garante per la protezione dei dati personali",
+        "garanteUrl": "https://www.garanteprivacy.it"
+      },
+      "linkCookie": "Leggi la cookie policy"
+    },
+    "cookie": {
+      "title": "Cookie policy · {nome}",
+      "description": "Quali cookie usa il sito di {nome}, a cosa servono e come cambiare la tua scelta in qualsiasi momento.",
+      "h1": "Cookie policy",
+      "intro": "Questa pagina spiega quali cookie e strumenti simili usa il sito di {nome} e come puoi scegliere tu.",
+      "nessuno": {
+        "h2": "Oggi il sito non usa cookie",
+        "testi": [
+          "Il sito non salva cookie sul tuo dispositivo e non usa strumenti di statistica né di marketing. Per questo non vedi nessun banner.",
+          "Se in futuro attiveremo strumenti di statistica o di marketing, partiranno solo con il tuo consenso e questa pagina verrà aggiornata.",
+          "I link a WhatsApp e a Google Maps aprono servizi esterni, che hanno le loro regole sui cookie."
+        ]
+      },
+      "attivi": {
+        "h2": "Quali cookie usiamo",
+        "testi": [
+          "I cookie tecnici servono a far funzionare il sito e non richiedono consenso. I cookie {tipiCookie} partono solo se li accetti nel banner.",
+          "Chiudere il banner con la X equivale a rifiutare. La tua scelta viene ricordata per 6 mesi."
+        ],
+        "etichette": {
+          "categoria": "Categoria",
+          "fornitore": "Fornitore",
+          "durata": "Durata",
+          "finalita": "A cosa serve"
+        }
+      },
+      "elenco": [
+        {
+          "nome": "migliore-consenso",
+          "categoria": "Tecnico",
+          "fornitore": "{nome}",
+          "durata": "6 mesi",
+          "finalita": "Ricorda nel browser (archiviazione locale, non un cookie) se hai accettato o rifiutato i cookie.",
+          "richiede": "tracciamenti"
+        },
+        {
+          "nome": "_ga",
+          "categoria": "Statistica",
+          "fornitore": "Google",
+          "durata": "2 anni",
+          "finalita": "Distingue i visitatori nelle statistiche di Google Analytics.",
+          "richiede": "ga4Id"
+        },
+        {
+          "nome": "_ga_<ID>",
+          "categoria": "Statistica",
+          "fornitore": "Google",
+          "durata": "2 anni",
+          "finalita": "Mantiene lo stato della sessione in Google Analytics.",
+          "richiede": "ga4Id"
+        },
+        {
+          "nome": "_fbp",
+          "categoria": "Marketing",
+          "fornitore": "Meta",
+          "durata": "3 mesi",
+          "finalita": "Riconosce il browser per misurare i risultati degli annunci su Facebook e Instagram.",
+          "richiede": "metaPixelId"
+        },
+        {
+          "nome": "_fbc",
+          "categoria": "Marketing",
+          "fornitore": "Meta",
+          "durata": "3 mesi",
+          "finalita": "Conserva il riferimento all’annuncio Meta da cui arrivi, se arrivi da un annuncio.",
+          "richiede": "metaPixelId"
+        }
+      ],
+      "scelta": {
+        "h2": "Come cambiare la tua scelta",
+        "testi": [
+          "Usa il link «Preferenze cookie» in fondo a ogni pagina: puoi accettare o rifiutare di nuovo quando vuoi.",
+          "Puoi anche cancellare i cookie dalle impostazioni del browser."
+        ]
+      },
+      "linkPrivacy": "Leggi l’informativa privacy"
+    }
+  },
+  "pagine": {
+    "home": {
+      "percorso": "/",
+      "title": "Migliore – Estetica Avanzata · Caronno Varesino",
+      "description": "Trattamenti viso, pedicure avanzato, epilazione e massaggi a Caronno Varesino. Solo su appuntamento: chiama o scrivi su WhatsApp al {telefono}.",
+      "occhiello": "Estetica avanzata a Caronno Varesino",
+      "h1": "Trattamenti viso e pedicure avanzato a Caronno Varesino",
+      "sottotitolo": "Si riceve solo su appuntamento. Chiama o scrivi su WhatsApp e scegli il giorno che preferisci.",
+      "whatsapp": "generale",
+      "ordine": [
+        "viso",
+        "pedicure"
+      ],
+      "listinoAperto": null
+    },
+    "viso": {
+      "percorso": "/viso/",
+      "title": "Trattamenti viso a Caronno Varesino · Migliore",
+      "description": "Pulizia viso e trattamenti anti-age a Caronno Varesino, su appuntamento. Chiama o scrivi su WhatsApp al {telefono}.",
+      "occhiello": "Viso · Caronno Varesino",
+      "h1": "Trattamenti viso a Caronno Varesino",
+      "sottotitolo": "Pulizia viso e trattamenti anti-age, su appuntamento, in un ambiente caldo e tranquillo.",
+      "whatsapp": "viso",
+      "ordine": [
+        "viso",
+        "pedicure"
+      ],
+      "listinoAperto": "corpo-viso"
+    },
+    "pedicure": {
+      "percorso": "/pedicure/",
+      "title": "Pedicure avanzato a Caronno Varesino · Migliore",
+      "description": "Pedicure avanzato a Caronno Varesino: non la solita pedicure. Su appuntamento, chiama o scrivi su WhatsApp al {telefono}.",
+      "occhiello": "Piedi · Caronno Varesino",
+      "h1": "Pedicure avanzato a Caronno Varesino",
+      "sottotitolo": "Non la solita pedicure: più attenzione alle zone dove la pelle si ispessisce, per piedi morbidi e curati.",
+      "whatsapp": "pedicure",
+      "ordine": [
+        "pedicure",
+        "viso"
+      ],
+      "listinoAperto": "mani-piedi"
+    }
+  },
+  "whatsapp": {
+    "generale": "Ciao Cristina, vorrei prenotare un appuntamento.",
+    "viso": "Ciao Cristina, vorrei informazioni sui trattamenti viso.",
+    "pedicure": "Ciao Cristina, vorrei prenotare un pedicure avanzato."
+  },
+  "legale": {
+    "aggiornamento": "6 novembre 2026",
+    "verificata": false
+  }
+}

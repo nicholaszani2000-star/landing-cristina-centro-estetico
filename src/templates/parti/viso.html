@@ -1,0 +1,30 @@
+<section class="sezione viso" id="viso" data-sezione="viso" aria-labelledby="viso-titolo">
+  <div class="contenitore viso-griglia">
+    <div class="viso-intro appare">
+      <p class="occhiello arco">{{t.viso.occhiello}}</p>
+      <h2 id="viso-titolo">{{t.viso.h2}}</h2>
+      <p>{{t.viso.testo}}</p>
+      <p>{{t.viso.secondaFrase}}</p>
+    </div>
+    <div class="viso-foto">{{{immagini.fotoViso}}}</div>
+    <div class="viso-dettagli">
+      <ul class="viso-voci">
+        {{#ogni viso.voci}}<li class="viso-voce appare">
+          <h3 class="viso-voce-nome">{{nome}}{{#se inEvidenza}} <span class="etichetta">{{t.viso.etichettaInEvidenza}}</span>{{/se}}</h3>
+          {{#se descrizione}}<p class="viso-descrizione">{{descrizione}}</p>
+          {{/se}}{{#se fasi}}<ol class="viso-fasi">{{#ogni fasi}}<li>{{.}}</li>{{/ogni}}</ol>
+          {{/se}}{{#se seguito}}<p class="viso-descrizione">{{seguito}}</p>
+          {{/se}}
+        </li>
+        {{/ogni}}
+      </ul>
+      {{#se t.viso.inCabina}}<p class="viso-cabina appare">{{t.viso.inCabina}}</p>
+      {{/se}}<div class="viso-azioni appare">
+        <a class="link-prezzi" href="{{link.listino}}">{{t.viso.linkPrezzi}}</a>
+        <div class="pulsanti">
+          <a class="pulsante pulsante-principale" href="{{link.whatsappViso}}" target="_blank" rel="noopener">{{{icone.fumetto}}}<span>{{t.viso.pulsante}}</span></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

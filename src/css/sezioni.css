@@ -1,0 +1,1397 @@
+/* sezioni.css — una parte per sezione (CLAUDE.md §6): header, apertura, viso, pedicure, chi sono, come prenotare, codice sconto, dove siamo, listino, barra contatti mobile, footer, 404, pagine legali, banner cookie. */
+
+/* 1. Header: logo a sinistra, «Chiama» a destra. Non fisso. */
+.testata {
+  padding-block: var(--spazio-1);
+}
+.testata-riga {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spazio-2);
+  min-height: var(--logo-altezza);
+}
+.testata-logo {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}
+.testata-logo img {
+  width: auto;
+  height: var(--logo-altezza);
+}
+.testata-chiama {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  min-height: var(--area-tocco);
+  padding-inline: var(--spazio-1);
+  font-weight: var(--peso-medio);
+  color: var(--inchiostro);
+  text-decoration: none;
+}
+.testata-chiama .icona {
+  color: var(--accento);
+}
+.testata-chiama:hover {
+  text-decoration: underline;
+}
+/* Sotto i 768 px il numero resta solo per i lettori di schermo */
+@media (max-width: 767.98px) {
+  .testata-numero {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+@media (min-width: 768px) {
+  .testata-numero::before {
+    content: "·";
+    margin-right: 0.5em;
+    color: var(--inchiostro-tenue);
+  }
+}
+
+/* 2. Apertura: occhiello, H1, sottotitolo, pulsanti, riga info, payoff e foto 01.
+   Fino a 1023 px: testo, pulsanti uno sotto l'altro, foto a tutta larghezza che sfuma in basso.
+   Da 1024 px: colonne 7/5, foto in cornice 3:4 che sfuma a sinistra e in basso. */
+.apertura {
+  padding-top: var(--spazio-3);
+}
+.apertura-testo {
+  display: grid;
+  gap: var(--spazio-2);
+  max-width: 38rem;
+}
+.apertura-sottotitolo {
+  font-size: 1.125rem;
+}
+.apertura .pulsanti {
+  margin-top: var(--spazio-1);
+}
+.apertura-info {
+  font-size: var(--testo-piccolo);
+  color: var(--inchiostro-tenue);
+}
+.apertura-info span {
+  white-space: nowrap;
+}
+.apertura-payoff {
+  text-wrap: balance;
+  font-size: 1.125rem;
+  color: var(--inchiostro-tenue);
+}
+.apertura-foto {
+  margin: var(--spazio-4) calc(-1 * var(--margine-laterale)) 0;
+}
+.apertura-foto picture {
+  display: block;
+}
+.apertura-foto img {
+  width: 100%;
+  height: auto;
+  -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+  mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+}
+@media (max-width: 1023.98px) {
+  .apertura .pulsanti > .pulsante {
+    flex: 1 1 100%;
+  }
+}
+/* Da 768 px: cornice 3:4 che sfuma in basso (all'86%: la scritta MIGLIORE resta nitida),
+   foto ritagliata dal CSS con object-position: il volto di Cristina e la scritta sul bancone. */
+@media (min-width: 768px) {
+  .apertura-foto {
+    aspect-ratio: 3 / 4;
+    -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso-dettaglio), transparent);
+    mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso-dettaglio), transparent);
+  }
+  .apertura-foto picture {
+    height: 100%;
+  }
+  .apertura-foto img {
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 62%;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+/* Tra 768 e 1023 px: cornice larga al massimo 520 px e centrata (intera sarebbe alta oltre 1300 px). */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .apertura-testo {
+    max-width: var(--cornice-tablet); /* stessi bordi della foto */
+    margin-inline: auto;
+  }
+  .apertura-foto {
+    width: 100%;
+    max-width: var(--cornice-tablet);
+    margin: var(--spazio-5) auto 0;
+  }
+}
+@media (min-width: 1024px) {
+  .apertura {
+    padding-block: var(--spazio-4) var(--sezione-verticale);
+  }
+  .apertura-griglia {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    align-items: center;
+    gap: var(--spazio-6);
+  }
+  /* Due maschere su due elementi: la cornice sfuma in basso, la foto sfuma a sinistra. */
+  .apertura-foto {
+    margin: 0;
+  }
+  .apertura-foto img {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--sfumatura-lato));
+    mask-image: linear-gradient(to right, transparent, #000 var(--sfumatura-lato));
+  }
+}
+/* Ripiego senza mask-image: niente sfumatura, angoli arrotondati; su mobile foto dentro i margini. */
+@supports not ((mask-image: none) or (-webkit-mask-image: none)) {
+  .apertura-foto img {
+    border-radius: var(--raggio-foto);
+  }
+}
+@supports not ((mask-image: none) or (-webkit-mask-image: none)) {
+  @media (max-width: 767.98px) {
+    .apertura-foto {
+      margin-inline: 0;
+    }
+  }
+}
+
+/* 3. Viso (quarta su /pedicure/): testo, foto 03, voci viso dal listino senza prezzi, link ai prezzi,
+   pulsante WhatsApp. Fino a 1023 px (§5, ordine su mobile): introduzione, poi foto che sfuma in basso
+   (intera fino a 767 px, cornice 4:5 di 520 px al massimo fino a 1023 px), poi elenco e pulsante.
+   Da 1024 px colonne 5/7: foto a sinistra in cornice 4:5 che sfuma a destra, testo a destra. */
+.viso-griglia {
+  display: grid;
+  gap: var(--spazio-4);
+}
+.viso-foto {
+  margin-inline: calc(-1 * var(--margine-laterale));
+}
+.viso-foto picture {
+  display: block;
+}
+.viso-foto img {
+  width: 100%;
+  height: auto;
+  -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+  mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+}
+.viso-intro,
+.viso-dettagli {
+  display: grid;
+  gap: var(--spazio-2);
+  align-content: start;
+}
+.viso-intro h2 {
+  margin-bottom: var(--spazio-1);
+}
+.viso-voci {
+  margin: 0;
+  padding: 0;
+  list-style-type: "\200B"; /* niente pallino; con list-style: none Safari non annuncia più la lista */
+  border-top: 1px solid var(--linea);
+}
+.viso-voce {
+  display: grid;
+  gap: var(--spazio-1);
+  padding-block: var(--spazio-3);
+  border-bottom: 1px solid var(--linea);
+}
+.viso-voce-nome {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spazio-1);
+  font-family: var(--font-testo);
+  font-size: 1.125rem;
+  font-weight: var(--peso-medio);
+  line-height: 1.35;
+}
+.etichetta {
+  display: inline-block;
+  padding: 0.2rem 0.7rem;
+  border-radius: var(--raggio-pillola);
+  background: var(--sabbia-profonda);
+  color: var(--accento);
+  font-size: 0.75rem;
+  font-weight: var(--peso-medio);
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+.viso-descrizione {
+  color: var(--inchiostro-tenue);
+}
+.viso-descrizione::first-letter {
+  text-transform: uppercase; /* il testo dei dettagli resta com'è: solo la prima lettera a vista */
+}
+.viso-fasi {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding-left: 1.75rem;
+  color: var(--inchiostro-tenue);
+}
+.viso-fasi li {
+  padding-left: 0.25rem;
+}
+.viso-fasi li::marker {
+  font-family: var(--font-titoli);
+  font-size: 1.0625rem;
+  color: var(--accento);
+}
+.viso-cabina {
+  font-size: var(--testo-piccolo);
+  color: var(--inchiostro-tenue);
+}
+.viso-azioni,
+.pedicure-azioni {
+  display: grid;
+  gap: var(--spazio-2);
+  justify-items: start;
+  margin-top: var(--spazio-1);
+}
+.link-prezzi {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--area-tocco);
+  font-weight: var(--peso-medio);
+}
+.viso-azioni .pulsanti,
+.pedicure-azioni .pulsanti {
+  width: 100%;
+}
+@media (min-width: 768px) {
+  .viso-foto {
+    aspect-ratio: 4 / 5;
+  }
+  .viso-foto picture {
+    height: 100%;
+  }
+  .viso-foto img {
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 55%; /* il lettino al centro della cornice */
+  }
+}
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .viso-foto {
+    width: 100%;
+    max-width: var(--cornice-tablet);
+    margin-inline: auto;
+    -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+    mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+  }
+  .viso-foto img {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .viso-intro,
+  .viso-dettagli {
+    width: 100%;
+    max-width: var(--cornice-tablet);
+    margin-inline: auto;
+  }
+}
+@media (min-width: 1024px) {
+  .viso-griglia {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-areas:
+      "foto intro"
+      "foto dettagli";
+    grid-template-rows: auto 1fr;
+    align-items: start;
+    column-gap: var(--spazio-8);
+    row-gap: var(--spazio-4);
+  }
+  .viso-intro {
+    grid-area: intro;
+  }
+  .viso-dettagli {
+    grid-area: dettagli;
+  }
+  /* L'elenco è più alto della foto: la foto resta in vista mentre si scorre. */
+  .viso-foto {
+    grid-area: foto;
+    position: sticky;
+    top: var(--spazio-4);
+    margin: 0;
+  }
+  .viso-foto img {
+    -webkit-mask-image: linear-gradient(to left, transparent, #000 var(--sfumatura-lato));
+    mask-image: linear-gradient(to left, transparent, #000 var(--sfumatura-lato));
+  }
+  .viso-azioni .pulsanti,
+  .pedicure-azioni .pulsanti {
+    width: auto;
+  }
+}
+@supports not ((mask-image: none) or (-webkit-mask-image: none)) {
+  .viso-foto img {
+    border-radius: var(--raggio-foto);
+  }
+  @media (max-width: 767.98px) {
+    .viso-foto {
+      margin-inline: 0;
+    }
+  }
+}
+
+/* 4. Pedicure avanzato (terza su /pedicure/): testo, foto 05, confronto in due schede, strumenti e igiene,
+   riga sul limite, link ai prezzi, pulsante WhatsApp. Fino a 1023 px (§5, ordine su mobile): introduzione,
+   foto che sfuma in basso, schede (affiancate da 768 px), il resto. Da 1024 px colonne 7/5: testo e schede
+   a sinistra, foto a destra in cornice 4:5 che sfuma a sinistra. Tutto sul sabbia (§5). */
+.pedicure-griglia {
+  display: grid;
+  gap: var(--spazio-4);
+}
+.pedicure-intro,
+.pedicure-dettagli {
+  display: grid;
+  gap: var(--spazio-3);
+  align-content: start;
+}
+.pedicure-intro {
+  gap: var(--spazio-2);
+}
+.pedicure-intro h2 {
+  margin-bottom: var(--spazio-1);
+}
+.pedicure-foto {
+  margin-inline: calc(-1 * var(--margine-laterale));
+}
+.pedicure-foto picture {
+  display: block;
+}
+.pedicure-foto img {
+  width: 100%;
+  height: auto;
+  -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+  mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+}
+.schede {
+  display: grid;
+  gap: var(--spazio-2);
+}
+.scheda {
+  display: grid;
+  gap: var(--spazio-1);
+  align-content: start;
+  padding: var(--spazio-3);
+  border-radius: var(--raggio-scheda);
+}
+.scheda-estetico {
+  background: var(--sabbia); /* fondo unico (§5): sul sabbia, con il bordo --linea */
+  border: var(--bordo-scheda) solid var(--linea);
+}
+.scheda-avanzato {
+  background: var(--sabbia-profonda); /* l'unica scheda in rilievo */
+  border: var(--bordo-scheda) solid var(--accento);
+}
+.scheda-sottotitolo {
+  font-size: var(--testo-piccolo);
+  font-weight: var(--peso-medio);
+  color: var(--inchiostro-tenue);
+}
+.scheda-voci {
+  display: grid;
+  gap: 0.5rem;
+  margin: var(--spazio-1) 0 0;
+  padding: 0;
+  list-style-type: "\200B"; /* niente pallino: la spunta è un SVG; Safari continua ad annunciare la lista */
+}
+.scheda-voci li {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  gap: 0.6rem;
+  align-items: start;
+  line-height: 1.5;
+}
+.scheda-voci .icona {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.1rem;
+  color: var(--accento);
+}
+.scheda-durata {
+  margin-top: var(--spazio-1);
+  padding-top: var(--spazio-1);
+  border-top: 1px solid var(--linea);
+  font-size: var(--testo-piccolo);
+  color: var(--inchiostro-tenue);
+}
+.pedicure-igiene,
+.pedicure-limite {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  gap: 0.6rem;
+  align-items: start;
+}
+.pedicure-igiene .icona,
+.pedicure-limite .icona {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.15rem;
+}
+.pedicure-igiene {
+  color: var(--inchiostro);
+}
+.pedicure-igiene .icona {
+  color: var(--accento);
+}
+.pedicure-limite {
+  font-size: var(--testo-piccolo);
+  color: var(--inchiostro-tenue);
+}
+.pedicure-limite .icona {
+  color: var(--inchiostro-tenue);
+}
+@media (min-width: 768px) {
+  .schede {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .pedicure-foto {
+    aspect-ratio: 4 / 5;
+  }
+  .pedicure-foto picture {
+    height: 100%;
+  }
+  .pedicure-foto img {
+    height: 100%;
+    object-fit: cover;
+    object-position: 55% 60%; /* poltrona, poggiapiedi e carrello */
+  }
+}
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .pedicure-foto {
+    width: 100%;
+    max-width: var(--cornice-tablet);
+    margin-inline: auto;
+    -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+    mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+  }
+  .pedicure-foto img {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+@media (min-width: 1024px) {
+  .pedicure-griglia {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    grid-template-areas:
+      "intro foto"
+      "dettagli foto";
+    grid-template-rows: auto 1fr;
+    align-items: start;
+    column-gap: var(--spazio-8);
+    row-gap: var(--spazio-4);
+  }
+  .pedicure-intro {
+    grid-area: intro;
+  }
+  .pedicure-dettagli {
+    grid-area: dettagli;
+  }
+  .pedicure-foto {
+    grid-area: foto;
+    position: sticky;
+    top: var(--spazio-4);
+    margin: 0;
+  }
+  .pedicure-foto img {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--sfumatura-lato));
+    mask-image: linear-gradient(to right, transparent, #000 var(--sfumatura-lato));
+  }
+}
+@supports not ((mask-image: none) or (-webkit-mask-image: none)) {
+  .pedicure-foto img {
+    border-radius: var(--raggio-foto);
+  }
+  @media (max-width: 767.98px) {
+    .pedicure-foto {
+      margin-inline: 0;
+    }
+  }
+}
+
+/* 5. Chi sono: testo, foto 04, payoff. Fino a 1023 px (§5): introduzione, foto che sfuma in basso
+   (cornice 4:5 di 520 px tra 768 e 1023 px), payoff. Da 1024 px foto a sinistra in cornice 4:5
+   (object-position 40% 55%: lettino e lampada a lente) che sfuma a destra, testo a destra. */
+.chi-griglia {
+  display: grid;
+  gap: var(--spazio-4);
+}
+.chi-intro {
+  display: grid;
+  gap: var(--spazio-2);
+}
+.chi-intro h2 {
+  margin-bottom: var(--spazio-1);
+}
+.chi-foto {
+  margin-inline: calc(-1 * var(--margine-laterale));
+}
+.chi-foto picture {
+  display: block;
+}
+.chi-foto img {
+  width: 100%;
+  height: auto;
+  -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+  mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+}
+.chi-payoff {
+  text-wrap: balance;
+  font-family: var(--font-titoli);
+  font-size: 1.5rem;
+  font-synthesis: none;
+  line-height: 1.3;
+  color: var(--accento);
+}
+@media (min-width: 768px) {
+  .chi-foto {
+    aspect-ratio: 4 / 5;
+  }
+  .chi-foto picture {
+    height: 100%;
+  }
+  .chi-foto img {
+    height: 100%;
+    object-fit: cover;
+    object-position: 40% 55%; /* lettino e lampada a lente */
+  }
+}
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .chi-intro,
+  .chi-payoff {
+    width: 100%;
+    max-width: var(--cornice-tablet);
+    margin-inline: auto;
+  }
+  .chi-foto {
+    width: 100%;
+    max-width: var(--cornice-tablet);
+    margin-inline: auto;
+    -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+    mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+  }
+  .chi-foto img {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+@media (min-width: 1024px) {
+  .chi-griglia {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-areas:
+      "foto intro"
+      "foto chiusura";
+    column-gap: var(--spazio-8);
+    row-gap: var(--spazio-4);
+    align-content: center;
+  }
+  .chi-intro {
+    grid-area: intro;
+    align-self: end;
+  }
+  .chi-payoff {
+    grid-area: chiusura;
+    align-self: start;
+  }
+  .chi-foto {
+    grid-area: foto;
+    margin: 0;
+  }
+  .chi-foto img {
+    -webkit-mask-image: linear-gradient(to left, transparent, #000 var(--sfumatura-lato));
+    mask-image: linear-gradient(to left, transparent, #000 var(--sfumatura-lato));
+  }
+}
+
+/* 6. Come prenotare: tre passi numerati (numeri grandi in Marcellus), in colonna sotto i 768 px e in riga
+   da 768 px; pulsanti «Chiama» e «Scrivi su WhatsApp». */
+.prenota-griglia {
+  display: grid;
+  gap: var(--spazio-4);
+}
+.prenota-intro {
+  display: grid;
+  gap: var(--spazio-2);
+}
+.passi {
+  display: grid;
+  gap: var(--spazio-3);
+  margin: 0;
+  padding: 0;
+  list-style-type: "\200B"; /* il numero lo disegna ::before; Safari continua ad annunciare la lista */
+  counter-reset: passo;
+}
+.passo {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  gap: var(--spazio-2);
+  align-items: baseline;
+  counter-increment: passo;
+}
+.passo::before {
+  content: counter(passo);
+  font-family: var(--font-titoli);
+  font-size: 2.75rem;
+  font-synthesis: none;
+  line-height: 1;
+  color: var(--accento);
+}
+@media (min-width: 768px) {
+  .passi {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--spazio-4);
+  }
+  .passo {
+    grid-template-columns: 1fr;
+    gap: var(--spazio-2);
+    align-content: start;
+    padding-top: var(--spazio-3);
+    border-top: 1px solid var(--linea);
+  }
+}
+
+/* 7. Codice sconto: introduzione, poi il blocco in rilievo (--sabbia-profonda) con il modulo.
+   Campi su --crema con bordo 1,5 px --inchiostro-tenue, errori in --accento con icona. Da 1024 px colonne 5/7. */
+.codice-griglia {
+  display: grid;
+  gap: var(--spazio-4);
+}
+.codice-intro {
+  display: grid;
+  gap: var(--spazio-2);
+  align-content: start;
+}
+.codice-blocco {
+  padding: var(--spazio-3);
+  border-radius: var(--raggio-scheda);
+  background: var(--sabbia-profonda);
+}
+.codice-modulo,
+.codice-ottenuto {
+  display: grid;
+  gap: var(--spazio-3);
+}
+.campo {
+  display: grid;
+  gap: var(--spazio-1);
+}
+.campo-etichetta {
+  font-weight: var(--peso-medio);
+}
+.campo-testo {
+  width: 100%;
+  min-height: var(--pulsante-altezza);
+  padding: 0 1rem;
+  border: var(--bordo-scheda) solid var(--inchiostro-tenue);
+  border-radius: 0.5rem;
+  background: var(--crema);
+  color: var(--inchiostro);
+  font: inherit;
+}
+.campo-testo::placeholder {
+  color: var(--inchiostro-tenue);
+}
+.campo-testo[aria-invalid="true"],
+.campo-casella[aria-invalid="true"]::before {
+  border-color: var(--accento);
+}
+/* Casella del consenso: area di tocco di 44 px, quadratino disegnato di 24 px. */
+.campo-consenso {
+  grid-template-columns: var(--area-tocco) minmax(0, 1fr);
+  column-gap: var(--spazio-1);
+  align-items: start;
+  font-size: var(--testo-piccolo);
+}
+.campo-consenso .campo-avviso {
+  grid-column: 2;
+}
+.campo-casella {
+  display: grid;
+  place-content: center;
+  width: var(--area-tocco);
+  height: var(--area-tocco);
+  margin: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+.campo-casella::before,
+.campo-casella::after {
+  content: "";
+  grid-area: 1 / 1;
+}
+.campo-casella::before {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: var(--bordo-scheda) solid var(--inchiostro-tenue);
+  border-radius: 0.3rem;
+  background: var(--crema);
+}
+.campo-casella::after {
+  justify-self: center;
+  width: 0.45rem;
+  height: 0.8rem;
+  margin-top: -0.2rem;
+  border: solid var(--sabbia);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  visibility: hidden;
+}
+.campo-casella:checked::before {
+  border-color: var(--inchiostro);
+  background: var(--inchiostro);
+}
+.campo-casella:checked::after {
+  visibility: visible;
+}
+.campo-casella:focus-visible {
+  outline-offset: -6px;
+}
+.campo-consenso label {
+  padding-top: 0.55rem;
+  line-height: 1.5;
+}
+.campo-errore {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin-top: 0.25rem;
+  font-size: var(--testo-piccolo);
+  font-weight: var(--peso-medio);
+  color: var(--accento);
+}
+.campo-errore .icona {
+  margin-top: 0.1rem;
+}
+/* Campo trappola: fuori dallo schermo (non display:none), così i robot lo compilano e le persone no. */
+.trappola {
+  position: absolute;
+  left: -10000px;
+  width: 20rem;
+}
+.codice-invia {
+  width: 100%;
+}
+.codice-invia:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+.codice-condizioni {
+  font-size: var(--testo-piccolo);
+  color: var(--inchiostro-tenue);
+}
+.codice-risultato:empty {
+  display: none;
+}
+.codice-ottenuto-titolo {
+  font-size: var(--testo-h3);
+}
+.codice-ottenuto-titolo:focus {
+  outline: none;
+}
+.codice-ottenuto-titolo:focus-visible {
+  outline: var(--focus-spessore) solid var(--accento);
+}
+.codice-valore {
+  justify-self: start;
+  padding: 0.5rem 1rem;
+  border: var(--bordo-scheda) dashed var(--accento);
+  border-radius: 0.5rem;
+  font-family: var(--font-titoli);
+  font-size: clamp(2rem, 1.6rem + 1.6vw, 2.75rem);
+  font-synthesis: none;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  user-select: all;
+}
+.codice-ottenuto .pulsante {
+  justify-self: start;
+}
+@media (min-width: 768px) {
+  .codice-invia {
+    width: auto;
+    justify-self: start;
+  }
+  .codice-blocco {
+    padding: var(--spazio-4);
+  }
+}
+@media (min-width: 1024px) {
+  .codice-griglia {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    column-gap: var(--spazio-8);
+  }
+}
+/* Pagina della funzione per chi invia senza JavaScript */
+.codice-pagina .contenitore {
+  display: grid;
+  gap: var(--spazio-3);
+  justify-items: start;
+}
+.codice-pagina-link a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--area-tocco);
+  font-weight: var(--peso-medio);
+}
+
+/* 8. Dove siamo e orari: foto 02 orizzontale, indirizzo, orari, telefono, «Apri in Google Maps».
+   Fino a 1023 px (§5): introduzione, foto intera che sfuma in basso, il resto. Da 1024 px testo
+   a sinistra, foto a destra in proporzione originale che sfuma a sinistra. Niente mappa incorporata. */
+.dove-griglia {
+  display: grid;
+  gap: var(--spazio-4);
+}
+.dove-intro {
+  display: grid;
+  gap: var(--spazio-2);
+}
+.dove-foto {
+  margin-inline: calc(-1 * var(--margine-laterale));
+}
+.dove-foto picture {
+  display: block;
+}
+.dove-foto img {
+  width: 100%;
+  height: auto;
+  -webkit-mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+  mask-image: linear-gradient(to bottom, #000 var(--sfumatura-basso), transparent);
+}
+.dove-dettagli {
+  display: grid;
+  gap: var(--spazio-3);
+  justify-items: start;
+}
+.dove-contatti {
+  display: grid;
+  gap: var(--spazio-1);
+  font-style: normal;
+}
+.dove-riga {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+  min-height: var(--area-tocco);
+}
+.dove-riga .icona {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--accento);
+}
+.dove-riga a {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  min-height: var(--area-tocco);
+  font-weight: var(--peso-medio);
+}
+.dove-orari span::first-letter {
+  text-transform: uppercase; /* «dal lunedì al sabato…» resta com'è nei dati */
+}
+.dove-dettagli .pulsanti {
+  width: 100%;
+}
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .dove-foto {
+    margin-inline: 0; /* foto orizzontale: intera nel contenitore (§5) */
+  }
+}
+@media (min-width: 1024px) {
+  .dove-griglia {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-areas:
+      "intro foto"
+      "dettagli foto";
+    column-gap: var(--spazio-8);
+    row-gap: var(--spazio-4);
+    align-content: center;
+  }
+  .dove-intro {
+    grid-area: intro;
+    align-self: end;
+  }
+  .dove-dettagli {
+    grid-area: dettagli;
+    align-self: start;
+  }
+  .dove-foto {
+    grid-area: foto;
+    align-self: center;
+    margin: 0;
+  }
+  .dove-foto img {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--sfumatura-lato));
+    mask-image: linear-gradient(to right, transparent, #000 var(--sfumatura-lato));
+  }
+  .dove-dettagli .pulsanti {
+    width: auto;
+  }
+}
+
+/* Ripiego senza mask-image per le foto di chi sono e dove siamo */
+@supports not ((mask-image: none) or (-webkit-mask-image: none)) {
+  .chi-foto img,
+  .dove-foto img {
+    border-radius: var(--raggio-foto);
+  }
+  @media (max-width: 767.98px) {
+    .chi-foto,
+    .dove-foto {
+      margin-inline: 0;
+    }
+  }
+}
+
+/* 9. Listino: una categoria per <details> (funziona senza JS), una voce per riga: nome, puntini, prezzo.
+   Se il nome va a capo, il prezzo resta in basso a destra, sull'ultima riga del nome.
+   Fino a 1023 px: introduzione, categorie, link al listino stampato. Da 1024 px colonne 5/7. */
+.listino-griglia {
+  display: grid;
+  gap: var(--spazio-4);
+}
+.listino-intro,
+.listino-corpo {
+  display: grid;
+  gap: var(--spazio-2);
+  align-content: start;
+}
+.listino-categorie {
+  border-top: 1px solid var(--linea);
+}
+.listino-categoria {
+  border-bottom: 1px solid var(--linea);
+}
+.listino-categoria > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--spazio-2);
+  min-height: var(--area-tocco);
+  padding: var(--spazio-2) var(--spazio-1);
+  list-style: none;
+  cursor: pointer;
+}
+.listino-categoria > summary::-webkit-details-marker {
+  display: none;
+}
+/* Sabbia chiara solo come piccolo dettaglio (§5): la riga della categoria aperta o sotto il mouse. */
+.listino-categoria > summary:hover,
+.listino-categoria[open] > summary {
+  background: var(--sabbia-chiara);
+}
+.listino-titolo {
+  flex: 1 1 auto;
+  font-family: var(--font-titoli);
+  font-size: 1.25rem;
+  font-synthesis: none;
+  line-height: 1.3;
+}
+.listino-conteggio {
+  flex: none;
+  font-size: var(--testo-piccolo);
+  color: var(--inchiostro-tenue);
+  white-space: nowrap;
+}
+.listino-categoria .icona-apri {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--accento);
+  transition: transform var(--durata-rapida) var(--curva);
+}
+.listino-categoria[open] .icona-apri {
+  transform: rotate(90deg);
+}
+.listino-voci {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: var(--spazio-2) var(--spazio-1) var(--spazio-3);
+}
+.listino-voce {
+  display: flex;
+  align-items: flex-end;
+  align-items: last baseline;
+}
+.listino-voce dt {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.listino-voce dd {
+  display: flex;
+  flex: 1 0 auto;
+  align-items: baseline;
+  margin: 0;
+  font-weight: var(--peso-medio);
+  white-space: nowrap;
+}
+.listino-voce dd::before {
+  content: "";
+  position: relative;
+  bottom: 0.3em;
+  flex: 1 1 auto;
+  min-width: 1.5rem;
+  margin-inline: 0.5rem;
+  border-bottom: 1.5px dotted var(--linea);
+}
+.listino-stampato a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--area-tocco);
+  font-weight: var(--peso-medio);
+}
+@media (min-width: 1024px) {
+  .listino-griglia {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    column-gap: var(--spazio-8);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .listino-categoria .icona-apri {
+    transition: none; /* la freccia indica lo stato aperto, ma senza ruotare in movimento */
+  }
+}
+
+/* Barra contatti mobile: sotto i 768 px, fissa in basso. Con JS si nasconde mentre i pulsanti
+   dell'apertura sono visibili; senza JS resta sempre visibile (ripiego dopo 3 s se main.js non parte). */
+.barra-contatti {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  display: flex;
+  gap: var(--spazio-1);
+  padding: var(--spazio-1) var(--margine-laterale) calc(var(--spazio-1) + env(safe-area-inset-bottom));
+  background: var(--sabbia);
+  border-top: 1px solid var(--linea);
+}
+.barra-contatti .pulsante {
+  flex: 1 1 0;
+  padding-inline: var(--spazio-2);
+}
+.js .barra-contatti {
+  transition: opacity var(--durata-barra) ease, visibility 0s linear 0s;
+}
+.js .barra-contatti:not(.visibile) {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--durata-barra) ease, visibility 0s linear var(--durata-barra);
+  animation: barra-ripiego 1ms linear 3s forwards;
+}
+.barra-attiva .barra-contatti:not(.visibile) {
+  animation: none;
+}
+@keyframes barra-ripiego {
+  to {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+/* Spazio in fondo pari alla barra, solo nelle pagine che la hanno (non 404 e pagine legali). */
+@media (max-width: 767.98px) {
+  .con-barra {
+    padding-bottom: calc(var(--barra-altezza) + env(safe-area-inset-bottom));
+  }
+}
+@media (min-width: 768px) {
+  .barra-contatti {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .js .barra-contatti,
+  .js .barra-contatti:not(.visibile) {
+    transition: none;
+  }
+}
+
+/* 10. Footer: logo piccolo, dati legali, contatti, link legali */
+.piede {
+  padding-block: var(--spazio-8) var(--spazio-6);
+  font-size: var(--testo-piccolo);
+  color: var(--inchiostro-tenue);
+}
+.piede-griglia {
+  display: grid;
+  gap: var(--spazio-3);
+}
+.piede-logo {
+  display: inline-flex;
+}
+.piede-logo img {
+  width: auto;
+  height: var(--logo-piede-altezza);
+}
+.piede-dati {
+  display: grid;
+  gap: var(--spazio-1);
+}
+.piede-elenco {
+  display: grid;
+  align-content: start;
+  padding: 0;
+  list-style: none;
+}
+.piede-elenco a,
+.piede-preferenze {
+  display: inline-flex;
+  align-items: center;
+  min-width: var(--area-tocco);
+  min-height: var(--area-tocco);
+  color: var(--inchiostro);
+}
+.piede-preferenze {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+}
+.piede-copyright {
+  padding-top: var(--spazio-3);
+  border-top: 1px solid var(--linea);
+  max-width: none;
+}
+@media (min-width: 768px) {
+  .piede-griglia {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: var(--spazio-5);
+  }
+  .piede-copyright {
+    grid-column: 1 / -1;
+  }
+}
+@media (min-width: 1024px) {
+  .piede-griglia {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+/* Pagina 404 */
+.pagina-404 p a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--area-tocco);
+}
+
+/* Pagine legali (privacy e cookie): stesso layout della landing, testo su una colonna di 62ch. */
+.legale {
+  padding-top: var(--spazio-4);
+}
+.legale-testo {
+  display: grid;
+  gap: var(--spazio-2);
+  max-width: var(--misura-testo);
+}
+.legale-testo h2 {
+  margin-top: var(--spazio-5);
+  font-size: clamp(1.5rem, 1.3143rem + 0.7619vw, 2rem);
+}
+.legale-testo h3 {
+  font-size: var(--testo-h3);
+}
+.legale-data {
+  font-size: var(--testo-piccolo);
+  color: var(--inchiostro-tenue);
+}
+.legale-intro {
+  font-size: 1.125rem;
+}
+.legale-bozza {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  margin-bottom: var(--spazio-2);
+  padding: var(--spazio-2) var(--spazio-3);
+  border: var(--bordo-scheda) solid var(--accento);
+  border-radius: var(--raggio-scheda);
+  color: var(--accento);
+  font-weight: var(--peso-medio);
+}
+.legale-bozza .icona {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.15rem;
+}
+.legale-blocco {
+  display: grid;
+  gap: var(--spazio-2);
+  margin-top: var(--spazio-2);
+}
+.legale-scheda {
+  display: grid;
+  gap: var(--spazio-1);
+  margin: 0;
+  padding-left: var(--spazio-2);
+  border-left: 1px solid var(--linea);
+}
+.legale-scheda dt {
+  font-size: var(--testo-piccolo);
+  font-weight: var(--peso-medio);
+  color: var(--inchiostro-tenue);
+}
+.legale-scheda dd {
+  margin: 0;
+}
+.legale-scheda dd a,
+.legale-link a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--area-tocco);
+}
+.legale-nota {
+  font-size: var(--testo-piccolo);
+  color: var(--inchiostro-tenue);
+}
+.legale-elenco {
+  display: grid;
+  gap: var(--spazio-1);
+  margin: 0;
+  padding-left: 1.25rem;
+}
+.legale-elenco li::marker {
+  color: var(--accento);
+}
+.legale-cookie-nome {
+  font-family: var(--font-testo);
+  font-weight: var(--peso-medio);
+}
+
+/* Banner cookie (solo con GA4 o Meta indicati): in basso, non bloccante. «Rifiuta», «Personalizza» e
+   «Accetta» hanno lo stesso stile e la stessa misura (§10); la X chiude rifiutando. */
+.banner-cookie {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 30;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding-block: var(--spazio-3) calc(var(--spazio-3) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--linea);
+  background: var(--sabbia);
+  box-shadow: 0 -0.5rem 1.5rem rgb(31 22 18 / 0.12);
+}
+.banner-interno {
+  position: relative;
+  display: grid;
+  gap: var(--spazio-2);
+}
+.banner-testo {
+  padding-right: var(--area-tocco);
+  font-size: var(--testo-piccolo);
+}
+.banner-pulsanti {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spazio-1);
+}
+.banner-cookie .pulsante {
+  padding-inline: 0.75rem;
+  font-size: 0.9375rem;
+}
+.banner-pannello {
+  display: grid;
+  gap: var(--spazio-2);
+  justify-items: start;
+}
+.banner-pannello-titolo {
+  font-weight: var(--peso-medio);
+}
+.interruttore {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--spazio-2);
+  align-items: start;
+  font-size: var(--testo-piccolo);
+  cursor: pointer;
+}
+.interruttore input {
+  position: relative;
+  width: 2.75rem;
+  height: 1.5rem;
+  margin: 0.1rem 0 0;
+  border: var(--bordo-scheda) solid var(--inchiostro-tenue);
+  border-radius: var(--raggio-pillola);
+  background: var(--crema);
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+.interruttore input::before {
+  content: "";
+  position: absolute;
+  top: 0.15rem;
+  left: 0.15rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: var(--inchiostro-tenue);
+}
+.interruttore input:checked {
+  border-color: var(--inchiostro);
+  background: var(--inchiostro);
+}
+.interruttore input:checked::before {
+  left: auto;
+  right: 0.15rem;
+  background: var(--sabbia);
+}
+.banner-chiudi {
+  position: absolute;
+  top: calc(-1 * var(--spazio-1));
+  right: var(--margine-laterale);
+  display: grid;
+  place-items: center;
+  width: var(--area-tocco);
+  height: var(--area-tocco);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--inchiostro);
+  cursor: pointer;
+}
+.banner-chiudi .icona {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+/* Mentre il banner è aperto la barra contatti mobile si nasconde e la pagina lascia spazio in fondo. */
+.banner-aperto .barra-contatti {
+  display: none;
+}
+.banner-aperto body {
+  padding-bottom: var(--spazio-banner, 0px);
+}
+/* «Preferenze cookie» funziona solo con JavaScript: senza, non compare. */
+html:not(.js) .piede-preferenze {
+  display: none;
+}
+@media (min-width: 768px) {
+  .banner-pulsanti {
+    grid-template-columns: repeat(3, auto);
+    justify-content: start;
+  }
+  .banner-cookie .pulsante {
+    min-width: 10rem;
+  }
+}

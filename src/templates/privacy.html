@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+{{> testa}}
+</head>
+<body>
+{{> header}}
+<main id="contenuto">
+<section class="sezione legale" aria-labelledby="legale-titolo">
+  <div class="contenitore">
+    <div class="legale-testo">
+      {{> legale-testata}}
+      <h2>{{t.privacy.titolare.h2}}</h2>
+      <dl class="legale-scheda">
+        <div><dt>{{t.privacy.titolare.etichette.titolare}}</dt><dd>{{centro.legale.denominazione}}</dd></div>
+        <div><dt>{{t.privacy.titolare.etichette.partitaIva}}</dt><dd>{{centro.legale.partitaIva}}</dd></div>
+        <div><dt>{{t.privacy.titolare.etichette.sede}}</dt><dd>{{legali.sede}}</dd></div>
+        <div><dt>{{t.privacy.titolare.etichette.email}}</dt><dd><a href="{{link.email}}">{{contatti.email}}</a></dd></div>
+        <div><dt>{{t.privacy.titolare.etichette.telefono}}</dt><dd><a href="{{link.tel}}">{{contatti.telefono}}</a></dd></div>
+      </dl>
+
+      <h2>{{t.privacy.trattamenti.h2}}</h2>
+      {{#ogni legali.trattamenti}}{{> legale-trattamento}}{{/ogni}}
+      {{#se !legali.tracciamenti}}<div class="legale-blocco">
+        <h3>{{t.privacy.tracciamentiSpenti.titolo}}</h3>
+        <p>{{t.privacy.tracciamentiSpenti.testo}}</p>
+      </div>
+      {{/se}}
+
+      <h2>{{t.privacy.fornitori.h2}}</h2>
+      <p>{{t.privacy.fornitori.testo}}</p>
+      <ul class="legale-elenco">
+        {{#ogni legali.fornitori}}<li><strong>{{nome}}</strong>{{#se sede}} ({{sede}}){{/se}}, {{ruolo}}{{#se inAttivazione}}, {{t.privacy.fornitori.inAttivazione}}{{/se}}.</li>
+        {{/ogni}}
+      </ul>
+      <p>{{t.privacy.fornitori.trasferimento}}</p>
+      <p>{{t.privacy.fornitori.altro}}</p>
+
+      <h2>{{t.privacy.diritti.h2}}</h2>
+      <p>{{t.privacy.diritti.testo}}</p>
+      <ul class="legale-elenco">
+        {{#ogni t.privacy.diritti.elenco}}<li>{{.}}</li>
+        {{/ogni}}
+      </ul>
+      <p>{{t.privacy.diritti.scrivi}} <a href="{{link.email}}">{{contatti.email}}</a>. {{t.privacy.diritti.risposta}}</p>
+      <p>{{t.privacy.diritti.reclamo}} <a href="{{link.garante}}" target="_blank" rel="noopener">{{t.privacy.diritti.garante}}</a>.</p>
+
+      <p class="legale-link"><a href="{{link.cookie}}">{{t.privacy.linkCookie}}</a></p>
+    </div>
+  </div>
+</section>
+</main>
+{{> footer}}
+{{#se tracciamenti.attivo}}{{> banner-cookie}}{{/se}}
+</body>
+</html>

@@ -1,0 +1,16 @@
+<section class="sezione prenota" id="come-prenotare" data-sezione="come-prenotare" aria-labelledby="prenota-titolo">
+  <div class="contenitore prenota-griglia">
+    <div class="prenota-intro appare">
+      <p class="occhiello arco">{{t.comePrenotare.occhiello}}</p>
+      <h2 id="prenota-titolo">{{t.comePrenotare.h2}}</h2>
+    </div>
+    <ol class="passi">
+      {{#ogni t.comePrenotare.passi}}<li class="passo appare">{{.}}</li>
+      {{/ogni}}
+    </ol>
+    <div class="pulsanti prenota-pulsanti appare">
+      <a class="pulsante pulsante-principale" href="{{link.tel}}">{{{icone.telefono}}}<span>{{t.comePrenotare.pulsanteChiama}}</span></a>
+      <a class="pulsante pulsante-secondario" href="{{link.whatsapp}}" target="_blank" rel="noopener">{{{icone.fumetto}}}<span>{{t.comePrenotare.pulsanteWhatsapp}}</span></a>
+    </div>
+  </div>
+</section>

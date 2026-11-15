@@ -1,0 +1,22 @@
+<section class="sezione listino" id="listino" data-sezione="listino" aria-labelledby="listino-titolo">
+  <div class="contenitore listino-griglia">
+    <div class="listino-intro appare">
+      <p class="occhiello arco">{{t.listino.occhiello}}</p>
+      <h2 id="listino-titolo">{{t.listino.h2}}</h2>
+      <p>{{t.listino.testo}}</p>
+    </div>
+    <div class="listino-corpo">
+      <div class="listino-categorie appare">
+        {{#ogni listino.categorie}}<details class="listino-categoria" id="listino-{{id}}"{{#se aperta}} open{{/se}}>
+          <summary><span class="listino-titolo">{{titolo}}</span><span class="listino-conteggio">{{conteggio}}</span>{{{icone.apri}}}</summary>
+          <dl class="listino-voci">
+            {{#ogni voci}}<div class="listino-voce"><dt>{{nome}}</dt><dd>{{prezzo}}</dd></div>
+            {{/ogni}}
+          </dl>
+        </details>
+        {{/ogni}}
+      </div>
+      <p class="listino-stampato appare"><a href="{{link.listinoStampato}}" target="_blank" rel="noopener">{{t.listino.linkStampato}}</a></p>
+    </div>
+  </div>
+</section>

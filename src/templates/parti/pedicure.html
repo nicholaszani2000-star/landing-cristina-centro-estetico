@@ -1,0 +1,33 @@
+<section class="sezione pedicure" id="pedicure" data-sezione="pedicure" aria-labelledby="pedicure-titolo">
+  <div class="contenitore pedicure-griglia">
+    <div class="pedicure-intro appare">
+      <p class="occhiello arco">{{t.pedicure.occhiello}}</p>
+      <h2 id="pedicure-titolo">{{t.pedicure.h2}}</h2>
+      <p>{{t.pedicure.testo}}</p>
+    </div>
+    <div class="pedicure-foto">{{{immagini.fotoPedicure}}}</div>
+    <div class="pedicure-dettagli">
+      <div class="schede">
+        {{#ogni pedicure.schede}}<div class="scheda {{classe}} appare">
+          <h3 class="scheda-titolo">{{titolo}}</h3>
+          <p class="scheda-sottotitolo">{{sottotitolo}}</p>
+          {{#se voci}}<ul class="scheda-voci">
+            {{#ogni voci}}<li>{{{icone.spunta}}}<span>{{.}}</span></li>
+            {{/ogni}}
+          </ul>
+          {{/se}}{{#se durata}}<p class="scheda-durata">{{durata}}</p>
+          {{/se}}
+        </div>
+        {{/ogni}}
+      </div>
+      {{#se t.pedicure.strumentiIgiene}}<p class="pedicure-igiene appare">{{{icone.scudo}}}<span>{{t.pedicure.strumentiIgiene}}</span></p>
+      {{/se}}<p class="pedicure-limite appare">{{{icone.info}}}<span>{{t.pedicure.rigaLimite}}</span></p>
+      <div class="pedicure-azioni appare">
+        <a class="link-prezzi" href="{{link.listino}}">{{t.pedicure.linkPrezzi}}</a>
+        <div class="pulsanti">
+          <a class="pulsante pulsante-principale" href="{{link.whatsappPedicure}}" target="_blank" rel="noopener">{{{icone.fumetto}}}<span>{{t.pedicure.pulsante}}</span></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

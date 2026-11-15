@@ -1,0 +1,19 @@
+<section class="sezione dove" id="dove-siamo" data-sezione="dove-siamo" aria-labelledby="dove-titolo">
+  <div class="contenitore dove-griglia">
+    <div class="dove-intro appare">
+      <p class="occhiello arco">{{t.doveSiamo.occhiello}}</p>
+      <h2 id="dove-titolo">{{t.doveSiamo.h2}}</h2>
+    </div>
+    <div class="dove-foto">{{{immagini.fotoDove}}}</div>
+    <div class="dove-dettagli appare">
+      <address class="dove-contatti">
+        <p class="dove-riga">{{{icone.posizione}}}<span>{{t.doveSiamo.indirizzo}}</span></p>
+        <p class="dove-riga dove-orari">{{{icone.orologio}}}<span>{{t.doveSiamo.orari}}</span></p>
+        <p class="dove-riga">{{{icone.telefono}}}<a href="{{link.tel}}">{{contatti.telefono}}</a></p>
+      </address>
+      <div class="pulsanti">
+        <a class="pulsante pulsante-secondario" href="{{link.maps}}" target="_blank" rel="noopener">{{{icone.posizione}}}<span>{{t.doveSiamo.pulsanteMaps}}</span></a>
+      </div>
+    </div>
+  </div>
+</section>

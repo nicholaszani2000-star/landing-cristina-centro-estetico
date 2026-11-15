@@ -1,0 +1,16 @@
+<section class="apertura" aria-labelledby="apertura-titolo">
+  <div class="contenitore apertura-griglia">
+    <div class="apertura-testo">
+      <p class="occhiello">{{p.occhiello}}</p>
+      <h1 id="apertura-titolo">{{p.h1}}</h1>
+      <p class="apertura-sottotitolo">{{p.sottotitolo}}</p>
+      <div class="pulsanti" data-pulsanti-apertura>
+        <a class="pulsante pulsante-principale" href="{{link.tel}}">{{{icone.telefono}}}<span>{{t.apertura.pulsanteChiama}}</span></a>
+        <a class="pulsante pulsante-secondario" href="{{link.whatsapp}}" target="_blank" rel="noopener">{{{icone.fumetto}}}<span>{{t.apertura.pulsanteWhatsapp}}</span></a>
+      </div>
+      <p class="apertura-info">{{#ogni t.apertura.rigaInfoSegmenti}}{{#se !@primo}} · {{/se}}<span>{{.}}</span>{{/ogni}}</p>
+      <p class="payoff apertura-payoff">{{t.apertura.payoff}}</p>
+    </div>
+    <div class="apertura-foto">{{{immagini.fotoApertura}}}</div>
+  </div>
+</section>

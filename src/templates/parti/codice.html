@@ -1,0 +1,48 @@
+<section class="sezione codice" id="codice-sconto" data-sezione="codice-sconto" aria-labelledby="codice-titolo">
+  <div class="contenitore codice-griglia">
+    <div class="codice-intro appare">
+      <p class="occhiello arco">{{t.codiceSconto.occhiello}}</p>
+      <h2 id="codice-titolo">{{t.codiceSconto.h2}}</h2>
+      <p>{{t.codiceSconto.testo}}</p>
+    </div>
+    <div class="codice-blocco appare">
+      <form class="codice-modulo" method="post" action="{{codice.azione}}" data-codice-modulo>
+        <div class="campo">
+          <label class="campo-etichetta" for="codice-email">{{t.codiceSconto.campoEtichetta}}</label>
+          <input class="campo-testo" id="codice-email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="254" required placeholder="{{t.codiceSconto.campoSegnaposto}}" aria-describedby="codice-errore-email">
+          <div class="campo-avviso" aria-live="polite"><p class="campo-errore" id="codice-errore-email" hidden>{{{icone.avviso}}}<span>{{t.codiceSconto.errori.email}}</span></p></div>
+        </div>
+        <div class="campo campo-consenso">
+          <input class="campo-casella" id="codice-consenso" name="consenso" type="checkbox" value="on" required aria-describedby="codice-errore-consenso">
+          <label for="codice-consenso">{{codice.consensoPrima}}<a href="{{link.privacy}}">{{codice.consensoLink}}</a>{{codice.consensoDopo}}</label>
+          <div class="campo-avviso" aria-live="polite"><p class="campo-errore" id="codice-errore-consenso" hidden>{{{icone.avviso}}}<span>{{t.codiceSconto.errori.consenso}}</span></p></div>
+        </div>
+        <div class="trappola">
+          <label for="codice-sito">{{t.codiceSconto.trappola}}</label>
+          <input class="campo-testo" id="codice-sito" name="sito" type="text" tabindex="-1" autocomplete="off">
+        </div>
+        <input type="hidden" name="pagina" value="{{p.percorso}}">
+        <input type="hidden" name="utm_source" value="">
+        <input type="hidden" name="utm_medium" value="">
+        <input type="hidden" name="utm_campaign" value="">
+        <input type="hidden" name="utm_content" value="">
+        <input type="hidden" name="evento_id" value="">
+        <button class="pulsante pulsante-principale codice-invia" type="submit">{{t.codiceSconto.pulsante}}</button>
+        <p class="codice-condizioni">{{t.codiceSconto.condizioni}}</p>
+      </form>
+      <div class="codice-risultato" aria-live="polite" data-codice-risultato>
+        <p class="campo-errore" hidden data-codice-generico>{{{icone.avviso}}}<span>{{t.codiceSconto.errori.generico}}</span></p>
+      </div>
+      <template data-codice-modello>
+        <div class="codice-ottenuto">
+          <h3 class="codice-ottenuto-titolo" tabindex="-1">{{t.codiceSconto.risultatoTitolo}}</h3>
+          <p class="codice-valore" data-codice-valore></p>
+          <p data-codice-scadenza>{{t.codiceSconto.risultatoValidita}}</p>
+          <p data-codice-email hidden>{{t.codiceSconto.risultatoEmail}}</p>
+          <button class="pulsante pulsante-secondario" type="button" data-codice-copia data-copiato="{{t.codiceSconto.copiato}}">{{t.codiceSconto.copia}}</button>
+          <p class="codice-condizioni">{{t.codiceSconto.condizioni}}</p>
+        </div>
+      </template>
+    </div>
+  </div>
+</section>

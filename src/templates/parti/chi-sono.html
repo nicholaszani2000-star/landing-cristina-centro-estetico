@@ -1,0 +1,11 @@
+<section class="sezione chi-sono" id="chi-sono" data-sezione="chi-sono" aria-labelledby="chi-sono-titolo">
+  <div class="contenitore chi-griglia">
+    <div class="chi-intro appare">
+      <p class="occhiello arco">{{t.chiSono.occhiello}}</p>
+      <h2 id="chi-sono-titolo">{{t.chiSono.h2}}</h2>
+      <p>{{#se t.chiSono.testo}}{{t.chiSono.testo}}{{altrimenti}}{{t.chiSono.testoPredefinito}}{{/se}}</p>
+    </div>
+    <div class="chi-foto">{{{immagini.fotoChiSono}}}</div>
+    <p class="chi-payoff appare">{{t.chiSono.payoff}}</p>
+  </div>
+</section>

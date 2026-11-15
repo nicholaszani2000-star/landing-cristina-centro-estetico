@@ -5,7 +5,10 @@
   "description": "Strumenti di lavoro interni (anteprima, controlli, export immagini): mai pubblicati",
   "type": "module",
   "dependencies": {
+    "@fontsource/jost": "^5.3.0",
+    "@fontsource/marcellus": "^5.3.0",
     "html-validate": "^11.17.0",
+    "lighthouse": "^12.8.2",
     "playwright": "^1.64.1",
     "sharp": "^0.35.5"
   }
