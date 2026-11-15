@@ -46,7 +46,8 @@ Struttura obbligatoria:
 │  ├─ fonts/              woff2 self-hosted
 │  └─ img/                immagini ottimizzate (generate allo Step 2)
 ├─ netlify/functions/
-│  └─ codice-sconto.mjs   la funzione del codice sconto (Step 8)
+│  ├─ codice-sconto.mjs   la funzione del codice sconto (Step 8)
+│  └─ diagnostica.mjs     segnalazioni tecniche anonime: esito degli script dopo il consenso e rapporti CSP (Step 9)
 ├─ supabase/
 │  └─ iscritti.sql        tabella e funzione per le iscrizioni (Step 8)
 └─ studio/                lavoro interno, mai pubblicato
@@ -193,6 +194,7 @@ Le voci viso della sezione viso (§6) sono 5: Pulizia viso base, Trattamento vis
 - Pixel Meta: 1682509193499996 (attivo dal 6 novembre 2026: parte solo dopo «Accetta» o «Marketing» nel banner, con consent revoke prima di init; eventi PageView, Contact e Lead. API Conversioni non ancora attiva: serve il token META_CAPI_TOKEN su Netlify)
 - Progetto Supabase: migliore-estetica (bkcpnkrnhjirmbwnrozp), regione eu-central-1 (Francoforte), con supabase/iscritti.sql applicato. SUPABASE_URL è su Netlify; SUPABASE_SECRET_KEY è su Netlify dal 6 novembre 2026, segreta e solo nel contesto di produzione: lì le iscrizioni si salvano davvero, nei Deploy Preview e in locale il codice resta in modalità prova.
 - Netlify: progetto esteticamigliore (https://esteticamigliore.netlify.app), collegato a GitHub dal 4 novembre 2026 con branch di produzione landing-migliore: ogni push su landing-migliore va online da solo (per un commit che non deve pubblicare, «[skip netlify]» nel messaggio). Dominio https://esteticamigliore.it con HTTPS attivo. Lo zip di studio/pacchetto-netlify.mjs resta solo come ripiego.
+- Diagnostica: netlify/functions/diagnostica.mjs (POST /api/diagnostica, dal 15 novembre 2026). Dopo il consenso consenso.js segnala se GA4 e il pixel Meta sono partiti, bloccati o non avviati; la CSP manda lì i suoi rapporti (report-uri). Una riga per segnalazione nei log della funzione, senza dati personali (solo percorso della pagina e origine bloccata).
 - Google Search Console: proprietà «Prefisso URL» https://esteticamigliore.it, verificata con il file HTML (content/centro.json › integrazioni.googleFileVerifica).
 - Servizio email: Brevo (Francia). BREVO_API_KEY è su Netlify dal 6 novembre 2026, segreta e solo nel contesto di produzione. Lista delle promo: «Promo sito» (content/centro.json › integrazioni.servizioEmail.listaPromo, il nome della lista, non il numero): ogni iscritto entra da solo in questa lista, da cui Cristina invia le promo mensili. La funzione cerca la lista per nome e, se manca (per esempio perché è stata cancellata), la ricrea da sola. Mittente: esteticamigliore@gmail.com (servizioEmail.mittente): il codice arriva anche via email. Per una consegna più sicura, più avanti, meglio un mittente @esteticamigliore.it con il dominio autenticato su Brevo.
 - Chiavi segrete (Supabase, API Conversioni Meta, servizio email): MAI in questo file, MAI nel repository, MAI nella chat. Vanno solo nelle variabili d'ambiente di Netlify, con ambito «Functions».

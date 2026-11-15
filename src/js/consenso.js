@@ -22,10 +22,19 @@
   function salva(s) {
     try { localStorage.setItem(CHIAVE, JSON.stringify({ v: VERSIONE, t: Date.now(), statistiche: s.statistiche, marketing: s.marketing })); } catch (e) { /* niente */ }
   }
-  function script(src) {
+  // Diagnostica anonima (netlify/functions/diagnostica.mjs): solo dopo il consenso, dice se lo script è partito o
+  // se il browser l'ha bloccato. Nessun dato personale: il nome dell'esito e il percorso della pagina.
+  function segnala(esito) {
+    try {
+      navigator.sendBeacon("/api/diagnostica", new Blob([JSON.stringify({ evento: esito, pagina: location.pathname })], { type: "text/plain;charset=UTF-8" }));
+    } catch (e) { /* niente */ }
+  }
+  function script(src, nome, avviato) {
     var s = d.createElement("script");
     s.async = true;
     s.src = src;
+    s.onerror = function () { segnala(nome + "-bloccato"); };
+    s.onload = function () { segnala(avviato ? nome + (avviato() ? "-avviato" : "-non-avviato") : nome + "-caricato"); };
     d.head.appendChild(s);
   }
 
@@ -38,7 +47,7 @@
     window.gtag("consent", "update", { analytics_storage: "granted" });
     window.gtag("js", new Date());
     window.gtag("config", ga4);
-    script("https://www.googletagmanager.com/gtag/js?id=" + encodeURIComponent(ga4));
+    script("https://www.googletagmanager.com/gtag/js?id=" + encodeURIComponent(ga4), "ga4");
   }
   function caricaMeta() {
     if (!meta || caricati.meta) return;
@@ -46,7 +55,8 @@
     var f = window.fbq = function () { f.callMethod ? f.callMethod.apply(f, arguments) : f.queue.push(arguments); };
     if (!window._fbq) window._fbq = f;
     f.push = f; f.loaded = true; f.version = "2.0"; f.queue = [];
-    script("https://connect.facebook.net/en_US/fbevents.js");
+    // fbevents.js, quando parte, mette callMethod sul suo fbq: se manca, lo script è arrivato ma non è partito.
+    script("https://connect.facebook.net/en_US/fbevents.js", "meta", function () { return typeof f.callMethod === "function"; });
     f("consent", "revoke"); // prima di init, come chiede Meta
     f("init", meta);
     f("consent", "grant");

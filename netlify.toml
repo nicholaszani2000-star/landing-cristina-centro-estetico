@@ -27,7 +27,8 @@
     # Pixel Meta: oltre a script (connect.facebook.net), immagini e connessioni (www.facebook.com), per gli eventi con
     # molti dati lo script di Meta invia con un modulo in un iframe nascosto verso www.facebook.com/tr: per questo
     # frame-src e form-action ammettono www.facebook.com (configurazione usata anche da Sharetribe per il pixel).
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'sha256-qOhFsq0QMV2REqNwk5hGH5bZE9SkX6gt6yeyKdYPv+U=' https://*.googletagmanager.com https://connect.facebook.net; style-src 'self'; img-src 'self' data: https://*.google-analytics.com https://*.googletagmanager.com https://www.facebook.com; font-src 'self'; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://www.facebook.com https://connect.facebook.net; frame-src https://www.facebook.com; object-src 'none'; base-uri 'self'; form-action 'self' https://www.facebook.com; frame-ancestors 'none'"
+    # report-uri: i blocchi della CSP arrivano a netlify/functions/diagnostica.mjs e finiscono nei log, senza dati personali.
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'sha256-qOhFsq0QMV2REqNwk5hGH5bZE9SkX6gt6yeyKdYPv+U=' https://*.googletagmanager.com https://connect.facebook.net; style-src 'self'; img-src 'self' data: https://*.google-analytics.com https://*.googletagmanager.com https://www.facebook.com; font-src 'self'; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://www.facebook.com https://connect.facebook.net; frame-src https://www.facebook.com; object-src 'none'; base-uri 'self'; form-action 'self' https://www.facebook.com; frame-ancestors 'none'; report-uri /api/diagnostica"
 
 # Cache: font, CSS e JS hanno ?v=<hash> nei link, quindi sono immutabili.
 [[headers]]

@@ -2546,6 +2546,57 @@ await controllo("CSP nel browser (anteprima con gli header di netlify.toml): nes
   verifica(!problemi.length, problemi.join(" · "));
 });
 
+await controllo("diagnostica anonima (POST /api/diagnostica): esiti degli script dopo il consenso e rapporti della CSP diventano una riga di log con il solo percorso della pagina e l'origine bloccata (mai parametri, email o a capo); richieste sbagliate → 400/405/413; la CSP manda i rapporti lì", async () => {
+  const f = await import(pathToFileURL(join(RADICE, "netlify", "functions", "diagnostica.mjs")).href);
+  verifica(f.config.path === "/api/diagnostica" && JSON.stringify(f.config.method) === '["POST"]' && f.config.rateLimit?.windowLimit > 0, `config: ${JSON.stringify(f.config)}`);
+  const invia = async (corpo, { metodo = "POST", tipo = "text/plain" } = {}) => {
+    const segnalazioni = [];
+    const r = await f.default(new Request("http://x/api/diagnostica", { method: metodo, headers: { "Content-Type": tipo }, body: metodo === "POST" ? corpo : undefined }), { segnalazioni });
+    return { stato: r.status, cache: r.headers.get("cache-control"), righe: segnalazioni };
+  };
+  let r = await invia(JSON.stringify({ evento: "meta-avviato", pagina: "/viso/?utm_source=meta&fbclid=ABC123" }));
+  verifica(r.stato === 204 && r.cache === "no-store" && r.righe.length === 1 && r.righe[0] === "diagnostica: meta-avviato su /viso/", `evento: ${JSON.stringify(r)}`);
+  r = await invia(JSON.stringify({ "csp-report": { "document-uri": "https://esteticamigliore.it/pedicure/?utm_campaign=x", "effective-directive": "frame-src", "violated-directive": "frame-src https://www.facebook.com", "blocked-uri": "https://www.facebook.com/tr/?id=1&ev=PageView&ud[em]=abc" } }), { tipo: "application/csp-report" });
+  verifica(r.stato === 204 && r.righe[0] === "diagnostica: csp frame-src https://www.facebook.com/tr/ su /pedicure/", `csp: ${JSON.stringify(r.righe)}`);
+  r = await invia(JSON.stringify({ "csp-report": { "document-uri": "https://esteticamigliore.it/", "violated-directive": "script-src-elem", "blocked-uri": "inline" } }), { tipo: "application/csp-report" });
+  verifica(r.righe[0] === "diagnostica: csp script-src-elem inline su /", `csp inline: ${JSON.stringify(r.righe)}`);
+  r = await invia(JSON.stringify({ evento: "meta-avviato", pagina: "/\nfalso: anna@esempio.it" }));
+  verifica(r.stato === 204 && !/\n|@/.test(r.righe[0]), `a capo o email nel log: ${JSON.stringify(r.righe)}`);
+  for (const [corpo, atteso, perche] of [["non json", 400, "testo non JSON"], [JSON.stringify({ evento: "altro" }), 400, "evento sconosciuto"], [JSON.stringify({}), 400, "corpo vuoto"], ["x".repeat(9000), 413, "corpo troppo grande"]]) {
+    const v = await invia(corpo);
+    verifica(v.stato === atteso && v.righe.length === 0, `${perche}: ${v.stato}`);
+  }
+  verifica((await invia(null, { metodo: "GET" })).stato === 405, "GET non rifiutato");
+  verifica(/report-uri \/api\/diagnostica/.test(cspNetlify() ?? ""), "la CSP non manda i rapporti a /api/diagnostica");
+  // Nel browser, dopo «Accetta»: Meta e Google bloccati → meta-bloccato e ga4-bloccato; uno script di Meta finto che
+  // parte → meta-avviato; uno che arriva ma non parte → meta-non-avviato. Prima della scelta, nessuna segnalazione.
+  const { browser, server, base } = await browserCondiviso();
+  const prova = async (fbevents) => {
+    server.segnalazioni.length = 0;
+    const contesto = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await contesto.route((u) => TRACCIANTI.test(u.hostname), (rotta) =>
+      fbevents && /fbevents\.js$/.test(new URL(rotta.request().url()).pathname) ? rotta.fulfill({ contentType: "text/javascript", body: fbevents }) : rotta.abort());
+    const pg = await contesto.newPage();
+    await pg.goto(base + "/viso/?utm_source=prova", { waitUntil: "networkidle" });
+    const prima = server.segnalazioni.length;
+    await pg.click('[data-consenso="accetta"]');
+    for (let t = 0; t < 30 && server.segnalazioni.length < 2; t++) await pg.waitForTimeout(100);
+    const righe = [...server.segnalazioni];
+    await contesto.close();
+    return { prima, righe };
+  };
+  const ga4 = centro.integrazioni.ga4Id, meta = centro.integrazioni.metaPixelId;
+  let esito = await prova(null);
+  verifica(esito.prima === 0, `segnalazioni prima della scelta: ${esito.prima}`);
+  verifica(esito.righe.includes("diagnostica: meta-bloccato su /viso/") === Boolean(meta) && esito.righe.includes("diagnostica: ga4-bloccato su /viso/") === Boolean(ga4), `con Google e Meta bloccati: ${JSON.stringify(esito.righe)}`);
+  if (meta) {
+    esito = await prova("window.fbq.callMethod = function () {};");
+    verifica(esito.righe.includes("diagnostica: meta-avviato su /viso/"), `Meta che parte: ${JSON.stringify(esito.righe)}`);
+    esito = await prova("/* arrivato ma non partito */");
+    verifica(esito.righe.includes("diagnostica: meta-non-avviato su /viso/"), `Meta che non parte: ${JSON.stringify(esito.righe)}`);
+  }
+});
+
 await controllo("Brevo (finto): POST /v3/smtp/email con api-key, mittente di centro.json, replyTo, oggetto e corpo HTML dai testi (codice, scadenza in italiano, condizioni, telefono); true solo se Brevo accetta; senza chiave, senza mittente o in modalità prova nessun invio; mai l'email nei log", async () => {
   const f = await import(pathToFileURL(FUNZIONE).href);
   const salvati = { chiave: process.env.BREVO_API_KEY, url: process.env.SUPABASE_URL, segreta: process.env.SUPABASE_SECRET_KEY, fetch: globalThis.fetch, errore: console.error };

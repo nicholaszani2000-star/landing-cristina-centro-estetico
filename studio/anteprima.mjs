@@ -120,25 +120,28 @@ function intestazioniPer(percorso, regole) {
 }
 const COMPRIMIBILI = new Set([".html", ".css", ".js", ".mjs", ".json", ".xml", ".txt", ".svg"]);
 
-// ---------------------------------------------------------------- funzione del codice sconto
+// ---------------------------------------------------------------- funzioni (codice sconto, diagnostica)
 
-let funzione = null;
-/** Importa netlify/functions/codice-sconto.mjs con un globale Netlify finto: env.get legge process.env.
- *  Senza SUPABASE_URL e SUPABASE_SECRET_KEY la funzione lavora in «modalità prova» (§13). */
-async function funzioneCodice() {
-  if (!funzione) {
+// Percorso → file in netlify/functions, come config.path delle funzioni su Netlify.
+const FUNZIONI = { "/api/codice-sconto": "codice-sconto.mjs", "/api/diagnostica": "diagnostica.mjs" };
+const funzioni = new Map();
+/** Importa una funzione di netlify/functions con un globale Netlify finto: env.get legge process.env.
+ *  Senza SUPABASE_URL e SUPABASE_SECRET_KEY il codice sconto lavora in «modalità prova» (§13). */
+async function funzioneDi(file) {
+  if (!funzioni.has(file)) {
     globalThis.Netlify ??= { env: { get: (k) => process.env[k] } };
-    funzione = (await import(pathToFileURL(join(RADICE, "netlify", "functions", "codice-sconto.mjs")).href)).default;
+    funzioni.set(file, (await import(pathToFileURL(join(RADICE, "netlify", "functions", file)).href)).default);
   }
-  return funzione;
+  return funzioni.get(file);
 }
 async function corpoDi(richiesta) {
   const parti = [];
   for await (const parte of richiesta) parti.push(parte);
   return Buffer.concat(parti);
 }
-/** Passa alla funzione una Request vera (metodo, header, corpo) e scrive la sua Response. */
-async function rispondiCodice(richiesta, risposta) {
+/** Passa alla funzione una Request vera (metodo, header, corpo) e scrive la sua Response. Le segnalazioni della
+ *  diagnostica restano in memoria (server.segnalazioni), così i controlli le leggono e il terminale resta pulito. */
+async function rispondiFunzione(file, richiesta, risposta, segnalazioni) {
   const intestazioni = new Headers();
   for (let i = 0; i < richiesta.rawHeaders.length; i += 2) intestazioni.append(richiesta.rawHeaders[i], richiesta.rawHeaders[i + 1]);
   const corpo = await corpoDi(richiesta);
@@ -147,7 +150,7 @@ async function rispondiCodice(richiesta, risposta) {
     headers: intestazioni,
     body: ["GET", "HEAD"].includes(richiesta.method) ? undefined : corpo,
   });
-  const res = await (await funzioneCodice())(req, { ip: richiesta.socket.remoteAddress, params: {} });
+  const res = await (await funzioneDi(file))(req, { ip: richiesta.socket.remoteAddress, params: {}, segnalazioni });
   risposta.writeHead(res.status, Object.fromEntries(res.headers));
   risposta.end(Buffer.from(await res.arrayBuffer()));
 }
@@ -155,7 +158,7 @@ const esisteFile = (p) => p && existsSync(p) && statSync(p).isFile();
 
 /** produzione = true imita Netlify anche su cache e compressione: header di tutti i blocchi di netlify.toml
  *  (Cache-Control compreso) e brotli per i file di testo, se il browser lo accetta. Serve a Lighthouse. */
-async function rispondi(richiesta, risposta, cartella = DIST, intestazioni = {}, produzione = false) {
+async function rispondi(richiesta, risposta, cartella = DIST, intestazioni = {}, produzione = false, segnalazioni = []) {
   const url = new URL(richiesta.url, "http://anteprima.local");
   let percorso;
   try {
@@ -165,12 +168,12 @@ async function rispondi(richiesta, risposta, cartella = DIST, intestazioni = {},
     return;
   }
 
-  if (percorso === "/api/codice-sconto") {
+  if (Object.hasOwn(FUNZIONI, percorso)) {
     if (richiesta.method !== "POST") {
       risposta.writeHead(405, { Allow: "POST" }).end();
       return;
     }
-    await rispondiCodice(richiesta, risposta);
+    await rispondiFunzione(FUNZIONI[percorso], richiesta, risposta, segnalazioni);
     return;
   }
   if (richiesta.method !== "GET" && richiesta.method !== "HEAD") {
@@ -226,13 +229,15 @@ const compressi = new Map();
 export function avviaServer(porta, { cartella = DIST, intestazioni = intestazioniNetlify(), produzione = false } = {}) {
   if (produzione) regoleProduzione = regoleNetlify();
   return new Promise((ok, ko) => {
+    const segnalazioni = [];
     const server = createServer((req, res) => {
-      rispondi(req, res, resolve(cartella), intestazioni, produzione).catch((e) => {
+      rispondi(req, res, resolve(cartella), intestazioni, produzione, segnalazioni).catch((e) => {
         console.error(e);
         if (!res.headersSent) res.writeHead(500);
         res.end();
       });
     });
+    server.segnalazioni = segnalazioni;
     server.once("error", ko);
     server.listen(porta, "127.0.0.1", () => ok(server));
   });

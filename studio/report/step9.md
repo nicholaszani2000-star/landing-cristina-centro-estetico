@@ -405,6 +405,12 @@ La titolare segnala che GA4 misura, ma Meta propone ancora di copiare il codice 
   - Il `PageView` non ne aveva bisogno: questa modifica toglie un possibile blocco, ma non spiega da sola l'assenza di eventi.
 - **9 novembre, log di Netlify** (ultime 24 ore): 11 visite con JavaScript, nessuna richiesta del codice sconto, alcuni robot che cercano `.env` e `wp-login.php` (tutti 404).
 - **Per chiudere**: ricollegare il connettore Meta di Claude includendo il portfolio del pixel, così gli eventi si leggono direttamente, oppure la prova con Eventi di test e Meta Pixel Helper.
+- **15 novembre**: Meta mostra «Completamento: 0%» (nessun evento web ricevuto dal pixel della scheda). Aggiunta la diagnostica anonima:
+  - `netlify/functions/diagnostica.mjs` (POST `/api/diagnostica`): una riga di log per segnalazione, solo percorso della pagina e origine bloccata, mai parametri o dati personali;
+  - `consenso.js`, solo dopo il consenso, segnala `meta-avviato`, `meta-non-avviato`, `meta-bloccato`, `ga4-caricato`, `ga4-bloccato`;
+  - la CSP manda i suoi rapporti lì (`report-uri /api/diagnostica`);
+  - si leggono con l'osservabilità di Netlify (filtro LogText «diagnostica»);
+  - controlli: 106/106, con prove nel browser dei tre casi di Meta (bloccato, avviato, arrivato ma non avviato).
 
 ## 7. Dati mancanti o dubbi
 
