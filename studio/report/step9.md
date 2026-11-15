@@ -411,6 +411,11 @@ La titolare segnala che GA4 misura, ma Meta propone ancora di copiare il codice 
   - la CSP manda i suoi rapporti lì (`report-uri /api/diagnostica`);
   - si leggono con l'osservabilità di Netlify (filtro LogText «diagnostica»);
   - controlli: 106/106, con prove nel browser dei tre casi di Meta (bloccato, avviato, arrivato ma non avviato).
+- **15 novembre, dati veri dalla diagnostica**:
+  - 10:21 e 11:05 (ora italiana): `meta-avviato` e `ga4-caricato` sulla home, con Chrome su Mac. Lo script di Meta parte dopo il consenso, senza blocchi della CSP verso Meta.
+  - Le richieste del codice sconto di oggi (3, tutte con risposta 200, 2 iscrizioni nuove su Supabase, nessun errore di Brevo) sono arrivate da pagine senza consenso ai cookie: per quelle Meta non riceve nulla, come deve essere.
+  - I rapporti CSP «script-src-elem/style-src-elem inline su /about» arrivano da un documento about:blank aperto insieme all'HUD di Netlify (`/.netlify/scripts/hud`, solo per chi è collegato a Netlify): non riguardano i visitatori né il pixel.
+  - Aggiunto `meta-inviato` / `meta-non-inviato`: 5 secondi dopo l'avvio, il browser dice se il PageView è uscito verso www.facebook.com/tr.
 
 ## 7. Dati mancanti o dubbi
 
