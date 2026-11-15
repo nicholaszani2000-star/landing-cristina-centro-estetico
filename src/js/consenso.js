@@ -69,7 +69,7 @@
     // fbevents.js, quando parte, mette callMethod sul suo fbq: se manca, lo script è arrivato ma non è partito.
     script("https://connect.facebook.net/en_US/fbevents.js", "meta", function () { return typeof f.callMethod === "function"; });
     f("consent", "revoke"); // prima di init, come chiede Meta
-    f("init", meta);
+    meta.split(",").forEach(function (id) { f("init", id); }); // uno o più pixel: PageView, Contact e Lead vanno a tutti
     f("consent", "grant");
     f("track", "PageView");
   }

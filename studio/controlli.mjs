@@ -2286,6 +2286,14 @@ await controllo("sito vero con gli ID di centro.json (oggi solo GA4): banner con
   await pg.waitForTimeout(800);
   verifica(tentate.some((h) => /googletagmanager/.test(h)) === Boolean(ga4), `GA4 dopo «Accetta»: ${tentate.join(", ") || "nessuna richiesta"}`);
   verifica(tentate.some((h) => /facebook/.test(h)) === Boolean(meta), `Meta dopo «Accetta»: ${tentate.join(", ") || "nessuna richiesta"}`);
+  if (meta) {
+    // Ogni pixel di centro.json (uno o più, separati da virgole) riceve il suo init, poi un solo PageView per tutti.
+    const chiamate = await pg.evaluate(() => (window.fbq?.queue ?? []).map((a) => Array.from(a).slice(0, 2)));
+    const iniziati = chiamate.filter((c) => c[0] === "init").map((c) => c[1]);
+    verifica(JSON.stringify(iniziati) === JSON.stringify(String(meta).split(",")), `pixel iniziati: ${JSON.stringify(iniziati)} invece di ${meta}`);
+    verifica(chiamate.filter((c) => c[0] === "track" && c[1] === "PageView").length === 1, `PageView: ${JSON.stringify(chiamate)}`);
+    verifica(home.includes(`data-meta="${meta}"`), "data-meta diverso dai pixel di centro.json");
+  }
   await contesto.close();
 });
 

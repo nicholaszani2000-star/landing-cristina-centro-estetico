@@ -54,7 +54,7 @@ const ID_PROVA = { ga4Id: "G-TEST000000", metaPixelId: "000000000000000" };
 // googleFileVerifica: il nome del file di verifica di Search Console (metodo «File HTML»), messo nella radice del sito.
 const FORMATO_ID = {
   ga4Id: /^G-[A-Z0-9]{6,12}$/,
-  metaPixelId: /^\d{15,16}$/,
+  metaPixelId: /^\d{15,16}(,\d{15,16})*$/, // uno o più pixel, separati da virgole: ogni evento va a tutti
   googleVerifica: /^[A-Za-z0-9_-]{20,100}$/,
   googleFileVerifica: /^google[0-9a-f]{16}\.html$/,
 };
